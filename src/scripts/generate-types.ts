@@ -66,6 +66,22 @@ export interface ShotExtraction {
   created_at: string;
 }
 
+export interface ShotEnvironment {
+  id: string;
+  shot: Shot | string;
+  humidity_percent?: number | null;
+  temperature_c?: number | null;
+  notes?: string | null;
+  created_at: string;
+}
+
+export interface ShotFeedback {
+  id: string;
+  shot: Shot | string;
+  notes?: string | null;
+  created_at: string;
+}
+  
 // API Response Types
 export interface ApiResponse<T> {
   data?: T;

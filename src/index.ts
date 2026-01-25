@@ -8,6 +8,8 @@ import beanRoutes from "./routes/bean.routes";
 import beanBatchRoutes from "./routes/beanBatch.routes";
 import shotPreparationRoutes from "./routes/shotPreparation.routes";
 import shotExtractionRoutes from "./routes/shotExtraction.routes";
+import shotEnvironmentRoutes from "./routes/shotEnvironment.routes";
+import shotFeedbackRoutes from "./routes/shotFeedback.routes";
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -22,6 +24,8 @@ app.use("/api/beans", beanRoutes);
 app.use("/api/batches", beanBatchRoutes);
 app.use("/api/preparations", shotPreparationRoutes);
 app.use("/api/extractions", shotExtractionRoutes);
+app.use("/api/environments", shotEnvironmentRoutes);
+app.use("/api/feedback", shotFeedbackRoutes);
 
 // Global error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -67,6 +71,16 @@ AppDataSource.initialize()
             console.log(`  GET    /api/extractions/:id`);
             console.log(`  PUT    /api/extractions/:id`);
             console.log(`  DELETE /api/extractions/:id`);
+            console.log(`  GET    /api/environments`);
+            console.log(`  POST   /api/environments`);
+            console.log(`  GET    /api/environments/:id`);
+            console.log(`  PUT    /api/environments/:id`);
+            console.log(`  DELETE /api/environments/:id`);
+            console.log(`  GET    /api/feedback`);
+            console.log(`  POST   /api/feedback`);
+            console.log(`  GET    /api/feedback/:id`);
+            console.log(`  PUT    /api/feedback/:id`);
+            console.log(`  DELETE /api/feedback/:id`);
             console.log(`  GET    /health`);
         });
     })

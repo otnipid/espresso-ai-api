@@ -3,6 +3,8 @@ import { BeanBatch } from "./BeanBatch";
 import { Machine } from "./Machine";
 import { ShotPreparation } from "./ShotPreparation";
 import { ShotExtraction } from "./ShotExtraction";
+import { ShotEnvironment } from "./shotEnvironment";
+import { ShotFeedback } from "./shotFeedback";
 
 type ShotType = 'ristretto' | 'normale' | 'lungo';
 
@@ -39,4 +41,10 @@ export class Shot {
 
     @OneToOne(() => ShotExtraction, extraction => extraction.shot)
     extraction?: ShotExtraction;
+
+    @OneToOne(() => ShotEnvironment, environment => environment.shot)
+    environment?: ShotEnvironment;
+
+    @OneToOne(() => ShotFeedback, feedback => feedback.shot)
+    feedback?: ShotFeedback;
 }

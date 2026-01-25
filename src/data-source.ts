@@ -6,6 +6,8 @@ import { Machine } from "./entities/Machine"
 import { Shot } from "./entities/Shot"
 import { ShotPreparation } from "./entities/ShotPreparation"
 import { ShotExtraction } from "./entities/ShotExtraction"
+import {ShotEnvironment} from "./entities/shotEnvironment"
+import {ShotFeedback} from "./entities/shotFeedback"
 
 export const AppDataSource = new DataSource({
     type: "postgres",
@@ -16,7 +18,7 @@ export const AppDataSource = new DataSource({
     database: process.env.DB_NAME || "espresso_ml",
     synchronize: true,
     logging: false,
-    entities: [Bean, BeanBatch, Machine, Shot, ShotPreparation, ShotExtraction],
+    entities: [Bean, BeanBatch, Machine, Shot, ShotPreparation, ShotExtraction, ShotEnvironment, ShotFeedback],
     migrations: [],
     subscribers: [],
 })
