@@ -6,7 +6,6 @@ import cors from "cors";
 import machineRoutes from "./routes/machine.routes";
 import beanRoutes from "./routes/bean.routes";
 import beanBatchRoutes from "./routes/beanBatch.routes";
-import grinderRoutes from "./routes/grinder.routes";
 import shotPreparationRoutes from "./routes/shotPreparation.routes";
 import shotExtractionRoutes from "./routes/shotExtraction.routes";
 
@@ -21,7 +20,6 @@ app.use(express.json());
 app.use("/api/machines", machineRoutes);
 app.use("/api/beans", beanRoutes);
 app.use("/api/batches", beanBatchRoutes);
-app.use("/api/grinders", grinderRoutes);
 app.use("/api/preparations", shotPreparationRoutes);
 app.use("/api/extractions", shotExtractionRoutes);
 
@@ -59,11 +57,6 @@ AppDataSource.initialize()
             console.log(`  GET    /api/batches/:id`);
             console.log(`  PUT    /api/batches/:id`);
             console.log(`  DELETE /api/batches/:id`);
-            console.log(`  GET    /api/grinders`);
-            console.log(`  POST   /api/grinders`);
-            console.log(`  GET    /api/grinders/:id`);
-            console.log(`  PUT    /api/grinders/:id`);
-            console.log(`  DELETE /api/grinders/:id`);
             console.log(`  GET    /api/preparations`);
             console.log(`  POST   /api/preparations`);
             console.log(`  GET    /api/preparations/:id`);

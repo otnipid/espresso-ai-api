@@ -1,10 +1,8 @@
-import { User } from "./entities/User"
 import { DataSource } from "typeorm"
 import "reflect-metadata"
 import { Bean } from "./entities/Bean"
 import { BeanBatch } from "./entities/BeanBatch"
 import { Machine } from "./entities/Machine"
-import { Grinder } from "./entities/Grinder"
 import { Shot } from "./entities/Shot"
 import { ShotPreparation } from "./entities/ShotPreparation"
 import { ShotExtraction } from "./entities/ShotExtraction"
@@ -18,7 +16,7 @@ export const AppDataSource = new DataSource({
     database: process.env.DB_NAME || "espresso_ml",
     synchronize: true,
     logging: false,
-    entities: [User, Bean, BeanBatch, Machine, Grinder, Shot, ShotPreparation, ShotExtraction],
+    entities: [Bean, BeanBatch, Machine, Shot, ShotPreparation, ShotExtraction],
     migrations: [],
     subscribers: [],
 })

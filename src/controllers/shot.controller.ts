@@ -13,7 +13,7 @@ export class ShotController {
     async all(request: Request, response: Response) {
         try {
             const shots = await this.shotRepository.find({
-                relations: ['grinder', 'machine', 'beanBatch', 'preparation', 'extraction']
+                relations: ['machine', 'beanBatch', 'preparation', 'extraction']
             });
             response.json(shots);
         } catch (error) {
@@ -26,7 +26,7 @@ export class ShotController {
         try {
             const shot = await this.shotRepository.findOne({
                 where: { id: request.params.id },
-                relations: ['grinder', 'machine', 'beanBatch', 'preparation', 'extraction']
+                relations: ['machine', 'beanBatch', 'preparation', 'extraction']
             });
 
             if (!shot) {
@@ -45,7 +45,6 @@ export class ShotController {
         
         try {
             const { 
-                grinderId, 
                 machineId, 
                 beanBatchId, 
                 preparation, 
@@ -54,9 +53,9 @@ export class ShotController {
             } = request.body;
             
             // Validate required fields
-            if (!grinderId || !machineId || !beanBatchId || !preparation || !extraction) {
+            if (!machineId || !beanBatchId || !preparation || !extraction) {
                 return response.status(400).json({ 
-                    message: 'grinderId, machineId, beanBatchId, preparation, and extraction are required' 
+                    message: 'machineId, beanBatchId, preparation, and extraction are required' 
                 });
             }
 
@@ -73,7 +72,6 @@ export class ShotController {
 
             // Create shot
             const shotData = {
-                grinder: { id: grinderId },
                 machine: { id: machineId },
                 beanBatch: { id: beanBatchId },
                 preparation: savedPrep,
@@ -99,7 +97,6 @@ export class ShotController {
         
         try {
             const { 
-                grinderId, 
                 machineId, 
                 beanBatchId, 
                 preparation, 
@@ -121,7 +118,6 @@ export class ShotController {
             }
 
             // Update basic fields
-            if (grinderId !== undefined) shot.grinder = { id: grinderId } as any;
             if (machineId !== undefined) shot.machine = { id: machineId } as any;
             if (beanBatchId !== undefined) shot.beanBatch = { id: beanBatchId } as any;
             if (notes !== undefined) shot.notes = notes;

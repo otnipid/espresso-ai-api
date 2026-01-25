@@ -38,18 +38,8 @@ export interface Machine {
   shots?: Shot[];
 }
 
-export interface Grinder {
-  id: string;
-  model: string;
-  burr_type?: string | null;
-  burr_install_date?: string | null;
-  created_at: string;
-  shots?: Shot[];
-}
-
 export interface Shot {
   id: string;
-  grinder: Grinder | string;
   machine: Machine | string;
   bean_batch: BeanBatch | string;
   preparation: ShotPreparation | string;
