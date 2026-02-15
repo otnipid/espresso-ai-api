@@ -8,7 +8,7 @@ trigger: always_on
 - No business logic in controllers.
 
 ## Code Quality
-- Always write tests for new features.
+- Always write tests for new features based on the user stories and requirements.
 - Prefer explicit types.
 - Avoid magic numbers.
 
