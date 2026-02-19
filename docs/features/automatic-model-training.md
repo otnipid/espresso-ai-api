@@ -1,344 +1,182 @@
-# Feature Specification: Automatic Model Training on New Shot Data
+# Automatic Model Training Feature
 
 ## Overview
+This document contains user stories for the Automatic Model Training feature. Each user story has acceptance criteria that trace back to requirements. This feature enables the espresso-ML system to automatically retrain and update its machine learning models whenever new shot data is entered.
 
-This feature enables the espresso-ML system to automatically retrain and update its machine learning models whenever new shot data is entered, ensuring the system continuously improves its prediction accuracy for shot yield, pressure, and extraction time.
+## Feature 3: Automatic Model Training
 
-## User Stories
-
-### Primary User Story
+### User Story 3.1: Automatic Model Retraining
 **As a** barista **I want** the system to automatically retrain its prediction models **when** I enter new shot data **so that** future predictions become more accurate based on my actual brewing results.
 
-### Secondary User Stories
-- **As a** barista **I want** to see when the last model training occurred **so that** I can trust the prediction freshness
-- **As a** barista **I want** to be notified if training fails **so that** I can take corrective action
-- **As a** system administrator **I want** to monitor training performance **so that** I can optimize the system
+**Requirements**: R-005, R-008
 
-## Functional Requirements
+#### Acceptance Criteria:
+- **AC-3.1.1**: The system shall automatically trigger model training when new shot data is added
+- **AC-3.1.2**: The system shall implement debouncing to prevent excessive training
+- **AC-3.1.3**: The system shall validate data completeness before training
+- **AC-3.1.4**: The system shall update model predictions based on new training
+- **AC-3.1.5**: The system shall maintain model performance metrics
 
-### 1. Training Trigger System
-- **Trigger Events**: Automatic training initiates when:
-  - New shot is created via ShotForm
-  - Existing shot is updated via ShotForm
-  - Batch import of multiple shots
-- **Debouncing**: Prevent excessive training by implementing:
-  - Minimum 5 new shots since last training
-  - Minimum 30-minute interval between training sessions
-  - Maximum 1 training session per hour
+#### Functional Requirements:
+- **Training Trigger System**:
+  - Automatic training on new shot creation/updates
+  - Debouncing with minimum shots and time intervals
+  - Batch training for multiple shots
+  - Training failure handling and retry logic
 
-### 2. Model Training Pipeline
-- **Data Preparation**:
-  - Validate new shot data completeness
-  - Normalize numerical features (dose, yield, time, temperature, pressure)
-  - Encode categorical features (bean type, machine model, grinder settings)
-  - Split data: 80% training, 20% validation
+- **Model Training Pipeline**:
+  - Data preparation and validation
+  - Feature normalization and encoding
+  - Multiple model types (yield, pressure, time, success)
+  - Hyperparameter optimization
 
-- **Model Types**:
-  - **Yield Prediction Model**: Predict shot yield (grams) based on input parameters
-  - **Pressure Prediction Model**: Optimize pressure recommendations
-  - **Extraction Time Model**: Predict ideal extraction time
-  - **Success Classification Model**: Predict shot success probability
+### User Story 3.2: Training Monitoring
+**As a** barista **I want** to see when the last model training occurred **so that** I can trust the prediction freshness.
 
-- **Training Algorithms**:
-  - Primary: Random Forest Regressor (for yield, pressure, time)
-  - Secondary: Gradient Boosting (for success classification)
-  - Hyperparameter optimization using GridSearchCV
+**Requirements**: R-005, R-006
 
-### 3. Model Storage & Versioning
-- **Model Registry**: Store trained models with metadata:
-  ```typescript
-  interface ModelVersion {
-    id: string;
-    modelType: 'yield' | 'pressure' | 'time' | 'success';
-    version: string;
-    trainedAt: Date;
-    trainingDataSize: number;
-    accuracy: number;
-    features: string[];
-    modelPath: string;
-  }
-  ```
-- **Version Control**: Maintain last 3 versions for rollback capability
-- **Model Persistence**: Store models in both:
-  - Database (metadata)
-  - File system (serialized model files)
+#### Acceptance Criteria:
+- **AC-3.2.1**: The system shall display last training timestamp
+- **AC-3.2.2**: The system shall show training status indicators
+- **AC-3.2.3**: The system shall provide training history
+- **AC-3.2.4**: The system shall display model performance metrics
+- **AC-3.2.5**: The system shall show data quality indicators
 
-### 4. Training Monitoring & Logging
-- **Training Metrics**:
-  - Mean Absolute Error (MAE) for regression models
-  - Accuracy/F1-score for classification models
-  - Training duration
-  - Memory usage during training
+#### Functional Requirements:
+- **Training Status Display**:
+  - Last training timestamp and status
+  - Training progress indicators
+  - Model version information
+  - Performance metrics dashboard
 
-- **Logging System**:
-  ```typescript
-  interface TrainingLog {
-    id: string;
-    triggeredBy: 'shot_creation' | 'shot_update' | 'manual';
-    startTime: Date;
-    endTime: Date;
-    status: 'started' | 'completed' | 'failed';
-    dataPointsUsed: number;
-    modelVersions: ModelVersion[];
-    errors?: string[];
-  }
-  ```
+- **Training History**:
+  - Training log with timestamps
+  - Performance improvement tracking
+  - Data quality metrics
+  - Training duration statistics
 
-## Technical Implementation
+### User Story 3.3: Training Notifications
+**As a** barista **I want** to be notified if training fails **so that** I can take corrective action.
 
-### 1. Backend Components
+**Requirements**: R-005, R-010
 
-#### Training Service (`/src/services/trainingService.ts`)
-```typescript
-interface TrainingService {
-  // Trigger training based on new data
-  triggerTrainingOnNewShot(shotId: string): Promise<void>;
-  
-  // Check if training should run
-  shouldTriggerTraining(): Promise<boolean>;
-  
-  // Execute training pipeline
-  executeTraining(): Promise<TrainingResult>;
-  
-  // Get training status
-  getTrainingStatus(): Promise<TrainingStatus>;
-}
-```
+#### Acceptance Criteria:
+- **AC-3.3.1**: The system shall notify users of training failures
+- **AC-3.3.2**: The system shall provide error details and suggestions
+- **AC-3.3.3**: The system shall offer manual training retry options
+- **AC-3.3.4**: The system shall log training errors for debugging
+- **AC-3.3.5**: The system shall provide troubleshooting guidance
 
-#### Model Manager (`/src/services/modelManager.ts`)
-```typescript
-interface ModelManager {
-  // Load current models
-  loadModels(): Promise<ModelRegistry>;
-  
-  // Save new models
-  saveModels(models: ModelVersion[]): Promise<void>;
-  
-  // Get predictions using current models
-  predict(features: ShotFeatures): Promise<Prediction>;
-  
-  // Rollback to previous model version
-  rollbackModel(modelType: string, version: string): Promise<void>;
-}
-```
+#### Functional Requirements:
+- **Failure Notification System**:
+  - Real-time failure alerts
+  - Detailed error messages
+  - Suggested corrective actions
+  - Manual retry functionality
 
-#### Training Queue System
-- **Redis Queue**: For asynchronous training jobs
-- **Worker Process**: Background training execution
-- **Job Priority**: Manual triggers > batch imports > single shot updates
+- **Error Handling**:
+  - Comprehensive error logging
+  - Error categorization and prioritization
+  - Automatic retry mechanisms
+  - Fallback model versions
 
-### 2. Database Schema Updates
+### User Story 3.4: Training Performance
+**As a** system administrator **I want** to monitor training performance **so that** I can optimize the system.
 
-#### New Tables
-```sql
--- Model versions tracking
-CREATE TABLE model_versions (
-  id UUID PRIMARY KEY,
-  model_type VARCHAR(50) NOT NULL,
-  version VARCHAR(20) NOT NULL,
-  trained_at TIMESTAMP NOT NULL,
-  training_data_size INTEGER NOT NULL,
-  accuracy DECIMAL(5,4),
-  features JSONB,
-  model_path VARCHAR(255),
-  created_at TIMESTAMP DEFAULT NOW()
-);
+**Requirements**: R-005, R-008, R-009
 
--- Training logs
-CREATE TABLE training_logs (
-  id UUID PRIMARY KEY,
-  triggered_by VARCHAR(50) NOT NULL,
-  start_time TIMESTAMP NOT NULL,
-  end_time TIMESTAMP,
-  status VARCHAR(20) NOT NULL,
-  data_points_used INTEGER,
-  model_versions JSONB,
-  errors JSONB,
-  created_at TIMESTAMP DEFAULT NOW()
-);
+#### Acceptance Criteria:
+- **AC-3.4.1**: The system shall provide training performance metrics
+- **AC-3.4.2**: The system shall track model accuracy improvements
+- **AC-3.4.3**: The system shall monitor resource usage during training
+- **AC-3.4.4**: The system shall provide training optimization recommendations
+- **AC-3.4.5**: The system shall support training configuration adjustments
 
--- Training configuration
-CREATE TABLE training_config (
-  id UUID PRIMARY KEY,
-  min_shots_for_training INTEGER DEFAULT 5,
-  min_interval_minutes INTEGER DEFAULT 30,
-  max_training_per_hour INTEGER DEFAULT 1,
-  auto_training_enabled BOOLEAN DEFAULT true,
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-```
+#### Functional Requirements:
+- **Performance Monitoring**:
+  - Training duration and resource usage
+  - Model accuracy and improvement metrics
+  - System performance impact analysis
+  - Optimization recommendations
 
-### 3. API Endpoints
-
-#### Training Management
-```
-POST /api/training/trigger
-GET  /api/training/status
-GET  /api/training/history
-POST /api/training/config
-GET  /api/models/current
-POST /api/models/rollback
-```
-
-#### Response Formats
-```typescript
-// Training trigger response
-interface TriggerTrainingResponse {
-  success: boolean;
-  message: string;
-  trainingId?: string;
-  estimatedDuration?: number;
-}
-
-// Training status response
-interface TrainingStatusResponse {
-  isTraining: boolean;
-  currentTraining?: TrainingLog;
-  lastTraining?: TrainingLog;
-  queuedJobs: number;
-}
-```
-
-### 4. Frontend Integration
-
-#### Shot Form Integration
-```typescript
-// In ShotFormContainer.tsx
-const handleSuccess = async () => {
-  // ... existing success logic ...
-  
-  // Trigger training check
-  try {
-    await api.training.checkAndTrigger();
-    toast.success('Shot saved! Model training initiated.');
-  } catch (error) {
-    toast.error('Shot saved, but training failed to start.');
-  }
-};
-```
-
-#### Training Status Component
-```typescript
-// New component: TrainingStatusIndicator.tsx
-export const TrainingStatusIndicator = () => {
-  const { data: trainingStatus } = useQuery({
-    queryKey: ['training-status'],
-    queryFn: () => api.training.getStatus(),
-    refetchInterval: 30000, // Check every 30 seconds
-  });
-
-  return (
-    <div className="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4">
-      {trainingStatus?.isTraining ? (
-        <div className="flex items-center">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-sm">Training models...</span>
-        </div>
-      ) : (
-        <div className="text-xs text-gray-500">
-          Last trained: {trainingStatus?.lastTraining?.endTime}
-        </div>
-      )}
-    </div>
-  );
-};
-```
+- **Configuration Management**:
+  - Training parameter adjustments
+  - Model selection and tuning
+  - Resource allocation controls
+  - Performance threshold settings
 
 ## Non-Functional Requirements
 
-### 1. Performance
-- **Training Time**: Complete training within 2 minutes for 1000+ shots
-- **Memory Usage**: Stay under 512MB during training
-- **API Impact**: Training should not block other API requests
+### Performance
+- **Training Speed**: Complete training within 5 minutes for 1000 shots
+- **Resource Usage**: Limit CPU and memory usage during training
+- **Scalability**: Handle increasing data volumes efficiently
+- **Response Time**: UI updates within 1 second during training
 
-### 2. Reliability
-- **Error Handling**: Graceful failure with detailed logging
-- **Data Integrity**: Validate all input data before training
-- **Rollback Capability**: Quick revert to previous working model
+### Reliability
+- **Training Success**: >95% successful training completion rate
+- **Error Recovery**: Automatic retry and fallback mechanisms
+- **Data Integrity**: Maintain data consistency during training
+- **Model Quality**: Ensure trained models meet minimum accuracy thresholds
 
-### 3. Usability
-- **Progress Indication**: Real-time training progress
-- **Clear Messaging**: User-friendly status updates
-- **Configuration**: Admin controls for training thresholds
+### Usability
+- **Clear Status**: Intuitive training status indicators
+- **Progress Feedback**: Real-time training progress updates
+- **Error Clarity**: User-friendly error messages and guidance
+- **Mobile Access**: Training monitoring on mobile devices
 
-## Security Considerations
-
-- **Data Privacy**: Ensure shot data remains confidential
-- **Model Security**: Prevent unauthorized model access
-- **Audit Trail**: Log all training activities
-
-## Testing Strategy
-
-### 1. Unit Tests
-- Training service logic
-- Model manager operations
-- Data validation functions
-
-### 2. Integration Tests
-- End-to-end training pipeline
-- API endpoint functionality
-- Database operations
-
-### 3. Performance Tests
-- Training with large datasets
-- Concurrent request handling
-- Memory usage monitoring
-
-## Success Metrics
-
-### 1. Technical Metrics
-- **Training Success Rate**: >95% automatic training completions
-- **Model Accuracy**: Improve prediction accuracy by 10% within 100 shots
-- **System Performance**: <2 second API response time during training
-
-### 2. User Experience Metrics
-- **Transparency**: Users can see training status and history
-- **Reliability**: No data loss during training failures
-- **Control**: Users can configure training behavior
+### Data Integrity
+- **Validation**: Comprehensive data quality checks
+- **Versioning**: Model version control and rollback
+- **Backup**: Automatic model backup and recovery
+- **Audit Trail**: Complete training history logging
 
 ## Implementation Phases
 
-### Phase 1: Core Training Infrastructure
-- Implement training service
-- Create model management system
-- Basic API endpoints
+### Phase 1: Basic Training
+- Simple automatic training triggers
+- Basic model training pipeline
+- Training status display
+- Error handling and notifications
 
-### Phase 2: User Interface Integration
-- Training status indicators
+### Phase 2: Enhanced Monitoring
+- Training performance metrics
+- Advanced error handling
+- Training history and analytics
 - Configuration management
-- History and monitoring
 
-### Phase 3: Optimization & Monitoring
-- Performance optimization
-- Advanced monitoring
-- Error recovery mechanisms
+### Phase 3: Optimization
+- Advanced performance monitoring
+- Training optimization algorithms
+- Resource usage optimization
+- Advanced model tuning
 
-## Dependencies
+## Success Metrics
 
-### Technical Dependencies
-- **Python ML Libraries**: scikit-learn, pandas, numpy
-- **Job Queue**: Redis/RQ for async training
-- **Model Storage**: Pickle for serialization, PostgreSQL for metadata
+### Technical Metrics
+- **Training Success Rate**: >95% successful training
+- **Training Time**: <5 minutes for 1000 shots
+- **Model Accuracy**: >90% prediction accuracy
+- **System Impact**: <10% performance impact during training
 
-### External Services
-- **Monitoring**: Application performance monitoring
-- **Logging**: Structured logging service
-- **Notifications**: Email/webhook for training failures
+### User Experience Metrics
+- **Status Clarity**: >90% users understand training status
+- **Error Recovery**: >85% successful error recovery
+- **Trust Level**: >80% user trust in predictions
+- **Satisfaction**: >85% satisfaction with training features
 
-## Risks & Mitigations
+## Traceability Matrix
 
-### 1. Training Failures
-- **Risk**: Model training crashes
-- **Mitigation**: Try-catch blocks, fallback to previous model
+| Feature | User Story | Acceptance Criteria | Requirements |
+|---------|------------|-------------------|-------------|
+| 3 | 3.1 | AC-3.1.1 to AC-3.1.5 | R-005, R-008 |
+| 3 | 3.2 | AC-3.2.1 to AC-3.2.5 | R-005, R-006 |
+| 3 | 3.3 | AC-3.3.1 to AC-3.3.5 | R-005, R-010 |
+| 3 | 3.4 | AC-3.4.1 to AC-3.4.5 | R-005, R-008, R-009 |
 
-### 2. Performance Degradation
-- **Risk**: Training slows down system
-- **Mitigation**: Background processing, rate limiting
+## Version History
 
-### 3. Data Quality Issues
-- **Risk**: Poor quality training data
-- **Mitigation**: Data validation, outlier detection
-
----
-
-*This feature specification provides the foundation for implementing automatic model training that continuously improves the espresso-ML system's prediction capabilities based on user-entered shot data.*
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | 2025-02-17 | Initial feature definition |
+| 1.1 | 2025-02-17 | Added comprehensive functional requirements, non-functional requirements, and implementation phases |

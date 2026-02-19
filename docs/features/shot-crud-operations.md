@@ -1,29 +1,23 @@
-# Feature Specification: Shot Data CRUD Operations
+# Shot CRUD Operations Feature
 
 ## Overview
+This document contains user stories for the Shot CRUD Operations feature. Each user story has acceptance criteria that trace back to requirements. This feature provides complete Create, Read, Update, and Delete (CRUD) functionality for shot data, including full integration with related entities like machines, beans, batches, and detailed shot parameters.
 
-This feature provides complete Create, Read, Update, and Delete (CRUD) functionality for shot data, including full integration with related entities like machines, beans, batches, and detailed shot parameters. This enables baristas to manage their entire shot history with rich context and relationships.
+## Feature 1: Shot CRUD Operations
 
-## User Stories
-
-### Primary User Stories
+### User Story 1.1: Shot Data Entry
 **As a** barista **I want** to enter new shot data with all relevant parameters **so that** I can track my espresso preparation and build a comprehensive history.
 
-**As a** barista **I want** to view my shot history with all related information **so that** I can analyze my performance and identify patterns.
+**Requirements**: R-001, R-002, R-003, R-004, R-006, R-010
 
-**As a** barista **I want** to edit existing shot data **so that** I can correct mistakes or update missing information.
+#### Acceptance Criteria:
+- **AC-1.1.1**: The system shall provide a form with sections for basic info, equipment selection, preparation parameters, extraction parameters, and notes
+- **AC-1.1.2**: The system shall validate all required fields before allowing submission
+- **AC-1.1.3**: The system shall save shot data to database with proper data integrity
+- **AC-1.1.4**: The system shall provide clear feedback for successful data entry and validation errors
+- **AC-1.1.5**: The system shall be accessible and responsive on mobile devices
 
-**As a** barista **I want** to delete shot records **so that** I can maintain clean and accurate data.
-
-### Secondary User Stories
-- **As a** barista **I want** to select machines, beans, and batches from dropdowns **so that** I can easily associate shots with the right equipment and ingredients.
-- **As a** barista **I want** to see shot preparation and extraction details **so that** I can replicate successful shots precisely.
-- **As a** barista **I want** to filter and sort my shot history **so that** I can find specific shots or analyze trends.
-- **As a** barista **I want** to export my shot data **so that** I can backup or share my brewing history.
-
-## Functional Requirements
-
-### 1. Shot Data Entry (Create)
+#### Functional Requirements:
 - **Comprehensive Form Fields**:
   - **Basic Info**: Date/time, shot type, success status
   - **Equipment Selection**: Machine, grinder, bean batch (with search/filter)
@@ -51,7 +45,19 @@ This feature provides complete Create, Read, Update, and Delete (CRUD) functiona
   - Recovery of incomplete entries
   - Confirmation before final save
 
-### 2. Shot Data Viewing (Read)
+### User Story 1.2: Shot Data Viewing
+**As a** barista **I want** to view my shot history with filtering and sorting options **so that** I can analyze my preparation patterns and identify improvement opportunities.
+
+**Requirements**: R-001, R-005, R-006, R-008
+
+#### Acceptance Criteria:
+- **AC-1.2.1**: The system shall display shot data in a table or grid format
+- **AC-1.2.2**: The system shall provide filtering options by date, equipment, and shot parameters
+- **AC-1.2.3**: The system shall provide sorting options by date, success rate, and key metrics
+- **AC-1.2.4**: The system shall load data efficiently with pagination for large datasets
+- **AC-1.2.5**: The system shall provide detailed view for individual shots
+
+#### Functional Requirements:
 - **List View**: 
   - Sortable columns (date, success, yield, etc.)
   - Filterable by date range, equipment, success status
@@ -70,17 +76,35 @@ This feature provides complete Create, Read, Update, and Delete (CRUD) functiona
   - Trend indicators
   - Equipment tags
 
-### 3. Shot Data Editing (Update)
+### User Story 1.3: Shot Data Editing
+**As a** barista **I want** to edit existing shot data **so that** I can correct errors and update information as needed.
+
+**Requirements**: R-001, R-002, R-003, R-010
+
+#### Acceptance Criteria:
+- **AC-1.3.1**: The system shall provide an edit interface that pre-populates existing data
+- **AC-1.3.2**: The system shall validate all edited data before saving
+- **AC-1.3.3**: The system shall maintain data integrity during updates
+- **AC-1.3.4**: The system shall provide clear confirmation for successful edits
+- **AC-1.3.5**: The system shall handle concurrent edits appropriately
+
+#### Functional Requirements:
 - **Inline Editing**: Quick edits from list view
 - **Full Form Edit**: Complete parameter modification
 - **Change Tracking**: Audit trail of modifications
 - **Validation**: Same rules as creation
 
-### 4. Shot Data Deletion
-- **Soft Delete**: Mark as deleted with recovery option
-- **Bulk Operations**: Multiple selection for batch deletion
-- **Confirmation**: Clear warnings before deletion
-- **Impact Analysis**: Show related data affected
+### User Story 1.4: Shot Data Deletion
+**As a** barista **I want** to delete incorrect shot data **so that** I can maintain clean and accurate records.
+
+**Requirements**: R-001, R-003, R-009, R-010
+
+#### Acceptance Criteria:
+- **AC-1.4.1**: The system shall provide a delete option for individual shots
+- **AC-1.4.2**: The system shall require confirmation before deletion
+- **AC-1.4.3**: The system shall implement soft delete to maintain data audit trail
+- **AC-1.4.4**: The system shall provide recovery options for deleted shots
+- **AC-1.4.5**: The system shall handle cascading deletions appropriately
 
 ## Technical Implementation
 
@@ -495,66 +519,37 @@ export const ShotList = () => {
 };
 ```
 
+#### Functional Requirements:
+- **Soft Delete**: Mark as deleted with recovery option
+- **Bulk Operations**: Multiple selection for batch deletion
+- **Confirmation**: Clear warnings before deletion
+- **Impact Analysis**: Show related data affected
+
 ## Non-Functional Requirements
 
-### 1. Performance
+### Performance
 - **Response Time**: CRUD operations within 200ms
 - **Data Loading**: Lists load within 1 second for 1000+ records
 - **Search Performance**: Filter/search results within 500ms
 - **Memory Usage**: Efficient rendering for large datasets
 
-### 2. Usability
+### Usability
 - **Intuitive Interface**: Clear form sections and validation
 - **Keyboard Navigation**: Full keyboard accessibility
 - **Mobile Responsive**: Works on all screen sizes
 - **Offline Support**: Basic functionality when offline
 
-### 3. Data Integrity
+### Data Integrity
 - **Validation**: Comprehensive input validation
 - **Relationship Integrity**: Maintain foreign key constraints
 - **Audit Trail**: Complete change tracking
 - **Backup/Recovery**: Draft saving and recovery options
 
-## Security Considerations
-
+### Security
 - **Input Sanitization**: Prevent XSS and injection attacks
 - **Authorization**: User can only modify their own shots
 - **Rate Limiting**: Prevent abuse of bulk operations
 - **Data Privacy**: Secure handling of sensitive brewing data
-
-## Testing Strategy
-
-### 1. Unit Tests
-- Form validation logic
-- CRUD service methods
-- Data transformation functions
-- Filter and sorting logic
-
-### 2. Integration Tests
-- End-to-end CRUD workflows
-- API endpoint functionality
-- Database operations
-- Form submission flows
-
-### 3. Performance Tests
-- Large dataset handling
-- Concurrent user operations
-- Memory usage optimization
-- Database query performance
-
-## Success Metrics
-
-### 1. Technical Metrics
-- **CRUD Success Rate**: >99% successful operations
-- **Data Accuracy**: 100% data integrity
-- **Response Time**: <200ms for 95% of operations
-- **Error Rate**: <1% for all operations
-
-### 2. User Experience Metrics
-- **Task Completion**: >90% of users complete intended tasks
-- **Error Recovery**: >95% of users recover from errors
-- **Efficiency**: 50% reduction in time to manage shots
-- **Satisfaction**: >85% user satisfaction with interface
 
 ## Implementation Phases
 
@@ -575,33 +570,32 @@ export const ShotList = () => {
 - Mobile optimization
 - Offline capabilities
 
-## Dependencies
+## Success Metrics
 
-### Technical Dependencies
-- **Frontend**: React Hook Form, React Query, Date-fns
-- **Backend**: Express.js, PostgreSQL, Joi for validation
-- **State Management**: React Query for server state, local state for forms
+### Technical Metrics
+- **CRUD Success Rate**: >99% successful operations
+- **Data Accuracy**: 100% data integrity
+- **Response Time**: <200ms for 95% of operations
+- **Error Rate**: <1% for all operations
 
-### External Services
-- **Date/Time**: Timezone handling
-- **Export**: CSV/Excel export libraries
-- **Analytics**: User interaction tracking
-- **Notifications**: Email/webhook integrations
+### User Experience Metrics
+- **Task Completion**: >90% of users complete intended tasks
+- **Error Recovery**: >95% of users recover from errors
+- **Efficiency**: 50% reduction in time to manage shots
+- **Satisfaction**: >85% user satisfaction with interface
 
-## Risks & Mitigations
+## Traceability Matrix
 
-### 1. Data Loss
-- **Risk**: Accidental deletion of important data
-- **Mitigation**: Soft delete, confirmation dialogs, recovery options
+| Feature | User Story | Acceptance Criteria | Requirements |
+|---------|------------|-------------------|-------------|
+| 1 | 1.1 | AC-1.1.1 to AC-1.1.5 | R-001, R-002, R-003, R-004, R-006, R-010 |
+| 1 | 1.2 | AC-1.2.1 to AC-1.2.5 | R-001, R-005, R-006, R-008 |
+| 1 | 1.3 | AC-1.3.1 to AC-1.3.5 | R-001, R-002, R-003, R-010 |
+| 1 | 1.4 | AC-1.4.1 to AC-1.4.5 | R-001, R-003, R-009, R-010 |
 
-### 2. Performance Issues
-- **Risk**: Slow performance with large datasets
-- **Mitigation**: Pagination, virtualization, caching
+## Version History
 
-### 3. User Error
-- **Risk**: Users make data entry mistakes
-- **Mitigation**: Validation, auto-save, clear error messages
-
----
-
-*This feature specification provides comprehensive guidance for implementing full CRUD operations for shot data with rich relationships, advanced filtering, and excellent user experience.*
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | 2025-02-17 | Initial feature definition |
+| 1.1 | 2025-02-17 | Added comprehensive functional requirements, non-functional requirements, and implementation phases |

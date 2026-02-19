@@ -1,575 +1,182 @@
-# Feature Specification: Bean Grinding Insights Based on Barista Rules
+# Bean Grinding Insights Feature
 
 ## Overview
+This document contains user stories for the Bean Grinding Insights feature. Each user story has acceptance criteria that trace back to requirements. This feature provides detailed analysis and recommendations for coffee bean grinding based on shot data.
 
-This feature provides intelligent recommendations for bean grinding settings based on well-established barista rules, user preferences, historical performance data, and bean characteristics. It helps baristas achieve consistent extraction and optimal flavor profiles through data-driven grinding guidance.
+## Feature 5: Bean Grinding Insights
 
-## User Stories
+### User Story 5.1: Grinding Analysis
+**As a** barista **I want** to analyze my grinding performance **so that** I can optimize grind settings for better extraction.
 
-### Primary User Story
-**As a** barista **I want** to receive grinding recommendations for my beans **when** I select them for a shot **so that** I can achieve optimal extraction and flavor consistency.
+**Requirements**: R-005, R-006, R-008
 
-### Secondary User Stories
-- **As a** barista **I want** to understand why certain grind settings work better **so that** I can improve my technique and knowledge.
-- **As a** barista **I want** to save successful grinding combinations **so that** I can quickly replicate good results.
-- **As a** barista **I want** to see grinding recommendations based on bean characteristics **so that** I can adapt my approach to different coffee origins.
-- **As a** barista **I want** to receive real-time grinding adjustments **when** I change equipment or beans **so that** I can maintain optimal settings.
+#### Acceptance Criteria:
+- **AC-5.1.1**: The system shall analyze grind setting effectiveness
+- **AC-5.1.2**: The system shall provide grind optimization recommendations
+- **AC-5.1.3**: The system shall track grind consistency metrics
+- **AC-5.1.4**: The system shall correlate grind settings with extraction quality
+- **AC-5.1.5**: The system shall provide grind setting history and trends
 
-## Functional Requirements
+#### Functional Requirements:
+- **Grind Analysis Engine**:
+  - Grind setting effectiveness analysis
+  - Extraction quality correlation
+  - Consistency metrics calculation
+  - Historical trend analysis
 
-### 1. Barista Rule Engine
-- **Rule Categories**:
-  - **Extraction Rules**: Target extraction times (1:1.5 to 1:2.5 ratio)
-  - **Flavor Rules**: Balance between acidity, sweetness, and bitterness
-  - **Consistency Rules**: Grind uniformity and particle size distribution
-  - **Equipment Rules**: Machine-specific and grinder-specific optimizations
+- **Optimization System**:
+  - Grind setting recommendations
+  - Bean-specific optimization
+  - Equipment-specific tuning
+  - Real-time adjustment suggestions
 
-- **Rule Definitions**:
-  ```typescript
-  interface GrindingRule {
-    id: string;
-    name: string;
-    category: 'extraction' | 'flavor' | 'consistency' | 'equipment';
-    conditions: RuleCondition[];
-    recommendations: GrindingRecommendation[];
-    priority: 'high' | 'medium' | 'low';
-    source: 'community' | 'expert' | 'ml-derived';
-    confidence: number; // 0-100
-  }
+### User Story 5.2: Bean Performance Tracking
+**As a** barista **I want** to track bean performance across different grind settings **so that** I can understand how each bean behaves and optimize my workflow.
 
-  interface RuleCondition {
-    parameter: 'bean_type' | 'roast_level' | 'machine_type' | 'grinder_type';
-    operator: 'equals' | 'in_range' | 'greater_than' | 'less_than';
-    value: string | number | boolean;
-  }
+**Requirements**: R-004, R-005, R-006
 
-  interface GrindingRecommendation {
-    type: 'grind_setting' | 'technique' | 'equipment_adjustment';
-    description: string;
-    value: number | string;
-    range?: { min: number; max: number };
-    reasoning: string;
-  }
-  ```
+#### Acceptance Criteria:
+- **AC-5.2.1**: The system shall track bean performance by grind setting
+- **AC-5.2.2**: The system shall provide bean comparison tools
+- **AC-5.2.3**: The system shall analyze bean-specific optimal settings
+- **AC-5.2.4**: The system shall track bean aging effects on grinding
+- **AC-5.2.5**: The system shall provide bean performance reports
 
-### 2. Bean Analysis System
-- **Bean Characteristics**:
-  - Origin and growing region analysis
-  - Processing method impact on grind
-  - Roast level optimization
-  - Density and moisture content considerations
-  - Varietal-specific recommendations
+#### Functional Requirements:
+- **Bean Performance Analytics**:
+  - Bean-specific performance tracking
+  - Cross-bean comparison tools
+  - Aging effect analysis
+  - Performance visualization
 
-- **Grinding Calculations**:
-  - Optimal particle size distribution
-  - Surface area calculations
-  - Extraction resistance estimates
-  - Flow rate predictions
+- **Optimization Tools**:
+  - Bean-specific grind recommendations
+  - Performance prediction models
+  - Comparative analysis reports
+  - Bean lifecycle tracking
 
-### 3. Recommendation Engine
-- **Multi-factor Analysis**:
-  - Bean characteristics × Equipment capabilities
-  - Historical shot performance × Current conditions
-  - Environmental factors (humidity, temperature)
-  - User preferences and taste profile
+### User Story 5.3: Grinder Performance Analysis
+**As a** cafe owner **I want** to analyze grinder performance **so that** I can maintain equipment quality and identify issues early.
 
-- **Real-time Adjustments**:
-  - Dynamic grind setting updates
-  - Equipment compensation factors
-  - Environmental condition adaptations
-  - User feedback integration
+**Requirements**: R-004, R-005, R-008
 
-## Technical Implementation
+#### Acceptance Criteria:
+- **AC-5.3.1**: The system shall analyze grinder consistency
+- **AC-5.3.2**: The system shall track grinder performance degradation
+- **AC-5.3.3**: The system shall provide grinder maintenance insights
+- **AC-5.3.4**: The system shall compare grinder performance across equipment
+- **AC-5.3.5**: The system shall provide grinder optimization recommendations
 
-### 1. Backend Components
+#### Functional Requirements:
+- **Grinder Analytics**:
+  - Consistency analysis and metrics
+  - Performance degradation tracking
+  - Maintenance scheduling insights
+  - Cross-equipment comparison
 
-#### Grinding Insights Service (`/src/services/grindingInsightsService.ts`)
-```typescript
-interface GrindingInsightsService {
-  // Get grinding recommendations for specific bean
-  getGrindingRecommendations(
-    beanId: string, 
-    equipment: EquipmentInfo,
-    userPreferences?: UserPreferences
-  ): Promise<GrindingInsights>;
-  
-  // Apply barista rules to current context
-  applyBaristaRules(
-    context: GrindingContext
-  ): Promise<RuleApplication[]>;
-  
-  // Get optimal grind settings based on historical data
-  getOptimalGrindSettings(
-    beanId: string,
-    historicalShots: Shot[]
-  ): Promise<OptimalSettings>;
-  
-  // Update rule engine with new community rules
-  updateCommunityRules(rules: GrindingRule[]): Promise<void>;
-  
-  // Get rule explanations
-  getRuleExplanation(ruleId: string): Promise<RuleExplanation>;
-}
+- **Performance Optimization**:
+  - Grinder-specific recommendations
+  - Calibration suggestions
+  - Performance benchmarking
+  - Upgrade recommendations
 
-interface GrindingContext {
-  bean: Bean;
-  equipment: {
-    machine: Machine;
-    grinder: Grinder;
-  };
-  environment: {
-    humidity: number;
-    temperature: number;
-    altitude: number;
-  };
-  userPreferences?: UserPreferences;
-  shotHistory: Shot[];
-}
+### User Story 5.4: Grinding Recommendations
+**As a** barista **I want** to receive personalized grinding recommendations **so that** I can improve my technique and shot quality.
 
-interface GrindingInsights {
-  recommendations: GrindingRecommendation[];
-  appliedRules: RuleApplication[];
-  optimalSettings: OptimalSettings;
-  confidence: number;
-  reasoning: string;
-  alternativeApproaches: AlternativeApproach[];
-}
+**Requirements**: R-005, R-006, R-008
 
-interface OptimalSettings {
-  grindSetting: number;
-  particleSizeDistribution: ParticleSizeRange;
-  extractionTarget: ExtractionTarget;
-  flavorProfile: FlavorProfile;
-  consistency: ConsistencyMetrics;
-}
-```
+#### Acceptance Criteria:
+- **AC-5.4.1**: The system shall provide personalized grind recommendations
+- **AC-5.4.2**: The system shall consider user technique and preferences
+- **AC-5.4.3**: The system shall adapt recommendations based on feedback
+- **AC-5.4.4**: The system shall provide step-by-step grinding guidance
+- **AC-5.4.5**: The system shall offer technique improvement suggestions
 
-#### Barista Rules Engine (`/src/services/baristaRulesEngine.ts`)
-```typescript
-interface BaristaRulesEngine {
-  // Load and categorize rules
-  loadRules(): Promise<GrindingRule[]>;
-  
-  // Apply rules to specific context
-  evaluateRules(context: GrindingContext): Promise<RuleApplication[]>;
-  
-  // Create custom rules
-  createCustomRule(rule: CreateRuleRequest): Promise<GrindingRule>;
-  
-  // Validate rule logic
-  validateRule(rule: GrindingRule): Promise<RuleValidation>;
-  
-  // Get rule conflicts
-  getRuleConflicts(rule: GrindingRule): Promise<RuleConflict[]>;
-}
+#### Functional Requirements:
+- **Personalized Recommendation Engine**:
+  - User-specific analysis
+  - Technique adaptation
+  - Preference learning
+  - Feedback integration
 
-interface RuleApplication {
-  ruleId: string;
-  ruleName: string;
-  applied: boolean;
-  confidence: number;
-  impact: 'high' | 'medium' | 'low';
-  result: GrindingRecommendation;
-  explanation: string;
-}
-
-interface ParticleSizeRange {
-  fine: number;    // < 400 microns
-  medium: number;  // 400-800 microns
-  coarse: number;   // > 800 microns
-  distribution: {
-    fine: number;    // percentage
-    medium: number;  // percentage
-    coarse: number;   // percentage
-  };
-}
-```
-
-### 2. Database Schema
-
-#### Grinding Rules Storage
-```sql
--- Barista rules table
-CREATE TABLE grinding_rules (
-  id UUID PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
-  category VARCHAR(50) NOT NULL,
-  conditions JSONB NOT NULL,
-  recommendations JSONB NOT NULL,
-  priority VARCHAR(20) NOT NULL,
-  source VARCHAR(50) NOT NULL,
-  confidence DECIMAL(3,2),
-  is_active BOOLEAN DEFAULT true,
-  created_by UUID REFERENCES users(id),
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Grinding insights cache
-CREATE TABLE grinding_insights_cache (
-  id UUID PRIMARY KEY,
-  bean_id UUID REFERENCES beans(id),
-  equipment_info JSONB NOT NULL,
-  insights JSONB NOT NULL,
-  optimal_settings JSONB NOT NULL,
-  confidence DECIMAL(3,2),
-  expires_at TIMESTAMP,
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- User grinding preferences
-CREATE TABLE user_grinding_preferences (
-  id UUID PRIMARY KEY,
-  user_id UUID REFERENCES users(id),
-  bean_id UUID REFERENCES beans(id),
-  preferred_grind_setting DECIMAL(5,2),
-  flavor_profile_preference JSONB,
-  extraction_target VARCHAR(50),
-  notes TEXT,
-  created_at TIMESTAMP DEFAULT NOW(),
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Grinding rule applications (audit trail)
-CREATE TABLE grinding_rule_applications (
-  id UUID PRIMARY KEY,
-  rule_id UUID REFERENCES grinding_rules(id),
-  user_id UUID REFERENCES users(id),
-  context JSONB NOT NULL,
-  applied BOOLEAN NOT NULL,
-  confidence DECIMAL(3,2),
-  impact VARCHAR(20),
-  created_at TIMESTAMP DEFAULT NOW()
-);
-```
-
-### 3. API Endpoints
-
-#### Grinding Insights Management
-```
-GET  /api/grinding-insights/recommendations
-GET  /api/grinding-insights/rules
-POST /api/grinding-insights/rules
-PUT  /api/grinding-insights/rules/:id
-DELETE /api/grinding-insights/rules/:id
-GET  /api/grinding-insights/optimal-settings
-POST /api/grinding-insights/feedback
-GET  /api/grinding-insights/explanations
-```
-
-#### Request/Response Formats
-```typescript
-// Grinding recommendations request
-interface GrindingRecommendationsRequest {
-  beanId: string;
-  equipment: EquipmentInfo;
-  userPreferences?: UserPreferences;
-  includeRules?: boolean;
-  includeHistorical?: boolean;
-}
-
-// Grinding recommendations response
-interface GrindingRecommendationsResponse {
-  insights: GrindingInsights;
-  processingTime: number;
-  rulesApplied: RuleApplication[];
-  alternatives: AlternativeApproach[];
-  lastUpdated: Date;
-}
-
-// Equipment info
-interface EquipmentInfo {
-  machine: {
-    id: string;
-    model: string;
-    type: 'espresso' | 'pour-over' | 'french-press';
-  };
-  grinder: {
-    id: string;
-    model: string;
-    burrType: string;
-    burrSize: number;
-  };
-}
-```
-
-### 4. Frontend Integration
-
-#### Grinding Insights Component
-```typescript
-// GrindingInsights.tsx
-export const GrindingInsights = ({ beanId, equipment }: GrindingInsightsProps) => {
-  const [insights, setInsights] = useState<GrindingInsights | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [selectedRule, setSelectedRule] = useState<string | null>(null);
-  
-  const { data: bean } = useQuery({
-    queryKey: ['bean', beanId],
-    queryFn: () => api.beans.getBean(beanId),
-    enabled: !!beanId
-  });
-  
-  const fetchInsights = async () => {
-    setIsLoading(true);
-    try {
-      const result = await api.grindingInsights.getRecommendations({
-        beanId,
-        equipment,
-        userPreferences: user?.preferences
-      });
-      setInsights(result.insights);
-    } catch (error) {
-      toast.error('Failed to load grinding insights');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  useEffect(() => {
-    if (beanId && equipment) {
-      fetchInsights();
-    }
-  }, [beanId, equipment, fetchInsights]);
-  
-  return (
-    <div className="space-y-6">
-      {/* Bean Information */}
-      {bean && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            {bean.name} - {bean.roaster}
-          </h3>
-          <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-            <div>Origin: {bean.country || 'Unknown'}</div>
-            <div>Roast: {bean.processing_method}</div>
-            <div>Varietal: {bean.varietal || 'N/A'}</div>
-            <div>Altitude: {bean.altitude_m || 'N/A'}m</div>
-          </div>
-        </div>
-      )}
-      
-      {/* Loading State */}
-      {isLoading && (
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-blue-600">Analyzing grinding requirements...</span>
-        </div>
-      )}
-      
-      {/* Grinding Insights */}
-      {insights && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">Grinding Recommendations</h3>
-          
-          {/* Optimal Settings */}
-          <div className="mb-6">
-            <h4 className="text-md font-medium text-gray-800 mb-3">Optimal Grind Setting</h4>
-            <div className="flex items-center">
-              <div className="text-3xl font-bold text-blue-600">
-                {insights.optimalSettings.grindSetting}
-              </div>
-              <div className="ml-4 text-sm text-gray-600">
-                (Scale: 1-10, where 1 = finest)
-              </div>
-            </div>
-            <div className="mt-2 text-sm text-gray-600">
-              Confidence: {Math.round(insights.confidence * 100)}%
-            </div>
-          </div>
-          
-          {/* Particle Size Distribution */}
-          <div className="mb-6">
-            <h4 className="text-md font-medium text-gray-800 mb-3">Particle Size Distribution</h4>
-            <div className="space-y-2">
-              <div className="flex items-center">
-                <span className="w-20 text-sm text-gray-600">Fine:</span>
-                <div className="flex-1 bg-gray-200 rounded-full h-4 ml-2">
-                  <div 
-                    className="h-4 bg-blue-500 rounded-full"
-                    style={{ width: `${insights.optimalSettings.particleSizeDistribution.distribution.fine}%` }}
-                  />
-                </div>
-                <span className="ml-2 text-sm font-medium">{insights.optimalSettings.particleSizeDistribution.distribution.fine}%</span>
-              </div>
-              <div className="flex items-center">
-                <span className="w-20 text-sm text-gray-600">Medium:</span>
-                <div className="flex-1 bg-gray-200 rounded-full h-4 ml-2">
-                  <div 
-                    className="h-4 bg-yellow-500 rounded-full"
-                    style={{ width: `${insights.optimalSettings.particleSizeDistribution.distribution.medium}%` }}
-                  />
-                </div>
-                <span className="ml-2 text-sm font-medium">{insights.optimalSettings.particleSizeDistribution.distribution.medium}%</span>
-              </div>
-              <div className="flex items-center">
-                <span className="w-20 text-sm text-gray-600">Coarse:</span>
-                <div className="flex-1 bg-gray-200 rounded-full h-4 ml-2">
-                  <div 
-                    className="h-4 bg-red-500 rounded-full"
-                    style={{ width: `${insights.optimalSettings.particleSizeDistribution.distribution.coarse}%` }}
-                  />
-                </div>
-                <span className="ml-2 text-sm font-medium">{insights.optimalSettings.particleSizeDistribution.distribution.coarse}%</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Recommendations */}
-          <div className="space-y-4">
-            <h4 className="text-md font-medium text-gray-800 mb-3">Recommendations</h4>
-            {insights.recommendations.map((rec, index) => (
-              <div key={index} className="border-l-4 border-gray-200 pl-4">
-                <div className="font-medium text-gray-900">{rec.description}</div>
-                <div className="text-sm text-gray-600 mt-1">{rec.reasoning}</div>
-                {rec.range && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    Recommended: {rec.range.min} - {rec.range.max}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          
-          {/* Applied Rules */}
-          {insights.appliedRules.length > 0 && (
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <h4 className="text-md font-medium text-gray-800 mb-3">Applied Barista Rules</h4>
-              <div className="space-y-2">
-                {insights.appliedRules.map((rule, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-gray-900">{rule.ruleName}</div>
-                      <div className="text-sm text-gray-600">{rule.explanation}</div>
-                    </div>
-                    <div className={`px-2 py-1 rounded text-xs font-medium ${
-                      rule.impact === 'high' ? 'bg-red-100 text-red-800' :
-                      rule.impact === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-green-100 text-green-800'
-                    }`}>
-                      {rule.impact} impact
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-```
+- **Guidance System**:
+  - Step-by-step instructions
+  - Technique tutorials
+  - Real-time guidance
+  - Progress tracking
 
 ## Non-Functional Requirements
 
-### 1. Performance
-- **Response Time**: Grinding insights within 1 second
-- **Rule Processing**: Evaluate 100+ rules in <500ms
-- **Cache Performance**: 95% cache hit rate for bean/equipment combinations
-- **Scalability**: Handle 1000+ concurrent insight requests
+### Performance
+- **Analysis Speed**: Grinding analysis within 2 seconds
+- **Report Generation**: Reports generated within 10 seconds
+- **Recommendation Speed**: Recommendations within 1 second
+- **Data Processing**: Handle 10,000+ shot records efficiently
 
-### 2. Usability
-- **Intuitive Interface**: Clear visual indicators and recommendations
-- **Educational Content**: Explain why recommendations are made
-- **Mobile Responsive**: Grinding insights work on all screen sizes
-- **Accessibility**: Screen reader compatible rule explanations
+### Accuracy
+- **Analysis Accuracy**: >90% accurate grind analysis
+- **Recommendation Quality**: >85% user satisfaction with recommendations
+- **Data Consistency**: 100% consistent analysis results
+- **Prediction Accuracy**: >80% accurate performance predictions
 
-### 3. Reliability
-- **Fallback Behavior**: Provide basic recommendations when insights fail
-- **Rule Validation**: Prevent conflicting or impossible rules
-- **Data Quality**: Validate all input parameters
-- **Offline Support**: Cached insights for common scenarios
+### Usability
+- **Intuitive Interface**: Easy-to-understand analytics and recommendations
+- **Mobile Optimization**: Full functionality on mobile devices
+- **Visual Clarity**: Clear charts and visualizations
+- **Actionable Insights**: Easy-to-implement recommendations
 
-## Security Considerations
-
-- **Input Validation**: Sanitize all grinding parameters
-- **Rule Security**: Prevent malicious rule injection
-- **Privacy Protection**: Secure handling of user preferences
-- **Access Control**: Users can only access their own grinding data
-- **Audit Trail**: Log all rule applications and modifications
-
-## Testing Strategy
-
-### 1. Unit Tests
-- Rule engine logic
-- Grinding calculation algorithms
-- Recommendation generation
-- Bean analysis functions
-
-### 2. Integration Tests
-- End-to-end insight generation
-- API endpoint functionality
-- Database query performance
-- Frontend component rendering
-
-### 3. Performance Tests
-- Large rule set processing
-- Concurrent insight requests
-- Cache efficiency measurements
-- Memory usage during analysis
-
-## Success Metrics
-
-### 1. Technical Metrics
-- **Insight Accuracy**: >90% of recommendations lead to successful shots
-- **Rule Processing**: <100ms average evaluation time
-- **System Performance**: <500ms API response time
-- **Cache Hit Rate**: >85% for common bean/equipment combos
-
-### 2. User Experience Metrics
-- **Recommendation Helpfulness**: >80% of users find insights useful
-- **Grinding Consistency**: Users achieve 25% more consistent extraction
-- **Knowledge Transfer**: >70% of users understand grinding principles
-- **Engagement**: >60% of users interact with rule explanations
+### Data Integrity
+- **Data Validation**: Comprehensive grinding data validation
+- **Analysis Consistency**: Consistent analysis across all interfaces
+- **Backup Security**: Secure grinding data backups
+- **Audit Trail**: Complete analysis and recommendation logging
 
 ## Implementation Phases
 
-### Phase 1: Core Rule Engine
-- Implement basic barista rules
-- Create grinding calculation algorithms
-- Build recommendation system
-- Develop API endpoints
+### Phase 1: Basic Analysis
+- Simple grind setting analysis
+- Basic performance tracking
+- Simple recommendations
+- Basic visualization
 
-### Phase 2: Enhanced Intelligence
-- Add machine learning to rule generation
-- Implement advanced bean analysis
-- Add user preference learning
-- Create feedback system
+### Phase 2: Enhanced Analytics
+- Advanced correlation analysis
+- Bean-specific insights
+- Grinder performance tracking
+- Improved recommendations
 
-### Phase 3: Optimization & Personalization
-- Personalized rule recommendations
-- Advanced visualization and reporting
-- Community rule sharing
-- Mobile optimization
+### Phase 3: Intelligence
+- Machine learning recommendations
+- Predictive analytics
+- Personalized guidance
+- Advanced optimization
 
-## Dependencies
+## Success Metrics
 
-### Technical Dependencies
-- **ML Libraries**: scikit-learn, pandas, numpy
-- **Rule Engine**: Custom rule evaluation framework
-- **Caching**: Redis for insight caching
-- **Analytics**: User interaction tracking
+### Technical Metrics
+- **Analysis Speed**: <2 second analysis time
+- **Accuracy**: >90% analysis accuracy
+- **System Performance**: <1 second response time
+- **Data Processing**: Handle 10,000+ records efficiently
 
-### External Services
-- **Coffee Data**: Integration with specialty coffee databases
-- **Environmental APIs**: Weather and humidity data
-- **Community Rules**: Integration with barista communities
-- **Educational Content**: Coffee science and brewing resources
+### User Experience Metrics
+- **User Satisfaction**: >85% satisfaction with insights
+- **Recommendation Adoption**: >70% recommendation implementation
+- **Performance Improvement**: >15% grinding improvement
+- **Engagement**: >80% regular feature usage
 
-## Risks & Mitigations
+## Traceability Matrix
 
-### 1. Poor Recommendations
-- **Risk**: Bad grinding advice leads to poor shots
-- **Mitigation**: Expert validation, community feedback, A/B testing
+| Feature | User Story | Acceptance Criteria | Requirements |
+|---------|------------|-------------------|-------------|
+| 5 | 5.1 | AC-5.1.1 to AC-5.1.5 | R-005, R-006, R-008 |
+| 5 | 5.2 | AC-5.2.1 to AC-5.2.5 | R-004, R-005, R-006 |
+| 5 | 5.3 | AC-5.3.1 to AC-5.3.5 | R-004, R-005, R-008 |
+| 5 | 5.4 | AC-5.4.1 to AC-5.4.5 | R-005, R-006, R-008 |
 
-### 2. Rule Conflicts
-- **Risk**: Contradictory rules confuse users
-- **Mitigation**: Conflict detection, priority system, rule versioning
+## Version History
 
-### 3. Over-reliance
-- **Risk**: Users depend too heavily on automated insights
-- **Mitigation**: Educational content, skill development emphasis, manual override options
-
----
-
-*This feature specification provides comprehensive guidance for implementing an intelligent grinding insights system that helps baristas achieve optimal extraction through data-driven recommendations based on established barista rules and bean characteristics.*
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.0 | 2025-02-17 | Initial feature definition |
+| 1.1 | 2025-02-17 | Added comprehensive functional requirements, non-functional requirements, and implementation phases |
