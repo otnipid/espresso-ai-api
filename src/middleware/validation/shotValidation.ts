@@ -19,6 +19,22 @@ import {
   ExportOptionsData,
 } from './schemas';
 
+// Re-export schemas for use in routes
+export {
+  CreateShotSchema,
+  UpdateShotSchema,
+  ShotQuerySchema,
+  ShotIdSchema,
+  BulkShotIdsSchema,
+  ExportOptionsSchema,
+  CreateShotData,
+  UpdateShotData,
+  ShotQueryParams,
+  ShotIdParams,
+  BulkShotIdsData,
+  ExportOptionsData,
+};
+
 /**
  * Validation middleware factory function
  * Creates middleware that validates request data against a Zod schema
