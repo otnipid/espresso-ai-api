@@ -1,0 +1,408 @@
+name: Deploy to Environments
+
+on:
+  workflow_run:
+    workflows: ["Continuous Integration"]
+    types:
+      - completed
+    branches: [main, develop]
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      version:
+        description: 'Version to deploy (optional)'
+        required: false
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Deploy to Staging
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    environment: 
+      name: staging
+      url: https://staging-api.espresso-ml.com
+    if: |
+      github.ref == 'refs/heads/develop' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch,suffix=-staging
+            type=sha,prefix={{branch}}-
+            type=raw,value=staging-latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Deploy to Kubernetes
+        run: |
+          echo "🚀 Deploying to staging environment..."
+          
+          # Create namespace if it doesn't exist
+          kubectl create namespace espresso-staging --dry-run=client -o yaml | kubectl apply -f -
+          
+          # Apply ConfigMaps and Secrets
+          kubectl apply -f k8s/staging/configmaps/ -n espresso-staging
+          kubectl apply -f k8s/staging/secrets/ -n espresso-staging
+          
+          # Deploy database
+          kubectl apply -f k8s/staging/postgres/ -n espresso-staging
+          kubectl wait --for=condition=ready pod -l app=postgres -n espresso-staging --timeout=300s
+          
+          # Deploy application
+          kubectl apply -f k8s/staging/backend/ -n espresso-staging
+          kubectl wait --for=condition=ready pod -l app=espresso-api -n espresso-staging --timeout=300s
+          
+          # Setup Ingress
+          kubectl apply -f k8s/staging/ingress/ -n espresso-staging
+          
+          echo "✅ Staging deployment completed"
+
+      - name: Run smoke tests
+        run: |
+          echo "🧪 Running smoke tests..."
+          sleep 30
+          
+          # Wait for deployment to be ready
+          kubectl wait --for=condition=available deployment/espresso-api -n espresso-staging --timeout=600s
+          
+          # Test health endpoint
+          curl -f https://staging-api.espresso-ml.com/health || exit 1
+          
+          # Test basic API endpoint
+          curl -f https://staging-api.espresso-ml.com/api/shots || exit 1
+          
+          echo "✅ Smoke tests passed"
+
+      - name: Notify staging deployment
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "🚀 Staging Deployment: ${{ github.repository }}"
+          to: ${{ secrets.NOTIFICATION_EMAIL }}
+          from: "GitHub Actions <${{ secrets.EMAIL_USERNAME }}>"
+          body: |
+            🚀 **Staging Deployment Successful**
+            
+            Repository: ${{ github.repository }}
+            Commit: ${{ github.sha }}
+            Branch: ${{ github.ref_name }}
+            Environment: Staging
+            URL: https://staging-api.espresso-ml.com
+            
+            Deployment completed successfully and smoke tests passed.
+            
+            View details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+  # Deploy to Production
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment: 
+      name: production
+      url: https://api.espresso-ml.com
+    if: |
+      (github.ref == 'refs/heads/main' && github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      startsWith(github.ref, 'refs/tags/v') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch,suffix=-production
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Create production backup
+        run: |
+          echo "💾 Creating production backup..."
+          
+          # Backup database
+          kubectl exec -n espresso-production deployment/postgres -- pg_dump -U postgres espresso_prod > backup-$(date +%Y%m%d-%H%M%S).sql
+          
+          # Backup current deployment
+          kubectl get deployment espresso-api -n espresso-production -o yaml > deployment-backup-$(date +%Y%m%d-%H%M%S).yaml
+          
+          echo "✅ Backup completed"
+
+      - name: Deploy to Kubernetes (Blue-Green)
+        run: |
+          echo "🚀 Deploying to production (Blue-Green strategy)..."
+          
+          # Create production namespace if it doesn't exist
+          kubectl create namespace espresso-production --dry-run=client -o yaml | kubectl apply -f -
+          
+          # Deploy to green environment first
+          sed 's/staging/green/g' k8s/staging/backend/deployment.yaml | kubectl apply -f - -n espresso-production
+          
+          # Wait for green deployment to be ready
+          kubectl wait --for=condition=ready pod -l app=espresso-api,env=green -n espresso-production --timeout=600s
+          
+          # Switch traffic to green
+          kubectl patch service espresso-api -n espresso-production -p '{"spec":{"selector":{"env":"green"}}}'
+          
+          # Wait for verification
+          sleep 60
+          
+          # Run health checks on green
+          curl -f https://api.espresso-ml.com/health || exit 1
+          
+          echo "✅ Production deployment completed"
+
+      - name: Run production smoke tests
+        run: |
+          echo "🧪 Running production smoke tests..."
+          
+          # Test health endpoint
+          curl -f https://api.espresso-ml.com/health || exit 1
+          
+          # Test API endpoints
+          curl -f https://api.espresso-ml.com/api/shots || exit 1
+          curl -f https://api.espresso-ml.com/api/machines || exit 1
+          
+          # Test database connectivity
+          kubectl exec -n espresso-production deployment/espresso-api -- curl -f http://localhost:3001/health || exit 1
+          
+          echo "✅ Production smoke tests passed"
+
+      - name: Cleanup blue environment
+        run: |
+          echo "🧹 Cleaning up blue environment..."
+          
+          # Wait for green to be stable
+          sleep 300
+          
+          # Remove blue deployment
+          kubectl delete deployment espresso-api-blue -n espresso-production --ignore-not-found=true
+          
+          echo "✅ Cleanup completed"
+
+      - name: Update deployment status
+        run: |
+          echo "📊 Updating deployment status..."
+          
+          # Create deployment record
+          curl -X POST https://api.espresso-ml.com/deployments \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.DEPLOYMENT_API_TOKEN }}" \
+            -d '{
+              "version": "${{ github.sha }}",
+              "environment": "production",
+              "status": "success",
+              "deployed_at": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",
+              "commit_url": "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}"
+            }'
+
+      - name: Notify production deployment
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "🚀 PRODUCTION DEPLOYMENT: ${{ github.repository }}"
+          to: ${{ secrets.NOTIFICATION_EMAIL }}
+          from: "GitHub Actions <${{ secrets.EMAIL_USERNAME }}>"
+          body: |
+            🚀 **PRODUCTION DEPLOYMENT SUCCESSFUL**
+            
+            Repository: ${{ github.repository }}
+            Commit: ${{ github.sha }}
+            Branch: ${{ github.ref_name }}
+            Environment: Production
+            URL: https://api.espresso-ml.com
+            
+            Production deployment completed successfully and all smoke tests passed.
+            
+            View details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Rollback deployment
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    if: failure() && (needs.deploy-production.result == 'failure' || needs.deploy-staging.result == 'failure')
+    needs: [deploy-production, deploy-staging]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine rollback target
+        id: rollback
+        run: |
+          if [[ "${{ needs.deploy-production.result }}" == "failure" ]]; then
+            echo "environment=production" >> $GITHUB_OUTPUT
+            echo "namespace=espresso-production" >> $GITHUB_OUTPUT
+          else
+            echo "environment=staging" >> $GITHUB_OUTPUT
+            echo "namespace=espresso-staging" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Rollback deployment
+        run: |
+          echo "🔄 Rolling back ${{ steps.rollback.outputs.environment }} deployment..."
+          
+          # Get previous deployment
+          kubectl rollout history deployment/espresso-api -n ${{ steps.rollback.outputs.namespace }}
+          
+          # Rollback to previous revision
+          kubectl rollout undo deployment/espresso-api -n ${{ steps.rollback.outputs.namespace }}
+          
+          # Wait for rollback to complete
+          kubectl rollout status deployment/espresso-api -n ${{ steps.rollback.outputs.namespace }} --timeout=300s
+          
+          echo "✅ Rollback completed"
+
+      - name: Verify rollback
+        run: |
+          echo "🔍 Verifying rollback..."
+          
+          # Wait for pods to be ready
+          kubectl wait --for=condition=ready pod -l app=espresso-api -n ${{ steps.rollback.outputs.namespace }} --timeout=300s
+          
+          # Test health endpoint
+          if [[ "${{ steps.rollback.outputs.environment }}" == "production" ]]; then
+            curl -f https://api.espresso-ml.com/health || exit 1
+          else
+            curl -f https://staging-api.espresso-ml.com/health || exit 1
+          fi
+          
+          echo "✅ Rollback verified"
+
+      - name: Notify rollback
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "🔄 ROLLBACK: ${{ github.repository }}"
+          to: ${{ secrets.NOTIFICATION_EMAIL }}
+          from: "GitHub Actions <${{ secrets.EMAIL_USERNAME }}>"
+          body: |
+            🔄 **DEPLOYMENT ROLLED BACK**
+            
+            Repository: ${{ github.repository }}
+            Commit: ${{ github.sha }}
+            Environment: ${{ steps.rollback.outputs.environment }}
+            Reason: Deployment failure detected
+            
+            Automatic rollback has been completed successfully.
+            
+            View details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+  # Security scan after deployment
+  post-deploy-security:
+    name: Post-Deploy Security Scan
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: needs.deploy-production.result == 'success'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.7.0
+        with:
+          target: 'https://api.espresso-ml.com'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a'
+
+      - name: Run security tests
+        run: |
+          echo "🔒 Running post-deployment security tests..."
+          
+          # Test for common vulnerabilities
+          curl -f https://api.espresso-ml.com/health || exit 1
+          
+          # Test authentication endpoints
+          curl -X POST https://api.espresso-ml.com/api/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"username":"test","password":"<script>alert(1)</script>"}' \
+            --fail-with-body || true
+          
+          echo "✅ Security tests completed"
+
+      - name: Upload security scan results
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-scan-results
+          path: |
+            report_html.html
+            report_json.json
+          retention-days: 30

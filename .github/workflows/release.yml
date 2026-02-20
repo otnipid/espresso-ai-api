@@ -1,0 +1,429 @@
+name: Release Management
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.2.3)'
+        required: true
+        type: string
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # Semantic version bump and changelog generation
+  version-bump:
+    name: Version Bump & Changelog
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    
+    outputs:
+      new_version: ${{ steps.version.outputs.new_version }}
+      changelog: ${{ steps.changelog.outputs.changelog }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Bump version
+        id: version
+        run: |
+          echo "🔢 Bumping version..."
+          
+          # Get current version
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Determine new version
+          if [ "${{ github.event.inputs.version }}" != "" ]; then
+            NEW_VERSION="${{ github.event.inputs.version }}"
+          else
+            # Auto-bump based on release type
+            case "${{ github.event.inputs.release_type }}" in
+              "major")
+                NEW_VERSION=$(npm version major --no-git-tag-version)
+                ;;
+              "minor")
+                NEW_VERSION=$(npm version minor --no-git-tag-version)
+                ;;
+              "patch")
+                NEW_VERSION=$(npm version patch --no-git-tag-version)
+                ;;
+            esac
+          fi
+          
+          echo "New version: $NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          
+          # Update package.json
+          npm version $NEW_VERSION --no-git-tag-version
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "📝 Generating changelog..."
+          
+          # Install conventional-changelog
+          npm install -g conventional-changelog-cli conventional-recommended-bump
+          
+          # Generate changelog
+          conventional-changelog -p angular -i CHANGELOG.md -s || true
+          
+          # Get changelog for this version
+          CHANGELOG=$(sed -n "/## \[${{ steps.version.outputs.new_version }}\]/,/^##/p" CHANGELOG.md | sed '$d')
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          echo "✅ Changelog generated"
+
+      - name: Commit version bump
+        run: |
+          echo "💾 Committing version bump..."
+          
+          git add package.json package-lock.json CHANGELOG.md
+          git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }}"
+          git tag v${{ steps.version.outputs.new_version }}
+          
+          git push origin main --follow-tags
+          
+          echo "✅ Version bump committed"
+
+  # Build and publish Docker image
+  build-and-publish:
+    name: Build & Publish
+    runs-on: ubuntu-latest
+    needs: [version-bump]
+    if: always() && (needs.version-bump.result == 'success' || github.event_name == 'push')
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            espresso-ml/backend
+            ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Generate SBOM
+        run: |
+          echo "📋 Generating SBOM..."
+          
+          # Install Syft for SBOM generation
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          
+          # Generate SBOM
+          syft espresso-ml/backend:${{ steps.meta.outputs.version }} -o cyclonedx-json -o sbom.json
+          
+          echo "✅ SBOM generated"
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v3
+        with:
+          name: sbom-${{ steps.meta.outputs.version }}
+          path: sbom.json
+          retention-days: 365
+
+  # Create GitHub Release
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [version-bump, build-and-publish]
+    if: always() && needs.build-and-publish.result == 'success'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ needs.version-bump.outputs.new_version || github.ref_name }}
+          release_name: Release v${{ needs.version-bump.outputs.new_version || github.ref_name }}
+          body: |
+            ## 🚀 Release v${{ needs.version-bump.outputs.new_version || github.ref_name }}
+            
+            ${{ needs.version-bump.outputs.changelog || 'Automated release from tag' }}
+            
+            ### 🐳 Docker Images
+            - `espresso-ml/backend:v${{ needs.version-bump.outputs.new_version || github.ref_name }}`
+            - `ghcr.io/${{ github.repository }}:v${{ needs.version-bump.outputs.new_version || github.ref_name }}`
+            - `espresso-ml/backend:latest`
+            - `ghcr.io/${{ github.repository }}:latest`
+            
+            ### 📋 SBOM
+            Software Bill of Materials (SBOM) is available in the workflow artifacts.
+            
+            ### 🔗 Links
+            - [Docker Hub](https://hub.docker.com/r/espresso-ml/backend)
+            - [GitHub Container Registry](https://github.com/${{ github.repository }}/pkgs/container/backend)
+            - [Documentation](https://docs.espresso-ml.com)
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: sbom.json
+          asset_name: sbom-v${{ needs.version-bump.outputs.new_version || github.ref_name }}.json
+          asset_content_type: application/json
+
+  # Deploy to production after release
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [create-release]
+    if: always() && needs.create-release.result == 'success'
+    environment: 
+      name: production
+      url: https://api.espresso-ml.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Kubernetes
+        run: |
+          echo "🚀 Deploying release v${{ needs.version-bump.outputs.new_version || github.ref_name }} to production..."
+          
+          # Update deployment with new image tag
+          kubectl set image deployment/espresso-api \
+            espresso-api=ghcr.io/${{ github.repository }}:v${{ needs.version-bump.outputs.new_version || github.ref_name }} \
+            -n espresso-production
+          
+          # Wait for rollout
+          kubectl rollout status deployment/espresso-api -n espresso-production --timeout=600s
+          
+          echo "✅ Production deployment completed"
+
+      - name: Run smoke tests
+        run: |
+          echo "🧪 Running production smoke tests..."
+          
+          # Wait for deployment to be ready
+          sleep 30
+          
+          # Test health endpoint
+          curl -f https://api.espresso-ml.com/health || exit 1
+          
+          # Test API endpoints
+          curl -f https://api.espresso-ml.com/api/shots || exit 1
+          
+          echo "✅ Production smoke tests passed"
+
+      - name: Update deployment registry
+        run: |
+          echo "📊 Updating deployment registry..."
+          
+          curl -X POST https://deployments.espresso-ml.com/api/releases \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.DEPLOYMENT_API_TOKEN }}" \
+            -d '{
+              "version": "v${{ needs.version-bump.outputs.new_version || github.ref_name }}",
+              "environment": "production",
+              "status": "deployed",
+              "deployed_at": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",
+              "commit_url": "${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}",
+              "release_url": "${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ needs.version-bump.outputs.new_version || github.ref_name }}"
+            }'
+
+      - name: Notify release
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "🎉 Release Deployed: ${{ github.repository }}"
+          to: ${{ secrets.NOTIFICATION_EMAIL }}
+          from: "GitHub Actions <${{ secrets.EMAIL_USERNAME }}>"
+          body: |
+            🎉 **RELEASE DEPLOYED**
+            
+            Repository: ${{ github.repository }}
+            Version: v${{ needs.version-bump.outputs.new_version || github.ref_name }}
+            Environment: Production
+            URL: https://api.espresso-ml.com
+            
+            📋 [Release Notes](${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ needs.version-bump.outputs.new_version || github.ref_name }})
+            
+            View details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+  # Post-release tasks
+  post-release:
+    name: Post-Release Tasks
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: always() && needs.deploy-production.result == 'success'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create next development version
+        run: |
+          echo "🔄 Creating next development version..."
+          
+          # Configure Git
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          # Get current version
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          
+          # Create next development version
+          NEXT_VERSION="${CURRENT_VERSION}-dev-$(date +%Y%m%d)"
+          npm version $NEXT_VERSION --no-git-tag-version
+          
+          # Commit development version
+          git add package.json package-lock.json
+          git commit -m "chore: bump to development version $NEXT_VERSION"
+          git push origin main
+          
+          echo "✅ Development version created: $NEXT_VERSION"
+
+      - name: Update documentation
+        run: |
+          echo "📚 Updating documentation..."
+          
+          # Generate API documentation
+          npm install -g typedoc
+          typedoc src/ --out docs/api --excludePrivate
+          
+          # Deploy to GitHub Pages
+          git checkout --orphan gh-pages
+          rm -rf * || true
+          cp -r docs/* . || true
+          
+          git add .
+          git commit -m "docs: update documentation for v${{ needs.version-bump.outputs.new_version || github.ref_name }}"
+          git push origin gh-pages --force
+          
+          echo "✅ Documentation updated"
+
+      - name: Archive release artifacts
+        run: |
+          echo "📦 Archiving release artifacts..."
+          
+          # Create release archive
+          mkdir -p release-archive
+          cp -r dist/ release-archive/
+          cp package.json release-archive/
+          cp README.md release-archive/
+          cp CHANGELOG.md release-archive/
+          
+          # Create tarball
+          tar -czf espresso-ml-backend-v${{ needs.version-bump.outputs.new_version || github.ref_name }}.tar.gz -C release-archive .
+          
+          echo "✅ Release archive created"
+
+      - name: Upload release archive
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-archive-v${{ needs.version-bump.outputs.new_version || github.ref_name }}
+          path: espresso-ml-backend-v${{ needs.version-bump.outputs.new_version || github.ref_name }}.tar.gz
+          retention-days: 365
+
+      - name: Cleanup old releases
+        run: |
+          echo "🧹 Cleaning up old releases..."
+          
+          # Keep only last 10 releases
+          gh release list --limit 50 | tail -n +11 | awk '{print $1}' | xargs -I {} gh release delete {} --yes || true
+          
+          echo "✅ Cleanup completed"
+
+      - name: Notify completion
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "✅ Release Complete: ${{ github.repository }}"
+          to: ${{ secrets.NOTIFICATION_EMAIL }}
+          from: "GitHub Actions <${{ secrets.EMAIL_USERNAME }}>"
+          body: |
+            ✅ **RELEASE COMPLETE**
+            
+            Repository: ${{ github.repository }}
+            Version: v${{ needs.version-bump.outputs.new_version || github.ref_name }}
+            Status: Deployed and verified
+            Documentation: Updated
+            Archive: Created
+            
+            🎉 Ready for production use!
+            
+            View details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

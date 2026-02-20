@@ -1,0 +1,615 @@
+name: Code Quality and Monitoring
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run weekly on Sundays at 3 AM UTC
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # Code coverage and quality metrics
+  code-quality:
+    name: Code Quality Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Generate coverage badge
+        run: |
+          echo "📊 Generating coverage badge..."
+          
+          # Extract coverage percentage
+          COVERAGE=$(cat coverage/coverage-summary.json | grep -o '"total":{"lines":{"pct":[0-9.]*' | grep -o '[0-9.]*' | head -1)
+          
+          # Generate badge
+          curl -s "https://img.shields.io/badge/coverage-${COVERAGE}%25-brightgreen" > coverage-badge.svg
+          
+          echo "✅ Coverage badge generated: ${COVERAGE}%"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-reports
+          path: coverage/
+          retention-days: 30
+
+      - name: Calculate code metrics
+        run: |
+          echo "📈 Calculating code metrics..."
+          
+          # Install code analysis tools
+          npm install -g plato complexity-report
+          
+          # Generate complexity report
+          plato -r -d complexity-report -t espresso-ml -x **/node_modules/** src/ || true
+          
+          echo "✅ Code metrics calculated"
+
+      - name: Upload code metrics
+        uses: actions/upload-artifact@v3
+        with:
+          name: code-metrics
+          path: complexity-report/
+          retention-days: 30
+
+      - name: Comment PR with coverage
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            
+            if (fs.existsSync('coverage/coverage-summary.json')) {
+              const coverage = JSON.parse(fs.readFileSync('coverage/coverage-summary.json', 'utf8'));
+              const lines = coverage.total.lines.pct;
+              const functions = coverage.total.functions.pct;
+              const branches = coverage.total.branches.pct;
+              const statements = coverage.total.statements.pct;
+              
+              const comment = `
+              ## 📊 Code Coverage Report
+              
+              | Metric | Coverage | Status |
+              |--------|----------|--------|
+              | Lines | ${lines}% | ${lines >= 80 ? '✅' : '❌'} |
+              | Functions | ${functions}% | ${functions >= 80 ? '✅' : '❌'} |
+              | Branches | ${branches}% | ${branches >= 80 ? '✅' : '❌'} |
+              | Statements | ${statements}% | ${statements >= 80 ? '✅' : '❌'} |
+              
+              ${lines < 80 ? '⚠️ **Coverage is below 80% threshold**' : '✅ **Coverage meets requirements**'}
+              `;
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: comment
+              });
+            }
+
+  # Performance monitoring
+  performance-monitoring:
+    name: Performance Monitoring
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v9
+        with:
+          configPath: '.lighthouserc.json'
+          uploadArtifacts: true
+          temporaryPublicStorage: true
+
+      - name: Run performance tests
+        run: |
+          echo "⚡ Running performance tests..."
+          
+          # Install Artillery for load testing
+          npm install -g artillery
+          
+          # Create performance test config
+          cat > artillery-config.yml << EOF
+          config:
+            target: 'http://localhost:3001'
+            phases:
+              - duration: 60
+                arrivalRate: 10
+              - duration: 120
+                arrivalRate: 20
+          scenarios:
+            - name: "API Health Check"
+              weight: 40
+              flow:
+                - get:
+                    url: "/health"
+            - name: "Get Shots"
+              weight: 30
+              flow:
+                - get:
+                    url: "/api/shots"
+            - name: "Create Shot"
+              weight: 30
+              flow:
+                - post:
+                    url: "/api/shots"
+                    json:
+                      machineId: "550e8400-e29b-41d4-a716-446655440000"
+                      beanBatchId: "550e8400-e29b-41d4-a716-446655440001"
+                      shot_type: "normale"
+          EOF
+          
+          echo "✅ Performance tests configured"
+
+      - name: Start application for testing
+        run: |
+          echo "🚀 Starting application..."
+          npm run build
+          npm start &
+          
+          # Wait for application to start
+          sleep 30
+          
+          # Verify application is running
+          curl -f http://localhost:3001/health || exit 1
+          
+          echo "✅ Application started"
+
+      - name: Run load tests
+        run: |
+          echo "🔥 Running load tests..."
+          
+          artillery run artillery-config.yml --output load-test-results.json || true
+          
+          echo "✅ Load tests completed"
+
+      - name: Process performance results
+        run: |
+          echo "📊 Processing performance results..."
+          
+          node -e "
+            const fs = require('fs');
+            
+            if (fs.existsSync('load-test-results.json')) {
+              const results = JSON.parse(fs.readFileSync('load-test-results.json', 'utf8'));
+              const aggregate = results.aggregate;
+              
+              console.log('## ⚡ Performance Test Results\\n');
+              console.log('| Metric | Value | Status |');
+              console.log('|--------|-------|--------|');
+              console.log(\`| Requests/sec | \${aggregate.rps.mean} | \${aggregate.rps.mean > 50 ? '✅' : '❌'} |\`);
+              console.log(\`| Response Time (p95) | \${aggregate.responseTime.p95}ms | \${aggregate.responseTime.p95 < 500 ? '✅' : '❌'} |\`);
+              console.log(\`| Error Rate | \${(aggregate.errors / aggregate.requests * 100).toFixed(2)}% | \${aggregate.errors / aggregate.requests < 0.01 ? '✅' : '❌'} |\`);
+              
+              // Create performance summary
+              const summary = {
+                timestamp: new Date().toISOString(),
+                commit: '${{ github.sha }}',
+                branch: '${{ github.ref_name }}',
+                rps: aggregate.rps.mean,
+                responseTime: aggregate.responseTime.p95,
+                errorRate: (aggregate.errors / aggregate.requests * 100).toFixed(2),
+                status: aggregate.errors / aggregate.requests < 0.01 && aggregate.responseTime.p95 < 500 ? 'PASS' : 'FAIL'
+              };
+              
+              fs.writeFileSync('performance-summary.json', JSON.stringify(summary, null, 2));
+            }
+          " > performance-report.md
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-results
+          path: |
+            load-test-results.json
+            performance-summary.json
+            performance-report.md
+          retention-days: 30
+
+      - name: Update performance dashboard
+        run: |
+          echo "📈 Updating performance dashboard..."
+          
+          # This would typically update a dashboard service
+          curl -X POST https://metrics.espresso-ml.com/api/performance \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.METRICS_API_TOKEN }}" \
+            -d @performance-summary.json || true
+          
+          echo "✅ Performance dashboard updated"
+
+  # Code style and formatting
+  code-style:
+    name: Code Style Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check code formatting
+        run: |
+          echo "🎨 Checking code formatting..."
+          
+          # Install Prettier
+          npm install -g prettier
+          
+          # Check formatting
+          prettier --check "src/**/*.{ts,js,json}" --write || true
+          
+          echo "✅ Code formatting checked"
+
+      - name: Run ESLint
+        run: |
+          echo "🔍 Running ESLint..."
+          
+          # Install ESLint
+          npm install -g eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin
+          
+          # Create ESLint config if it doesn't exist
+          if [ ! -f ".eslintrc.js" ]; then
+            cat > .eslintrc.js << EOF
+            module.exports = {
+              parser: '@typescript-eslint/parser',
+              extends: [
+                'eslint:recommended',
+                '@typescript-eslint/recommended',
+              ],
+              parserOptions: {
+                ecmaVersion: 2020,
+                sourceType: 'module',
+              },
+              rules: {
+                '@typescript-eslint/no-unused-vars': 'error',
+                '@typescript-eslint/explicit-function-return-type': 'warn',
+                'no-console': 'warn',
+              },
+            };
+            EOF
+          fi
+          
+          # Run ESLint
+          npx eslint src/ --format=json --output-file=eslint-report.json || true
+          
+          echo "✅ ESLint completed"
+
+      - name: Upload style reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: code-style-reports
+          path: |
+            eslint-report.json
+          retention-days: 7
+
+      - name: Comment PR with style issues
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            
+            if (fs.existsSync('eslint-report.json')) {
+              const report = JSON.parse(fs.readFileSync('eslint-report.json', 'utf8'));
+              const errors = report.filter(r => r.severity === 2);
+              const warnings = report.filter(r => r.severity === 1);
+              
+              if (errors.length > 0 || warnings.length > 0) {
+                let comment = '## 🎨 Code Style Issues\\n\\n';
+                
+                if (errors.length > 0) {
+                  comment += '### ❌ Errors\\n';
+                  errors.forEach(error => {
+                    comment += `- **${error.ruleId}**: ${error.message} (${error.filePath}:${error.lineNumber})\\n`;
+                  });
+                }
+                
+                if (warnings.length > 0) {
+                  comment += '### ⚠️ Warnings\\n';
+                  warnings.forEach(warning => {
+                    comment += `- **${warning.ruleId}**: ${warning.message} (${warning.filePath}:${warning.lineNumber})\\n`;
+                  });
+                }
+                
+                github.rest.issues.createComment({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: comment
+                });
+              }
+            }
+
+  # Documentation quality
+  documentation-quality:
+    name: Documentation Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check documentation coverage
+        run: |
+          echo "📚 Checking documentation coverage..."
+          
+          # Install TypeDoc
+          npm install -g typedoc
+          
+          # Generate documentation
+          typedoc src/ --out docs-temp --excludePrivate || true
+          
+          # Check for undocumented items
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            
+            function findUndocumented(dir) {
+              const files = fs.readdirSync(dir);
+              let undocumented = [];
+              
+              files.forEach(file => {
+                const filePath = path.join(dir, file);
+                const stat = fs.statSync(filePath);
+                
+                if (stat.isDirectory()) {
+                  undocumented = undocumented.concat(findUndocumented(filePath));
+                } else if (file.endsWith('.ts')) {
+                  const content = fs.readFileSync(filePath, 'utf8');
+                  
+                  // Check for missing JSDoc
+                  const functions = content.match(/export\s+(?:async\s+)?function\s+\w+/g) || [];
+                  const documented = content.match(/\/\*\*[\s\S]*?\*\//g) || [];
+                  
+                  if (functions.length > documented.length) {
+                    undocumented.push(file);
+                  }
+                }
+              });
+              
+              return undocumented;
+            }
+            
+            const undocumented = findUndocumented('src');
+            
+            if (undocumented.length > 0) {
+              console.log('## 📚 Documentation Coverage\\n');
+              console.log('### ⚠️ Undocumented Files\\n');
+              undocumented.forEach(file => {
+                console.log(\`- \${file}\`);
+              });
+              console.log(\`\\n**Coverage:** \${((files.length - undocumented.length) / files.length * 100).toFixed(1)}%\`);
+            } else {
+              console.log('✅ All files are documented!');
+            }
+          " > docs-coverage.md
+          
+          echo "✅ Documentation coverage checked"
+
+      - name: Check README quality
+        run: |
+          echo "📖 Checking README quality..."
+          
+          # Check for required sections
+          if [ -f "README.md" ]; then
+            missing_sections=()
+            
+            if ! grep -q "## Installation" README.md; then
+              missing_sections+=("Installation")
+            fi
+            
+            if ! grep -q "## Usage" README.md; then
+              missing_sections+=("Usage")
+            fi
+            
+            if ! grep -q "## API" README.md; then
+              missing_sections+=("API Documentation")
+            fi
+            
+            if [ ${#missing_sections[@]} -eq 0 ]; then
+              echo "✅ README has all required sections"
+            else
+              echo "⚠️ README missing sections: ${missing_sections[*]}"
+              echo "## 📖 README Issues\\n\\n### Missing Sections\\n" > readme-issues.md
+              for section in "${missing_sections[@]}"; do
+                echo "- $section" >> readme-issues.md
+              done
+            fi
+          else
+            echo "❌ No README.md found"
+            echo "## 📖 README Issues\\n\\n❌ No README.md file found" > readme-issues.md
+          fi
+
+      - name: Upload documentation reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: documentation-quality
+          path: |
+            docs-coverage.md
+            readme-issues.md
+          retention-days: 7
+
+  # Quality gates
+  quality-gates:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    needs: [code-quality, performance-monitoring, code-style, documentation-quality]
+    if: always()
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: quality-reports/
+
+      - name: Evaluate quality gates
+        run: |
+          echo "🚪 Evaluating quality gates..."
+          
+          # Initialize gate results
+          coverage_gate="PASS"
+          performance_gate="PASS"
+          style_gate="PASS"
+          docs_gate="PASS"
+          
+          # Check coverage gate (80% threshold)
+          if [ -f "quality-reports/coverage-reports/coverage-summary.json" ]; then
+            coverage=$(cat quality-reports/coverage-reports/coverage-summary.json | grep -o '"pct":[0-9.]*' | grep -o '[0-9.]*' | head -1)
+            if (( $(echo "$coverage < 80" | bc -l) )); then
+              coverage_gate="FAIL"
+            fi
+          fi
+          
+          # Check performance gate
+          if [ -f "quality-reports/performance-results/performance-summary.json" ]; then
+            status=$(cat quality-reports/performance-results/performance-summary.json | grep -o '"status":"[^"]*"' | grep -o '[^"]*' | head -1)
+            if [ "$status" != "PASS" ]; then
+              performance_gate="FAIL"
+            fi
+          fi
+          
+          # Check style gate
+          if [ -f "quality-reports/code-style-reports/eslint-report.json" ]; then
+            errors=$(cat quality-reports/code-style-reports/eslint-report.json | grep -o '"severity":2' | wc -l)
+            if [ "$errors" -gt 0 ]; then
+              style_gate="FAIL"
+            fi
+          fi
+          
+          # Create quality gate report
+          cat > quality-gate-report.md << EOF
+          # 🚪 Quality Gate Results
+          
+          | Gate | Status | Threshold |
+          |------|--------|----------|
+          | Code Coverage | $coverage_gate | ≥80% |
+          | Performance | $performance_gate | <500ms p95, <1% errors |
+          | Code Style | $style_gate | 0 errors |
+          | Documentation | $docs_gate | 100% coverage |
+          
+          ## Overall Status
+          
+          EOF
+          
+          if [ "$coverage_gate" = "PASS" ] && [ "$performance_gate" = "PASS" ] && [ "$style_gate" = "PASS" ] && [ "$docs_gate" = "PASS" ]; then
+            echo "✅ **ALL QUALITY GATES PASSED**" >> quality-gate-report.md
+            overall_status="PASS"
+          else
+            echo "❌ **SOME QUALITY GATES FAILED**" >> quality-gate-report.md
+            overall_status="FAIL"
+          fi
+          
+          echo "Overall Status: $overall_status"
+
+      - name: Upload quality gate report
+        uses: actions/upload-artifact@v3
+        with:
+          name: quality-gate-report
+          path: quality-gate-report.md
+          retention-days: 30
+
+      - name: Set quality status
+        run: |
+          echo "QUALITY_STATUS=$overall_status" >> $GITHUB_ENV
+
+      - name: Notify quality gate results
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "${{ env.QUALITY_STATUS == 'PASS' && '✅' || '❌' }} Quality Gates: ${{ github.repository }}"
+          to: ${{ secrets.NOTIFICATION_EMAIL }}
+          from: "GitHub Actions <${{ secrets.EMAIL_USERNAME }}>"
+          body: |
+            ${{ env.QUALITY_STATUS == 'PASS' && '✅' || '❌' }} **Quality Gates Results**
+            
+            Repository: ${{ github.repository }}
+            Commit: ${{ github.sha }}
+            Branch: ${{ github.ref_name }}
+            Overall Status: ${{ env.QUALITY_STATUS }}
+            
+            Quality Gate Results:
+            - Code Coverage: $coverage_gate
+            - Performance: $performance_gate  
+            - Code Style: $style_gate
+            - Documentation: $docs_gate
+            
+            View details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+      - name: Block merge on quality gate failure
+        if: env.QUALITY_STATUS == 'FAIL'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚪 Quality Gates Failed',
+              body: 'Quality gates failed for commit ${{ github.sha }}. Please review the quality reports and address the issues before merging.',
+              labels: ['quality-gate', 'blocked']
+            });

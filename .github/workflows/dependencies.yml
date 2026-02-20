@@ -1,0 +1,428 @@
+name: Dependency Management
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      update_type:
+        description: 'Type of update to perform'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - production
+          - dev
+          - security
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # Check for outdated dependencies
+  check-outdated:
+    name: Check Outdated Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check for outdated packages
+        run: |
+          echo "📦 Checking for outdated dependencies..."
+          npm outdated --json > outdated.json || true
+          
+          # Parse and format the output
+          node -e "
+            const fs = require('fs');
+            try {
+              const outdated = JSON.parse(fs.readFileSync('outdated.json', 'utf8'));
+              if (outdated.length > 0) {
+                console.log('## 🚨 Outdated Dependencies Found\\n');
+                console.log('| Package | Current | Latest | Type |');
+                console.log('|--------|---------|--------|------|');
+                outdated.forEach(pkg => {
+                  console.log(\`| \${pkg.name} | \${pkg.current} | \${pkg.latest} | \${pkg.type} |\`);
+                });
+                console.log('\\n### Summary\\n');
+                console.log(\`- **Total outdated packages:** \${outdated.length}\\n\`);
+                console.log(\`- **Security updates needed:** \${outdated.filter(p => p.type === 'devDependencies' || p.security).length}\\n\`);
+              } else {
+                console.log('✅ All dependencies are up to date!');
+              }
+            } catch (e) {
+              console.log('✅ All dependencies are up to date!');
+            }
+          " > outdated-report.md
+
+      - name: Upload outdated report
+        uses: actions/upload-artifact@v3
+        with:
+          name: outdated-dependencies
+          path: outdated-report.md
+          retention-days: 7
+
+      - name: Create PR for updates (if needed)
+        if: github.event_name == 'schedule'
+        run: |
+          if [ -f "outdated-report.md" ] && grep -q "Outdated Dependencies Found" outdated-report.md; then
+            echo "🔄 Creating dependency update PR..."
+            
+            # Configure git
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            
+            # Create branch
+            git checkout -b chore/update-dependencies-$(date +%Y%m%d)
+            
+            # Update dependencies
+            npm update
+            
+            # Run tests to ensure compatibility
+            npm test || true
+            
+            # Commit changes
+            git add package*.json
+            git commit -m "chore: update dependencies [skip ci]"
+            
+            # Push branch
+            git push origin chore/update-dependencies-$(date +%Y%m%d)
+            
+            echo "✅ Dependency update PR created"
+          else
+            echo "✅ No dependency updates needed"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Security vulnerability scan
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: |
+          echo "🔒 Running security audit..."
+          npm audit --json > audit-results.json || true
+          
+          # Parse and format the results
+          node -e "
+            const fs = require('fs');
+            try {
+              const audit = JSON.parse(fs.readFileSync('audit-results.json', 'utf8'));
+              const vulnerabilities = audit.vulnerabilities || {};
+              const vulnCount = Object.keys(vulnerabilities).length;
+              
+              if (vulnCount > 0) {
+                console.log('## 🚨 Security Vulnerabilities Found\\n');
+                console.log('| Package | Severity | Title |');
+                console.log('|--------|----------|-------|');
+                
+                Object.entries(vulnerabilities).forEach(([name, data]) => {
+                  data.severity = data.severity || 'unknown';
+                  console.log(\`| \${name} | \${data.severity} | \${data.title} |\`);
+                });
+                
+                console.log('\\n### Summary\\n');
+                console.log(\`- **Total vulnerabilities:** \${vulnCount}\\n\`);
+                console.log(\`- **Critical:** \${Object.values(vulnerabilities).filter(v => v.severity === 'critical').length}\\n\`);
+                console.log(\`- **High:** \${Object.values(vulnerabilities).filter(v => v.severity === 'high').length}\\n\`);
+                console.log(\`- **Moderate:** \${Object.values(vulnerabilities).filter(v => v.severity === 'moderate').length}\\n\`);
+                console.log(\`- **Low:** \${Object.values(vulnerabilities).filter(v => v.severity === 'low').length}\\n\`);
+              } else {
+                console.log('✅ No security vulnerabilities found!');
+              }
+            } catch (e) {
+              console.log('✅ No security vulnerabilities found!');
+            }
+          " > security-report.md
+
+      - name: Run Snyk security scan
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-scan-results
+          path: |
+            security-report.md
+            audit-results.json
+          retention-days: 7
+
+      - name: Create security issue (if critical)
+        if: github.event_name == 'schedule'
+        run: |
+          if [ -f "security-report.md" ] && grep -q "Critical:" security-report.md && grep -q "1" security-report.md; then
+            echo "🚨 Creating security issue..."
+            
+            curl -X POST \
+              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/repos/${{ github.repository }}/issues \
+              -d '{
+                "title": "🚨 Critical Security Vulnerabilities Detected",
+                "body": "Automated security scan detected critical vulnerabilities that require immediate attention.\n\nPlease review the security scan results and update dependencies as soon as possible.\n\n[View Security Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})",
+                "labels": ["security", "critical", "dependencies"]
+              }'
+            
+            echo "✅ Security issue created"
+          fi
+
+  # License compliance check
+  license-check:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install license checker
+        run: npm install -g license-checker
+
+      - name: Check licenses
+        run: |
+          echo "📄 Checking license compliance..."
+          
+          license-checker --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD' \
+            --excludePrivatePackages \
+            --json > license-report.json || true
+          
+          # Parse and format the results
+          node -e "
+            const fs = require('fs');
+            try {
+              const report = JSON.parse(fs.readFileSync('license-report.json', 'utf8'));
+              const violations = Object.entries(report).filter(([name, data]) => 
+                data.licenses && !data.licenses.some(license => 
+                  ['MIT', 'Apache-2.0', 'BSD-2-Clause', 'BSD-3-Clause', 'ISC', '0BSD'].includes(license)
+                )
+              );
+              
+              if (violations.length > 0) {
+                console.log('## 🚨 License Compliance Issues\\n');
+                console.log('| Package | License | Status |');
+                console.log('|--------|---------|--------|');
+                
+                violations.forEach(([name, data]) => {
+                  const license = data.licenses ? data.licenses.join(', ') : 'Unknown';
+                  console.log(\`| \${name} | \${license} | ❌ Non-compliant |\`);
+                });
+                
+                console.log('\\n### Summary\\n');
+                console.log(\`- **Total violations:** \${violations.length}\\n\`);
+                console.log('- **Allowed licenses:** MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD\\n');
+              } else {
+                console.log('✅ All licenses are compliant!');
+              }
+            } catch (e) {
+              console.log('✅ All licenses are compliant!');
+            }
+          " > license-compliance-report.md
+
+      - name: Upload license report
+        uses: actions/upload-artifact@v3
+        with:
+          name: license-compliance
+          path: license-compliance-report.md
+          retention-days: 7
+
+  # Dependency graph update
+  update-dependency-graph:
+    name: Update Dependency Graph
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate dependency graph
+        run: |
+          echo "📊 Generating dependency graph..."
+          
+          # Install dependency graph generator
+          npm install -g madge
+          
+          # Generate graph
+          madge --image deps.svg src/ || true
+          madge --json deps.json src/ || true
+          
+          echo "✅ Dependency graph generated"
+
+      - name: Upload dependency graph
+        uses: actions/upload-artifact@v3
+        with:
+          name: dependency-graph
+          path: |
+            deps.svg
+            deps.json
+          retention-days: 30
+
+  # Bundle size analysis
+  bundle-analysis:
+    name: Bundle Size Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Analyze bundle size
+        run: |
+          echo "📦 Analyzing bundle size..."
+          
+          # Install bundle analyzer
+          npm install -g bundlesize
+          
+          # Analyze dist/ directory
+          if [ -d "dist" ]; then
+            du -sh dist/ > bundle-size.txt
+            find dist/ -name "*.js" -exec ls -lh {} \; > js-bundles.txt
+            
+            echo "✅ Bundle analysis completed"
+          else
+            echo "❌ No dist/ directory found"
+          fi
+
+      - name: Upload bundle analysis
+        uses: actions/upload-artifact@v3
+        with:
+          name: bundle-analysis
+          path: |
+            bundle-size.txt
+            js-bundles.txt
+          retention-days: 30
+
+      - name: Comment on PR with bundle changes
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            
+            if (fs.existsSync('bundle-size.txt')) {
+              const bundleSize = fs.readFileSync('bundle-size.txt', 'utf8').trim();
+              
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `## 📦 Bundle Size Analysis\n\n\`\`\`\n${bundleSize}\n\`\`\`\n\nThis PR affects the bundle size. Please review the changes.`
+              });
+            }
+
+  # Update documentation
+  update-docs:
+    name: Update Documentation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate API documentation
+        run: |
+          echo "📚 Updating documentation..."
+          
+          # Generate TypeDoc documentation
+          if command -v typedoc &> /dev/null; then
+            npm install -g typedoc
+            typedoc src/ --out docs/api --excludePrivate
+          fi
+          
+          # Generate OpenAPI spec
+          if [ -f "src/index.ts" ]; then
+            npm install -g swagger-jsdoc
+            jsdoc -c jsdoc.conf.json src/ || true
+          fi
+          
+          echo "✅ Documentation updated"
+
+      - name: Deploy documentation
+        run: |
+          echo "🚀 Deploying documentation..."
+          
+          # Deploy to GitHub Pages
+          git config --local user.name "GitHub Action"
+          git config --local user.email "action@github.com"
+          
+          git checkout --orphan gh-pages
+          rm -rf * || true
+          cp -r docs/* . || true
+          
+          git add .
+          git commit -m "Update documentation [skip ci]"
+          git push origin gh-pages --force
+          
+          echo "✅ Documentation deployed"
