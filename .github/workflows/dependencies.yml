@@ -68,7 +68,7 @@ jobs:
           " > outdated-report.md
 
       - name: Upload outdated report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: outdated-dependencies
           path: outdated-report.md
@@ -175,8 +175,8 @@ jobs:
         env:
           SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
-      - name: Upload security report
-        uses: actions/upload-artifact@v3
+      - name: Upload documentation
+        uses: actions/upload-artifact@v4
         with:
           name: security-scan-results
           path: |
@@ -265,7 +265,7 @@ jobs:
           " > license-compliance-report.md
 
       - name: Upload license report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: license-compliance
           path: license-compliance-report.md
@@ -304,7 +304,7 @@ jobs:
           echo "✅ Dependency graph generated"
 
       - name: Upload dependency graph
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dependency-graph
           path: |
@@ -351,7 +351,7 @@ jobs:
           fi
 
       - name: Upload bundle analysis
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: bundle-analysis
           path: |

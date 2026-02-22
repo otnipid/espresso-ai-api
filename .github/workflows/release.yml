@@ -185,7 +185,7 @@ jobs:
           echo "✅ SBOM generated"
 
       - name: Upload SBOM
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: sbom-${{ steps.meta.outputs.version }}
           path: sbom.json
@@ -390,7 +390,7 @@ jobs:
           echo "✅ Release archive created"
 
       - name: Upload release archive
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: release-archive-v${{ needs.version-bump.outputs.new_version || github.ref_name }}
           path: espresso-ml-backend-v${{ needs.version-bump.outputs.new_version || github.ref_name }}.tar.gz
