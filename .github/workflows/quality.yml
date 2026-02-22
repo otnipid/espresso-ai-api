@@ -303,7 +303,7 @@ jobs:
           
           # Create ESLint config if it doesn't exist
           if [ ! -f ".eslintrc.js" ]; then
-            cat > .eslintrc.js << EOF
+            cat > .eslintrc.js << 'EOF'
             module.exports = {
               parser: '@typescript-eslint/parser',
               extends: [
