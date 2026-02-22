@@ -84,7 +84,7 @@ This directory contains the GitHub Actions workflows for the Espresso ML backend
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `NODE_VERSION` | '18' | Node.js version |
+| `NODE_VERSION` | '20' | Node.js version |
 | `POSTGRES_VERSION` | '15' | PostgreSQL version |
 | `REDIS_VERSION` | '7' | Redis version |
 | `REGISTRY` | 'ghcr.io' | Container registry |

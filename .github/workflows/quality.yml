@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
 
 jobs:
   # Code coverage and quality metrics
@@ -298,8 +298,8 @@ jobs:
         run: |
           echo "🔍 Running ESLint..."
           
-          # Install ESLint
-          npm install -g eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin
+          # Install ESLint 
+          npm install -g eslint@8 @typescript-eslint/parser@6 @typescript-eslint/eslint-plugin@6
           
           # Create ESLint config if it doesn't exist
           if [ ! -f ".eslintrc.js" ]; then
