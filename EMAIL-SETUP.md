@@ -41,11 +41,17 @@ Add the following secrets to your GitHub repository:
 
 ### Required Secrets
 
-| Secret Name | Value | Description |
-|-------------|--------|-------------|
-| `EMAIL_USERNAME` | Your Gmail address | Sender email address |
-| `EMAIL_PASSWORD` | 16-character app password | Gmail app password |
-| `NOTIFICATION_EMAIL` | Recipient email | Where notifications are sent |
+| Secret Name | Secret | Description | Required For |
+|-------------|--------|-------------|--------------|
+| `GITHUB_TOKEN` | GitHub access token | All workflows | 
+| `EMAIL_USERNAME` | Email address for notifications | All workflows | 
+| `EMAIL_PASSWORD` | Email password or app password | All workflows | 
+| `NOTIFICATION_EMAIL` | Recipient email address | All workflows | 
+| `DOCKER_USERNAME` | Docker Hub username | Release | 
+| `DOCKER_PASSWORD` | Docker Hub password | Release | 
+| `SEMGREP_APP_TOKEN` | Semgrep security scanning token | CI, Dependencies | 
+| `DEPLOYMENT_API_TOKEN` | Deployment API access | Deploy | 
+| `METRICS_API_TOKEN` | Metrics dashboard access | Quality | 
 
 ### Setup Steps
 

@@ -162,13 +162,18 @@ jobs:
             }
           " > security-report.md
 
-      - name: Run Snyk security scan
-        uses: snyk/actions/node@master
-        continue-on-error: true
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: Run Semgrep security scan
+        uses: semgrep/semgrep-action@v1
         with:
-          args: --severity-threshold=high
+          config: >-
+            p/security-audit
+            p/owasp-top-ten
+            p/cwe-top-25
+            p/secrets
+            p/nodejs
+            p/typescript
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
       - name: Upload security report
         uses: actions/upload-artifact@v3

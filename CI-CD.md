@@ -25,7 +25,7 @@ This document provides a comprehensive overview of the Continuous Integration an
 1. **Code Quality** - TypeScript compilation, ESLint, Prettier checks
 2. **Unit Tests** - Jest test suite with SQLite in-memory database
 3. **Integration Tests** - PostgreSQL integration tests
-4. **Security Scan** - npm audit, Snyk, CodeQL analysis
+4. **Security Scanning** - Semgrep, npm audit, OWASP ZAP
 5. **Build** - Docker image building and testing
 6. **Performance Tests** - Load testing with Artillery
 7. **Documentation** - API documentation generation
@@ -111,7 +111,7 @@ Configure these in your GitHub repository settings:
 | `NOTIFICATION_EMAIL` | Recipient email address | All workflows |
 | `DOCKER_USERNAME` | Docker Hub username | Release |
 | `DOCKER_PASSWORD` | Docker Hub password | Release |
-| `SNYK_TOKEN` | Snyk security token | CI, Dependencies |
+| `SEMGREP_APP_TOKEN` | Semgrep security scanning token | CI, Dependencies |
 | `DEPLOYMENT_API_TOKEN` | Deployment API access | Deploy |
 | `METRICS_API_TOKEN` | Metrics dashboard access | Quality |
 

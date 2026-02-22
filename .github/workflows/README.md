@@ -11,7 +11,7 @@ This directory contains the GitHub Actions workflows for the Espresso ML backend
 - **Code Quality**: TypeScript compilation, ESLint, Prettier checks
 - **Unit Tests**: Jest test suite with coverage reporting
 - **Integration Tests**: Database integration tests
-- **Security Scan**: npm audit, Snyk, CodeQL analysis
+- **Security Scanning**: Semgrep, npm audit
 - **Build**: Docker image building and testing
 - **Performance Tests**: Load testing with Artillery
 - **Documentation**: API documentation generation
@@ -76,7 +76,7 @@ This directory contains the GitHub Actions workflows for the Espresso ML backend
 | `NOTIFICATION_EMAIL` | Recipient email address | All workflows |
 | `DOCKER_USERNAME` | Docker Hub username | Release |
 | `DOCKER_PASSWORD` | Docker Hub password | Release |
-| `SNYK_TOKEN` | Snyk security token | CI, Dependencies |
+| `SEMGREP_APP_TOKEN` | Semgrep security scanning token | CI, Dependencies |
 | `DEPLOYMENT_API_TOKEN` | Deployment API access | Deploy |
 | `METRICS_API_TOKEN` | Metrics dashboard access | Quality |
 
