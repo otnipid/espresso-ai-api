@@ -4,6 +4,13 @@ import { validate, validateMachineExists, validateBeanBatchExists } from '../../
 import { CreateShotSchema, UpdateShotSchema, ShotQuerySchema } from '../../middleware/validation/schemas';
 import { ValidationError, NotFoundError, BusinessRuleError } from '../../middleware/errorHandler';
 
+// Mock data-source module
+jest.mock('../../data-source', () => ({
+  AppDataSource: {
+    getRepository: jest.fn(),
+  },
+}));
+
 // Mock Express request/response
 const mockRequest = (body: any = {}, query: any = {}, params: any = {}) => ({
   body,
@@ -40,7 +47,7 @@ describe('Validation Middleware', () => {
       await validate(CreateShotSchema, 'body')(req, res, next);
 
       expect(next).toHaveBeenCalledWith();
-      expect(req.validated.body).toBeDefined();
+      expect(req.validated?.body).toBeDefined();
       expect(res.status).not.toHaveBeenCalled();
     });
 
@@ -85,10 +92,10 @@ describe('Validation Middleware', () => {
       await validate(ShotQuerySchema, 'query')(req, res, next);
 
       expect(next).toHaveBeenCalledWith();
-      expect(req.validated.query).toBeDefined();
-      expect(req.validated.query.page).toBe(1);
-      expect(req.validated.query.limit).toBe(10);
-      expect(req.validated.query.success).toBe(true);
+      expect(req.validated?.query).toBeDefined();
+      expect((req.validated?.query as any)?.page).toBe(1);
+      expect((req.validated?.query as any)?.limit).toBe(10);
+      expect((req.validated?.query as any)?.success).toBe(true);
     });
 
     it('should validate route parameters', async () => {
@@ -101,7 +108,7 @@ describe('Validation Middleware', () => {
       await validate(CreateShotSchema.pick({ machineId: true }), 'params')(req, res, next);
 
       expect(next).toHaveBeenCalledWith();
-      expect(req.validated.params).toBeDefined();
+      expect(req.validated?.params).toBeDefined();
     });
 
     it('should handle missing required fields', async () => {
@@ -181,9 +188,9 @@ describe('Validation Middleware', () => {
       await validate(UpdateShotSchema, 'body')(req, res, next);
 
       expect(next).toHaveBeenCalledWith();
-      expect(req.validated.body).toBeDefined();
-      expect(req.validated.body.success).toBe(false);
-      expect(req.validated.body.notes).toBe('Updated notes');
+      expect(req.validated?.body).toBeDefined();
+      expect((req.validated?.body as any)?.success).toBe(false);
+      expect((req.validated?.body as any)?.notes).toBe('Updated notes');
     });
 
     it('should validate optional fields in updates', async () => {
@@ -199,7 +206,7 @@ describe('Validation Middleware', () => {
       await validate(UpdateShotSchema, 'body')(req, res, next);
 
       expect(next).toHaveBeenCalledWith();
-      expect(req.validated.body.extraction).toBeDefined();
+      expect((req.validated?.body as any)?.extraction).toBeDefined();
     });
 
     it('should reject invalid update data', async () => {
@@ -244,10 +251,10 @@ describe('Validation Middleware', () => {
       await validate(ShotQuerySchema, 'query')(req, res, next);
 
       expect(next).toHaveBeenCalledWith();
-      expect(req.validated.query.page).toBe(2);
-      expect(req.validated.query.limit).toBe(15);
-      expect(req.validated.query.sortBy).toBe('pulled_at');
-      expect(req.validated.query.sortOrder).toBe('ASC');
+      expect((req.validated?.query as any)?.page).toBe(2);
+      expect((req.validated?.query as any)?.limit).toBe(15);
+      expect((req.validated?.query as any)?.sortBy).toBe('pulled_at');
+      expect((req.validated?.query as any)?.sortOrder).toBe('ASC');
     });
 
     it('should apply default values for query parameters', async () => {
@@ -258,10 +265,10 @@ describe('Validation Middleware', () => {
       await validate(ShotQuerySchema, 'query')(req, res, next);
 
       expect(next).toHaveBeenCalledWith();
-      expect(req.validated.query.page).toBe(1);
-      expect(req.validated.query.limit).toBe(20);
-      expect(req.validated.query.sortBy).toBe('pulled_at');
-      expect(req.validated.query.sortOrder).toBe('DESC');
+      expect((req.validated?.query as any)?.page).toBe(1);
+      expect((req.validated?.query as any)?.limit).toBe(20);
+      expect((req.validated?.query as any)?.sortBy).toBe('pulled_at');
+      expect((req.validated?.query as any)?.sortOrder).toBe('DESC');
     });
 
     it('should validate date range in query', async () => {
@@ -275,8 +282,8 @@ describe('Validation Middleware', () => {
       await validate(ShotQuerySchema, 'query')(req, res, next);
 
       expect(next).toHaveBeenCalledWith();
-      expect(req.validated.query.dateFrom).toBe('2024-01-01T00:00:00Z');
-      expect(req.validated.query.dateTo).toBe('2024-12-31T23:59:59Z');
+      expect(req.validated?.query?.dateFrom).toBe('2024-01-01T00:00:00Z');
+      expect(req.validated?.query?.dateTo).toBe('2024-12-31T23:59:59Z');
     });
 
     it('should reject invalid date range', async () => {
@@ -363,7 +370,7 @@ describe('Validation Middleware', () => {
       expect(next).toHaveBeenCalledWith();
       
       // TypeScript should infer the correct type
-      const validatedData = req.validated.body;
+      const validatedData = req.validated?.body as any;
       expect(validatedData.shot_type).toBe('normale');
       expect(validatedData.success).toBe(true);
     });
@@ -382,7 +389,7 @@ describe('Validation Middleware', () => {
 
       expect(next).toHaveBeenCalledWith();
       
-      const validatedData = req.validated.body;
+      const validatedData = req.validated?.body as any;
       expect(validatedData.success).toBeUndefined();
       expect(validatedData.notes).toBeUndefined();
     });
@@ -402,16 +409,13 @@ describe('Database Validation Middleware', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     
-    // Mock AppDataSource
-    jest.doMock('../../../data-source', () => ({
-      AppDataSource: {
-        getRepository: jest.fn((entity) => {
-          if (entity.name === 'Machine') return mockMachineRepository;
-          if (entity.name === 'BeanBatch') return mockBeanBatchRepository;
-          return {};
-        }),
-      },
-    }));
+    // Setup mock repositories
+    const { AppDataSource } = require('../../data-source');
+    AppDataSource.getRepository.mockImplementation((entity: any) => {
+      if (entity.name === 'Machine') return mockMachineRepository;
+      if (entity.name === 'BeanBatch') return mockBeanBatchRepository;
+      return {};
+    });
   });
 
   describe('validateMachineExists', () => {
@@ -425,7 +429,7 @@ describe('Database Validation Middleware', () => {
       await validateMachineExists(req, res, next);
 
       expect(next).toHaveBeenCalledWith();
-      expect(req.validated.machine).toBeDefined();
+      expect(req.validated?.machine).toBeDefined();
       expect(res.status).not.toHaveBeenCalled();
     });
 
@@ -494,7 +498,7 @@ describe('Database Validation Middleware', () => {
       await validateBeanBatchExists(req, res, next);
 
       expect(next).toHaveBeenCalledWith();
-      expect(req.validated.beanBatch).toBeDefined();
+      expect(req.validated?.beanBatch).toBeDefined();
       expect(res.status).not.toHaveBeenCalled();
     });
 
