@@ -6,9 +6,9 @@ trigger: always_on
 This project is part of a multi-repo system.
 
 Assume there are:
-- A frontend repo
-- A backend repo
-- A database repo
+- A frontend repo (React + TypeScript)
+- A backend repo (Node.js + TypeScript)
+- A database repo (PostgreSQL)
 
 Changes here may impact others.
 

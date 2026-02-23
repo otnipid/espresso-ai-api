@@ -8,19 +8,7 @@ trigger: always_on
 - No business logic in controllers.
 
 ## Code Quality
-- Always write tests for new features based on the user stories and requirements.
-- Prefer explicit types.
-- Avoid magic numbers.
+- Always write unit tests for any new code that is generated under the src/ directory.
 
 ## Stack
-- Frontend: Node.js + Typescript
-- DB: PostgreSQL
-- Infra: Docker + Kubernetes
-
-## Style
-- Small functions (<30 lines)
-- Always include documentation for new functions and classes including:
-    - A description of the function
-    - Parameters
-    - Return value
-- No deep nesting
+- When considering integration, always refer to the multi-repo awareness rules.
