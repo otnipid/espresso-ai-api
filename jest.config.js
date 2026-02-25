@@ -2,7 +2,12 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
-  testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
+  testMatch: [
+    '**/__tests__/**/*.unit.test.ts',
+    '**/__tests__/**/*.integration.test.ts',
+    '**/__tests__/**/*.test.ts',
+    '**/?(*.)+(spec|test).ts'
+  ],
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
@@ -14,9 +19,23 @@ module.exports = {
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
-  setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
-  moduleNameMapping: {
+  moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   testTimeout: 30000,
+  // Load test environment variables
+  setupFiles: ['<rootDir>/src/__tests__/env-setup.ts'],
+  // Separate coverage for unit vs integration tests
+  projects: [
+    {
+      displayName: 'unit',
+      testMatch: ['<rootDir>/src/__tests__/unit/**/*.test.ts'],
+      setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.unit.ts'],
+    },
+    {
+      displayName: 'integration',
+      testMatch: ['<rootDir>/src/__tests__/integration/**/*.test.ts'],
+      setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
+    },
+  ],
 };

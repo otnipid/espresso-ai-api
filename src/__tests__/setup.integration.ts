@@ -1,5 +1,5 @@
-// Test database setup - tries Kubernetes PostgreSQL first, then local PostgreSQL, falls back to SQLite
-import 'reflect-metadata';
+
+let testDataSource: DataSource;
 import { DataSource } from 'typeorm';
 import { Shot } from '../entities/Shot';
 import { ShotPreparation } from '../entities/ShotPreparation';
@@ -10,6 +10,7 @@ import { BeanBatch } from '../entities/BeanBatch';
 import { Machine } from '../entities/Machine';
 import { Bean } from '../entities/Bean';
 
+// Test database setup - tries Kubernetes PostgreSQL first, then local PostgreSQL, falls back to SQLite
 let testDataSource: DataSource;
 
 const createKubernetesPostgresDataSource = () => new DataSource({

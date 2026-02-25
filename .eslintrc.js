@@ -57,5 +57,12 @@ module.exports = {
         'no-console': 'off',
       },
     },
+    {
+      files: ['**/*.test.ts', '**/*.spec.ts'],
+      // Apply testing boundaries rules
+      rules: {
+        'testing-boundaries': 'error',
+      },
+    },
   ],
 };
