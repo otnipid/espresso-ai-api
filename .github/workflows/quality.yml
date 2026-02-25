@@ -12,12 +12,26 @@ on:
 
 env:
   NODE_VERSION: '20'
+  POSTGRES_VERSION: '15'
 
 jobs:
   # Code coverage and quality metrics
   code-quality:
     name: Code Quality Analysis
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:${{ env.POSTGRES_VERSION }}
+        env:
+          POSTGRES_PASSWORD: postgres_password
+          POSTGRES_USER: postgres_user
+          POSTGRES_DB: espresso_ml_dev
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     
     steps:
       - name: Checkout code
@@ -33,6 +47,29 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Setup test environment
+        run: |
+          echo "🐘 Setting up test environment for PostgreSQL..."
+          
+          # Create test environment file
+          cp .env.test .env.test.ci
+          
+          # Override with CI PostgreSQL configuration
+          echo "TEST_DB_HOST=localhost" >> .env.test.ci
+          echo "TEST_DB_PORT=5432" >> .env.test.ci
+          echo "TEST_DB_USERNAME=postgres_user" >> .env.test.ci
+          echo "TEST_DB_PASSWORD=postgres_password" >> .env.test.ci
+          echo "TEST_DB_DATABASE=espresso_ml_dev" >> .env.test.ci
+          echo "TEST_DB_SSL=false" >> .env.test.ci
+          
+          echo "✅ Test environment configured"
+
+      - name: Wait for PostgreSQL
+        run: |
+          echo "⏳ Waiting for PostgreSQL to be ready..."
+          timeout 60 bash -c 'until pg_isready -h localhost -p 5432; do sleep 1; done'
+          echo "✅ PostgreSQL is ready"
 
       - name: Run tests with coverage
         run: npm run test:coverage
