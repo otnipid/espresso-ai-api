@@ -6,10 +6,10 @@ export class Bean {
     @PrimaryGeneratedColumn("uuid")
     id!: string
 
-    @Column()
+    @Column({ type: 'varchar' })
     name!: string
 
-    @Column()
+    @Column({ type: 'varchar' })
     roaster!: string
 
     @Column({ type: 'varchar', nullable: true })

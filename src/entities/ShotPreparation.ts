@@ -10,24 +10,24 @@ export class ShotPreparation {
     @JoinColumn({ name: 'shot_id' })
     shot!: Shot;
 
-    @Column({ type: 'integer', nullable: true })
+    @Column({ type: "integer", nullable: true })
     grind_setting?: number | null;
 
-    @Column({ type: 'numeric', precision: 5, scale: 2, nullable: true })
+    @Column({ type: "numeric", precision: 5, scale: 2, nullable: true })
     dose_grams?: number | null;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: "text", nullable: true })
     basket_type?: string | null;
 
-    @Column({ type: 'integer', nullable: true })
+    @Column({ type: "integer", nullable: true })
     basket_size_grams?: number | null;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: "text", nullable: true })
     distribution_method?: string | null;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: "text", nullable: true })
     tamp_type?: string | null;
 
-    @Column({ type: 'text', nullable: true })
+    @Column({ type: "text", nullable: true })
     tamp_pressure_category?: string | null;
 }
