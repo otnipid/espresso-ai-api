@@ -1,5 +1,3 @@
-// src/controllers/shotExtraction.controller.ts
-import { Request, Response } from "express";
 import { FindOptionsWhere } from "typeorm";
 import { AppDataSource } from "../data-source";
 import { ShotExtraction } from "../entities/ShotExtraction";

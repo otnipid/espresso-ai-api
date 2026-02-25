@@ -1,5 +1,3 @@
-// src/controllers/shot.controller.ts
-import { Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { ShotEnvironment } from "../entities/shotEnvironment";
 import { FindOptionsWhere } from "typeorm";

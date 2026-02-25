@@ -1,4 +1,3 @@
-// src/controllers/shot.controller.ts
 import { Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { Shot } from "../entities/Shot";
