@@ -1,4 +1,7 @@
-import { ShotService } from '../../services/ShotService';
+import { ShotService } from '../../../services/ShotService';
+
+// Unmock ShotService for this test file
+jest.unmock('../../../services/ShotService');
 
 describe('ShotService - Structure Tests', () => {
   describe('Class Definition', () => {
@@ -80,7 +83,7 @@ describe('ShotService - Structure Tests', () => {
   describe('Interface Definitions', () => {
     it('should export CreateShotData interface', () => {
       // Test that the interface types are available through the service file
-      const serviceModule = require('../../services/ShotService');
+      const serviceModule = require('../../../services/ShotService');
       
       // These should be available as types (checked at compile time)
       expect(serviceModule).toBeDefined();
@@ -88,17 +91,17 @@ describe('ShotService - Structure Tests', () => {
     });
 
     it('should export UpdateShotData interface', () => {
-      const serviceModule = require('../../services/ShotService');
+      const serviceModule = require('../../../services/ShotService');
       expect(serviceModule).toBeDefined();
     });
 
     it('should export ShotFilterOptions interface', () => {
-      const serviceModule = require('../../services/ShotService');
+      const serviceModule = require('../../../services/ShotService');
       expect(serviceModule).toBeDefined();
     });
 
     it('should export ShotQueryResult interface', () => {
-      const serviceModule = require('../../services/ShotService');
+      const serviceModule = require('../../../services/ShotService');
       expect(serviceModule).toBeDefined();
     });
   });
@@ -107,7 +110,12 @@ describe('ShotService - Structure Tests', () => {
     let shotServiceInstance: ShotService;
 
     beforeAll(() => {
-      const mockDataSource = {} as any;
+      // Create instance with mock DataSource to avoid database issues
+      const mockDataSource = {
+        getRepository: jest.fn(),
+        createQueryRunner: jest.fn(),
+      } as any;
+      
       shotServiceInstance = new ShotService(mockDataSource);
     });
 
@@ -123,7 +131,16 @@ describe('ShotService - Structure Tests', () => {
 
     it('getShots should accept optional filter parameters', () => {
       const method = shotServiceInstance.getShots;
-      expect(method.length).toBe(1); // Should accept one parameter (options)
+      
+      // Check that the method exists and is a function
+      expect(typeof method).toBe('function');
+      
+      // Check the method signature by looking for key parts
+      const methodString = method.toString();
+      expect(methodString).toContain('getShots');
+      expect(methodString).toContain('options');
+      expect(methodString).toContain('async');
+      expect(methodString).toContain('= {}'); // Default parameter
     });
 
     it('updateShot should accept id and update data parameters', () => {
@@ -139,7 +156,16 @@ describe('ShotService - Structure Tests', () => {
 
     it('getShotStatistics should accept optional filter parameters', () => {
       const method = shotServiceInstance.getShotStatistics;
-      expect(method.length).toBe(1); // Should accept one parameter (options)
+      
+      // Check that the method exists and is a function
+      expect(typeof method).toBe('function');
+      
+      // Check the method signature by looking for key parts
+      const methodString = method.toString();
+      expect(methodString).toContain('getShotStatistics');
+      expect(methodString).toContain('options');
+      expect(methodString).toContain('async');
+      expect(methodString).toContain('= {}'); // Default parameter
     });
   });
 
@@ -147,7 +173,12 @@ describe('ShotService - Structure Tests', () => {
     let shotServiceInstance: ShotService;
 
     beforeAll(() => {
-      const mockDataSource = {} as any;
+      // Create instance with mock DataSource to avoid database issues
+      const mockDataSource = {
+        getRepository: jest.fn(),
+        createQueryRunner: jest.fn(),
+      } as any;
+      
       shotServiceInstance = new ShotService(mockDataSource);
     });
 
@@ -163,7 +194,12 @@ describe('ShotService - Structure Tests', () => {
     let shotServiceInstance: ShotService;
 
     beforeAll(() => {
-      const mockDataSource = {} as any;
+      // Create instance with mock DataSource to avoid database issues
+      const mockDataSource = {
+        getRepository: jest.fn(),
+        createQueryRunner: jest.fn(),
+      } as any;
+      
       shotServiceInstance = new ShotService(mockDataSource);
     });
 

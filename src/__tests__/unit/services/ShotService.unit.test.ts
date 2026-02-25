@@ -1,11 +1,78 @@
-import { ShotService } from '../../services/ShotService';
-import { testDataSource, createTestMachine, createTestBean } from '../setup';
+import { ShotService } from '../../../services/ShotService';
+import { DataSource } from 'typeorm';
+import { Shot } from '../../../entities/Shot';
+import { Machine } from '../../../entities/Machine';
+import { BeanBatch } from '../../../entities/BeanBatch';
+import { Repository } from 'typeorm';
+
+// Unmock ShotService for this test file
+jest.unmock('../../../services/ShotService');
 
 describe('ShotService - Unit Tests', () => {
   let shotService: ShotService;
+  let mockDataSource: jest.Mocked<DataSource>;
 
-  beforeAll(async () => {
-    shotService = new ShotService(testDataSource);
+  beforeEach(() => {
+    // Create mock repositories with Jest mocks
+    const mockMachineRepo = {
+      findOne: jest.fn() as jest.MockedFunction<Repository<Machine>['findOne']>,
+      find: jest.fn(),
+      save: jest.fn(),
+      remove: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      restore: jest.fn(),
+    };
+
+    const mockBeanRepo = {
+      findOne: jest.fn() as jest.MockedFunction<Repository<BeanBatch>['findOne']>,
+      find: jest.fn(),
+      save: jest.fn(),
+      remove: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      restore: jest.fn(),
+    };
+
+    const mockShotRepo = {
+      findOne: jest.fn() as jest.MockedFunction<Repository<Shot>['findOne']>,
+      find: jest.fn(),
+      save: jest.fn(),
+      remove: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      restore: jest.fn(),
+    };
+
+    // Create a mock data source that returns mock repositories
+    mockDataSource = {
+      getRepository: jest.fn().mockImplementation((entity) => {
+        if (entity === Shot) {
+          return mockShotRepo;
+        } else if (entity === Machine) {
+          return mockMachineRepo;
+        } else if (entity === BeanBatch) {
+          return mockBeanRepo;
+        } else {
+          return {
+            findOne: jest.fn(),
+            find: jest.fn(),
+            save: jest.fn(),
+            remove: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+            restore: jest.fn(),
+          };
+        }
+      }),
+    } as any;
+
+    // Create a ShotService instance
+    shotService = new ShotService(mockDataSource);
   });
 
   describe('Service Initialization', () => {
@@ -28,10 +95,7 @@ describe('ShotService - Unit Tests', () => {
 
   describe('Method Validation', () => {
     it('should validate input parameters for createShot', () => {
-      // Test that the method exists and has the right signature
       expect(shotService.createShot).toBeDefined();
-      
-      // Test that it's an async function
       expect(shotService.createShot.constructor.name).toBe('AsyncFunction');
     });
 
@@ -72,19 +136,61 @@ describe('ShotService - Unit Tests', () => {
         machineId: 'invalid-machine-id',
       };
 
-      await expect(shotService.updateShot('non-existent-id', invalidUpdateData)).rejects.toThrow();
+      // Mock repositories BEFORE ShotService instantiation
+      const mockMachineRepo = {
+        findOne: jest.fn().mockResolvedValue(null), // Machine not found
+        save: jest.fn(),
+        find: jest.fn(),
+        remove: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+        restore: jest.fn(),
+      };
+
+      const mockShotRepo = {
+        findOne: jest.fn().mockResolvedValue({ id: 'non-existent-id' }), // Shot exists
+        save: jest.fn(),
+        find: jest.fn(),
+        remove: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+        restore: jest.fn(),
+      };
+
+      // Create test-specific dataSource that returns our mocks
+      const testDataSource = {
+        getRepository: jest.fn().mockImplementation((entity) => {
+          if (entity === Machine) return mockMachineRepo;
+          if (entity === Shot) return mockShotRepo;
+          return {
+            findOne: jest.fn(),
+            save: jest.fn(),
+            find: jest.fn(),
+            remove: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+            restore: jest.fn(),
+          };
+        }),
+      } as any;
+
+      // Create ShotService with mocked repositories
+      const testShotService = new ShotService(testDataSource);
+
+      await expect(testShotService.updateShot('non-existent-id', invalidUpdateData)).rejects.toThrow();
     });
   });
 
   describe('Repository Access', () => {
     it('should have access to all required repositories', () => {
-      // Test that the service can access repositories (without actually using them)
-      expect(testDataSource.getRepository).toBeDefined();
+      expect(mockDataSource.getRepository).toBeDefined();
       
-      // Test that we can create repository instances
-      const machineRepo = testDataSource.getRepository('Machine');
-      const beanRepo = testDataSource.getRepository('Bean');
-      const shotRepo = testDataSource.getRepository('Shot');
+      const machineRepo = mockDataSource.getRepository('Machine');
+      const beanRepo = mockDataSource.getRepository('Bean');
+      const shotRepo = mockDataSource.getRepository('Shot');
       
       expect(machineRepo).toBeDefined();
       expect(beanRepo).toBeDefined();
@@ -103,9 +209,7 @@ describe('ShotService - Unit Tests', () => {
         notes: 'Test shot',
       };
 
-      // This should not throw during parameter validation
       expect(() => {
-        // Just test that the method accepts the structure
         const method = shotService.createShot;
         expect(method).toBeDefined();
       }).not.toThrow();
@@ -145,7 +249,6 @@ describe('ShotService - Unit Tests', () => {
 
   describe('Type Safety', () => {
     it('should maintain TypeScript types for interfaces', () => {
-      // Test that the interfaces are properly typed
       const testShotData = {
         machineId: 'test-id',
         beanBatchId: 'test-batch-id',
@@ -153,7 +256,6 @@ describe('ShotService - Unit Tests', () => {
         success: true,
       };
 
-      // These should compile without TypeScript errors
       expect(testShotData.shot_type).toBe('normale');
       expect(testShotData.success).toBe(true);
     });
@@ -168,7 +270,6 @@ describe('ShotService - Unit Tests', () => {
       expect(minimalShotData.machineId).toBeDefined();
       expect(minimalShotData.beanBatchId).toBeDefined();
       expect(minimalShotData.shot_type).toBe('normale');
-      // Optional fields should not exist on minimal object
       expect('success' in minimalShotData).toBe(false);
       expect('notes' in minimalShotData).toBe(false);
     });
