@@ -1,4 +1,4 @@
-1. Run unit tests: `npm run test:coverage`
+1. Run unit tests: `npm run test:unit:coverage`
 2. For each failing test, do the following. Remember to address one failed test at a time. 
    a. Identify the root cause
    b. Fix the issue
