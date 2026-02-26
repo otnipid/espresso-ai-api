@@ -16,13 +16,13 @@ export class ShotFeedback {
     @Column({ type: "numeric", precision: 4, scale: 1, nullable: true })
     acidity!: number | null;
 
-    @Column({ type: "integer", nullable: true })
+    @Column({ type: "numeric", precision: 4, scale: 1, nullable: true })
     sweetness!: number | null;
 
-    @Column({ type: "integer", nullable: true })
+    @Column({ type: "numeric", precision: 4, scale: 1, nullable: true })
     bitterness?: number | null;
 
-    @Column({ type: "integer", nullable: true })
+    @Column({ type: "numeric", precision: 4, scale: 1, nullable: true })
     body?: number | null;
 
     @Column({ type: "text", nullable: true })

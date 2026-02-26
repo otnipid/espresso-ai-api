@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, OneToOne } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn, OneToOne, DeleteDateColumn } from "typeorm";
 import { BeanBatch } from "./BeanBatch";
 import { Machine } from "./Machine";
 import { ShotPreparation } from "./ShotPreparation";
@@ -35,6 +35,9 @@ export class Shot {
 
     @CreateDateColumn({ type: 'timestamp' })
     created_at!: Date;
+
+    @DeleteDateColumn({ type: 'timestamp', nullable: true })
+    deleted_at?: Date | null;
 
     @OneToOne(() => ShotPreparation, preparation => preparation.shot)
     preparation?: ShotPreparation;
