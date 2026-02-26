@@ -1,10 +1,14 @@
-import { ShotService } from '../../services/ShotService';
-import { testDataSource, createTestMachine, createTestBean, createTestBeanBatch } from '../setup';
+import { DataSource } from 'typeorm';
+import { ShotService } from '../../../services/ShotService';
+import { initializeTestDataSource, getTestDataSource, createTestMachine, createTestBean, createTestBeanBatch } from '../../setup.integration';
 
 describe('ShotService - Basic Tests', () => {
   let shotService: ShotService;
+  let testDataSource: DataSource;
 
   beforeAll(async () => {
+    await initializeTestDataSource();
+    testDataSource = getTestDataSource();
     shotService = new ShotService(testDataSource);
   });
 
@@ -231,13 +235,13 @@ describe('ShotService - Basic Tests', () => {
       const beanBatch = await createTestBeanBatch(bean);
 
       const shotData = {
-        machineId: 'invalid-machine-id',
+        machineId: '550e8400-e29b-41d4-a716-446655440000', // Valid UUID format but doesn't exist
         beanBatchId: beanBatch.id,
         shot_type: 'normale' as const,
       };
 
       await expect(shotService.createShot(shotData)).rejects.toThrow(
-        'Machine with ID invalid-machine-id not found'
+        'Machine with ID 550e8400-e29b-41d4-a716-446655440000 not found'
       );
     });
 
@@ -246,42 +250,40 @@ describe('ShotService - Basic Tests', () => {
 
       const shotData = {
         machineId: machine.id,
-        beanBatchId: 'invalid-batch-id',
+        beanBatchId: '550e8400-e29b-41d4-a716-446655440001', // Valid UUID format but doesn't exist
         shot_type: 'normale' as const,
       };
 
       await expect(shotService.createShot(shotData)).rejects.toThrow(
-        'BeanBatch with ID invalid-batch-id not found'
+        'BeanBatch with ID 550e8400-e29b-41d4-a716-446655440001 not found'
       );
     });
 
     it('should throw error when getting non-existent shot', async () => {
-      await expect(shotService.getShotById('non-existent-id')).rejects.toThrow(
-        'Shot with ID non-existent-id not found'
+      await expect(shotService.getShotById('550e8400-e29b-41d4-a716-446655440002')).rejects.toThrow(
+        'Shot with ID 550e8400-e29b-41d4-a716-446655440002 not found'
       );
     });
 
     it('should throw error when updating non-existent shot', async () => {
-      const updateData = { success: false };
-
-      await expect(shotService.updateShot('non-existent-id', updateData)).rejects.toThrow(
-        'Shot with ID non-existent-id not found'
+      await expect(shotService.updateShot('550e8400-e29b-41d4-a716-446655440003', {})).rejects.toThrow(
+        'Shot with ID 550e8400-e29b-41d4-a716-446655440003 not found'
       );
     });
 
     it('should return false when soft deleting non-existent shot', async () => {
-      const result = await shotService.softDeleteShot('non-existent-id');
+      const result = await shotService.softDeleteShot('550e8400-e29b-41d4-a716-446655440004');
       expect(result).toBe(false);
     });
 
     it('should return false when hard deleting non-existent shot', async () => {
-      const result = await shotService.hardDeleteShot('non-existent-id');
+      const result = await shotService.hardDeleteShot('550e8400-e29b-41d4-a716-446655440005');
       expect(result).toBe(false);
     });
 
     it('should throw error when restoring non-existent shot', async () => {
-      await expect(shotService.restoreShot('non-existent-id')).rejects.toThrow(
-        'Shot with ID non-existent-id not found or not deleted'
+      await expect(shotService.restoreShot('550e8400-e29b-41d4-a716-446655440006')).rejects.toThrow(
+        'Shot with ID 550e8400-e29b-41d4-a716-446655440006 not found'
       );
     });
   });

@@ -1,22 +1,21 @@
 import { DataSource } from 'typeorm';
-import { ShotService } from '../../services/ShotService';
-import { Shot } from '../../entities/Shot';
-import { ShotPreparation } from '../../entities/ShotPreparation';
-import { ShotExtraction } from '../../entities/ShotExtraction';
-import { ShotEnvironment } from '../../entities/shotEnvironment';
-import { ShotFeedback } from '../../entities/shotFeedback';
-import { BeanBatch } from '../../entities/BeanBatch';
-import { Machine } from '../../entities/Machine';
-import { Bean } from '../../entities/Bean';
-import { testDataSource, createTestMachine, createTestBean, createTestBeanBatch } from '../setup';
+import { ShotService } from '../../../services/ShotService';
+import { Shot } from '../../../entities/Shot';
+import { BeanBatch } from '../../../entities/BeanBatch';
+import { Machine } from '../../../entities/Machine';
+import { Bean } from '../../../entities/Bean';
+import { initializeTestDataSource, getTestDataSource, createTestMachine, createTestBean, createTestBeanBatch } from '../../setup.integration';
 
 describe('ShotService', () => {
   let shotService: ShotService;
   let machine: Machine;
   let bean: Bean;
   let beanBatch: BeanBatch;
+  let testDataSource: DataSource;
 
   beforeAll(async () => {
+    await initializeTestDataSource();
+    testDataSource = getTestDataSource();
     shotService = new ShotService(testDataSource);
   });
 
@@ -98,44 +97,53 @@ describe('ShotService', () => {
 
       // Verify preparation data
       expect(result.preparation?.grind_setting).toBe(15);
-      expect(result.preparation?.dose_grams).toBe(18.0);
+      expect(result.preparation?.dose_grams).toBe("18.00");
       expect(result.preparation?.basket_type).toBe('double');
 
       // Verify extraction data
-      expect(result.extraction?.dose_grams).toBe(18.0);
-      expect(result.extraction?.yield_grams).toBe(36.0);
+      expect(result.extraction?.dose_grams).toBe("18.00");
+      expect(result.extraction?.yield_grams).toBe("36.00");
       expect(result.extraction?.extraction_time_seconds).toBe(25);
 
       // Verify environment data
-      expect(result.environment?.ambient_temp_c).toBe(22.5);
-      expect(result.environment?.humidity_percent).toBe(60.0);
+      expect(result.environment?.ambient_temp_c).toBe("22.5");
+      expect(result.environment?.humidity_percent).toBe("60.0");
+      expect(result.environment?.water_source).toBe('filtered');
+      expect(result.environment?.estimated_water_hardness_ppm).toBe(150);
+      expect(result.environment?.machine_warmup_minutes).toBe(15);
+      expect(result.environment?.shots_since_clean).toBe(5);
 
       // Verify feedback data
-      expect(result.feedback?.overall_score).toBe(8.5);
-      expect(result.feedback?.acidity).toBe(7.0);
+      expect(result.feedback?.overall_score).toBe("8.5");
+      expect(result.feedback?.acidity).toBe("7.0");
+      expect(result.feedback?.sweetness).toBe("8.0");
+      expect(result.feedback?.bitterness).toBe("3.0");
+      expect(result.feedback?.body).toBe("7.5");
+      expect(result.feedback?.extraction_assessment).toBe('Balanced extraction');
+      expect(result.feedback?.notes).toBe('Good balance');
     });
 
     it('should throw error when machine does not exist', async () => {
       const shotData = {
-        machineId: 'non-existent-machine-id',
+        machineId: '550e8400-e29b-41d4-a716-446655440014',
         beanBatchId: beanBatch.id,
         shot_type: 'normale' as const,
       };
 
       await expect(shotService.createShot(shotData)).rejects.toThrow(
-        'Machine with ID non-existent-machine-id not found'
+        'Machine with ID 550e8400-e29b-41d4-a716-446655440014 not found'
       );
     });
 
     it('should throw error when bean batch does not exist', async () => {
       const shotData = {
         machineId: machine.id,
-        beanBatchId: 'non-existent-batch-id',
+        beanBatchId: '550e8400-e29b-41d4-a716-446655440015',
         shot_type: 'normale' as const,
       };
 
       await expect(shotService.createShot(shotData)).rejects.toThrow(
-        'BeanBatch with ID non-existent-batch-id not found'
+        'BeanBatch with ID 550e8400-e29b-41d4-a716-446655440015 not found'
       );
     });
 
@@ -181,8 +189,8 @@ describe('ShotService', () => {
     });
 
     it('should throw error when shot does not exist', async () => {
-      await expect(shotService.getShotById('non-existent-id')).rejects.toThrow(
-        'Shot with ID non-existent-id not found'
+      await expect(shotService.getShotById('550e8400-e29b-41d4-a716-446655440010')).rejects.toThrow(
+        'Shot with ID 550e8400-e29b-41d4-a716-446655440010 not found'
       );
     });
   });
@@ -339,8 +347,8 @@ describe('ShotService', () => {
 
       expect(result.preparation).toBeDefined();
       expect(result.preparation?.grind_setting).toBe(20);
-      expect(result.preparation?.dose_grams).toBe(20.0);
-      expect(result.extraction?.yield_grams).toBe(40.0);
+      expect(result.preparation?.dose_grams).toBe("20.00");
+      expect(result.extraction?.yield_grams).toBe("40.00");
       expect(result.extraction?.extraction_time_seconds).toBe(30);
     });
 
@@ -359,16 +367,16 @@ describe('ShotService', () => {
       const result = await shotService.updateShot(createdShot.id, updateData);
 
       expect(result.environment).toBeDefined();
-      expect(result.environment?.ambient_temp_c).toBe(25.0);
+      expect(result.environment?.ambient_temp_c).toBe("25.0");
       expect(result.feedback).toBeDefined();
-      expect(result.feedback?.overall_score).toBe(9.0);
+      expect(result.feedback?.overall_score).toBe("9.0");
     });
 
     it('should throw error when updating non-existent shot', async () => {
       const updateData = { success: false };
 
-      await expect(shotService.updateShot('non-existent-id', updateData)).rejects.toThrow(
-        'Shot with ID non-existent-id not found'
+      await expect(shotService.updateShot('550e8400-e29b-41d4-a716-446655440011', updateData)).rejects.toThrow(
+        'Shot with ID 550e8400-e29b-41d4-a716-446655440011 not found'
       );
     });
   });
@@ -395,7 +403,7 @@ describe('ShotService', () => {
     });
 
     it('should return false when deleting non-existent shot', async () => {
-      const result = await shotService.softDeleteShot('non-existent-id');
+      const result = await shotService.softDeleteShot('550e8400-e29b-41d4-a716-446655440012');
 
       expect(result).toBe(false);
     });
@@ -435,7 +443,7 @@ describe('ShotService', () => {
     });
 
     it('should return false when deleting non-existent shot', async () => {
-      const result = await shotService.hardDeleteShot('non-existent-id');
+      const result = await shotService.hardDeleteShot('550e8400-e29b-41d4-a716-446655440013');
 
       expect(result).toBe(false);
     });
@@ -469,8 +477,8 @@ describe('ShotService', () => {
     });
 
     it('should throw error when restoring non-existent shot', async () => {
-      await expect(shotService.restoreShot('non-existent-id')).rejects.toThrow(
-        'Shot with ID non-existent-id not found or not deleted'
+      await expect(shotService.restoreShot('550e8400-e29b-41d4-a716-446655440099')).rejects.toThrow(
+        'Shot with ID 550e8400-e29b-41d4-a716-446655440099 not found or not deleted'
       );
     });
   });
@@ -518,9 +526,8 @@ describe('ShotService', () => {
     });
 
     it('should handle empty results', async () => {
-      // Clear all shots
-      const shotRepository = testDataSource.getRepository(Shot);
-      await shotRepository.clear();
+      // Use synchronize to drop and recreate all tables to ensure clean state
+      await testDataSource.synchronize(true);
 
       const result = await shotService.getShotStatistics();
 
