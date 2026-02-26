@@ -35,7 +35,9 @@ module.exports = {
     {
       displayName: 'integration',
       testMatch: ['<rootDir>/src/__tests__/integration/**/*.test.ts'],
-      setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.ts'],
+      setupFiles: ['<rootDir>/src/__tests__/env-setup.ts'],
+      setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.integration.ts'],
+      runInBand: true, // Run tests sequentially to avoid database conflicts
     },
   ],
 };
