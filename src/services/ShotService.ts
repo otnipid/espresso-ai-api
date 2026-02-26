@@ -1,4 +1,4 @@
-import { Repository, DataSource, FindManyOptions, FindOneOptions } from 'typeorm';
+import { Repository, DataSource, FindManyOptions, FindOneOptions, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import { Shot } from '../entities/Shot';
 import { ShotPreparation } from '../entities/ShotPreparation';
 import { ShotExtraction } from '../entities/ShotExtraction';
@@ -212,9 +212,13 @@ export class ShotService {
     if (shot_type) where.shot_type = shot_type;
     if (success !== undefined) where.success = success;
     if (dateFrom || dateTo) {
-      where.pulled_at = {};
-      if (dateFrom) where.pulled_at.$gte = dateFrom;
-      if (dateTo) where.pulled_at.$lte = dateTo;
+      if (dateFrom && dateTo) {
+        where.pulled_at = Between(dateFrom, dateTo);
+      } else if (dateFrom) {
+        where.pulled_at = MoreThanOrEqual(dateFrom);
+      } else if (dateTo) {
+        where.pulled_at = LessThanOrEqual(dateTo);
+      }
     }
 
     // Calculate pagination
