@@ -11,7 +11,7 @@ trigger: always_on
 - Always write unit tests for any new code that is generated under the src/ directory.
 - All test functions must include comments documenting the implementation of the test case and the expected outcome, including:
   - What is being tested
-  - Expected results and edge cases
+  - Expected results
   - Any setup or teardown steps
   - Input parameters
   - Any dependencies or external services used
