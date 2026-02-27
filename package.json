@@ -17,7 +17,11 @@
     "test:unit:coverage": "NODE_ENV=test jest --coverage src/__tests__/unit",
     "test:integration": "NODE_ENV=test jest src/__tests__/integration",
     "test:integration:watch": "NODE_ENV=test jest --watch src/__tests__/integration",
-    "test:integration:coverage": "NODE_ENV=test jest --coverage src/__tests__/integration"
+    "test:integration:coverage": "NODE_ENV=test jest --coverage src/__tests__/integration",
+    "test:docker": "docker-compose --profile local up --build --abort-on-container-exit",
+    "test:docker:local": "docker-compose --profile local up --build",
+    "docker:down": "docker-compose --profile local down",
+    "docker:logs": "docker-compose --profile local logs -f api"
   },
   "keywords": [],
   "author": "",
