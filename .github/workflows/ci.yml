@@ -123,30 +123,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, test]
     
-    services:
-      postgres:
-        image: postgres:${{ env.POSTGRES_VERSION }}
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: espresso_integration
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-      redis:
-        image: redis:${{ env.REDIS_VERSION }}
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -160,36 +136,57 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Setup integration test environment
-        run: |
-          cp .env.example .env.integration
-          echo "DB_HOST=localhost" >> .env.integration
-          echo "DB_PORT=5432" >> .env.integration
-          echo "DB_USERNAME=postgres" >> .env.integration
-          echo "DB_PASSWORD=postgres" >> .env.integration
-          echo "DB_DATABASE=espresso_integration" >> .env.integration
-          echo "REDIS_HOST=localhost" >> .env.integration
-          echo "REDIS_PORT=6379" >> .env.integration
-          echo "NODE_ENV=integration" >> .env.integration
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      - name: Wait for services
-        run: |
-          timeout 60 bash -c 'until pg_isready -h localhost -p 5432; do sleep 1; done'
-          timeout 30 bash -c 'until redis-cli -h localhost -p 6379 ping; do sleep 1; done'
+      - name: Login to Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run database setup
+      - name: Set up test environment
         run: |
-          if npm run | grep -q "migration"; then
-            npm run migration:run
-          fi
+          echo "COMPOSE_PROJECT_NAME=espresso_ml_ci" >> $GITHUB_ENV
+          echo "NODE_ENV=test" >> $GITHUB_ENV
+          echo "POSTGRES_USER=${{ secrets.DB_USERNAME }}" >> $GITHUB_ENV
+          echo "POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $GITHUB_ENV
+          echo "POSTGRES_DB=${{ secrets.DB_NAME }}" >> $GITHUB_ENV
+          echo "POSTGRES_PORT=5432" >> $GITHUB_ENV
+          echo "REDIS_PORT=6379" >> $GITHUB_ENV
+          echo "API_PORT=3001" >> $GITHUB_ENV
 
-      - name: Run integration tests
+      - name: Pull custom PostgreSQL image
         run: |
-          if [ -d "src/__tests__/integration" ]; then
-            npm run test:integration || npm run test -- --testPathPattern=integration
-          else
-            echo "No integration tests found, skipping..."
-          fi
+          echo "🐳 Pulling custom PostgreSQL image..."
+          docker pull ghcr.io/otnipid/espresso-ml-postgres:latest
+          echo "✅ Custom PostgreSQL image pulled successfully"
+
+      - name: Run tests with Docker Compose
+        env:
+          COMPOSE_PROJECT_NAME: espresso_ml_ci
+          NODE_ENV: test
+          POSTGRES_USER: ${{ secrets.DB_USERNAME }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.DB_NAME }}
+          POSTGRES_PORT: 5432
+          REDIS_PORT: 6379
+          API_PORT: 3001
+        run: |
+          echo "🚀 Starting test environment with Docker Compose..."
+          docker-compose --profile local up --build --abort-on-container-exit
+          echo "🎉 All tests completed!"
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-reports
+          path: |
+            coverage/
+            test-results/
+          retention-days: 30
 
   # Security Scanning
   security:
