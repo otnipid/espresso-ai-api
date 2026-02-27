@@ -11,13 +11,13 @@ import { Bean } from '../entities/Bean';
 // Test database setup - tries Kubernetes PostgreSQL first, then local PostgreSQL, falls back to SQLite
 let testDataSource: DataSource;
 
-const createKubernetesPostgresDataSource = () => new DataSource({
+const createCustomPostgresDataSource = () => new DataSource({
   type: 'postgres',
-  host: process.env.TEST_DB_HOST || 'espresso-db-postgres.espresso-development.svc.cluster.local',
-  port: parseInt(process.env.TEST_DB_PORT || '5432'),
-  username: process.env.TEST_DB_USERNAME || 'postgres_user',
-  password: process.env.TEST_DB_PASSWORD || 'postgres_password',
-  database: process.env.TEST_DB_DATABASE || 'espresso_ml_dev',
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5432'),
+  username: process.env.DB_USERNAME || 'postgres_user',
+  password: process.env.DB_PASSWORD || 'postgres_password',
+  database: process.env.DB_NAME || 'espresso_ml_test',
   entities: [
     Shot,
     ShotPreparation,
@@ -28,19 +28,19 @@ const createKubernetesPostgresDataSource = () => new DataSource({
     Bean,
     BeanBatch,
   ],
-  synchronize: true,
+  synchronize: false, // Schemas are pre-loaded!
   logging: false,
-  dropSchema: true,
-  ssl: process.env.TEST_DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  dropSchema: false, // Keep pre-loaded schema
+  ssl: false,
 });
 
 const createLocalPostgresDataSource = () => new DataSource({
   type: 'postgres',
-  host: process.env.TEST_DB_HOST || 'localhost',
-  port: parseInt(process.env.TEST_DB_PORT || '5432'),
-  username: process.env.TEST_DB_USERNAME || 'postgres',
-  password: process.env.TEST_DB_PASSWORD || 'password',
-  database: process.env.TEST_DB_DATABASE || 'espresso_ml_test',
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5432'),
+  username: process.env.DB_USERNAME || 'postgres',
+  password: process.env.DB_PASSWORD || 'password',
+  database: process.env.DB_NAME || 'espresso_ml_test',
   entities: [
     Shot,
     ShotPreparation,
@@ -73,47 +73,57 @@ const createSQLiteDataSource = () => new DataSource({
   logging: false,
 });
 
+// Clean test data but preserve schema
+const cleanTestData = async () => {
+  const tables = [
+    'shots', 'shot_preparation', 'shot_extraction', 
+    'shot_environment', 'shot_feedback', 
+    'bean_batches', 'machines', 'beans'
+  ];
+  
+  for (const table of tables) {
+    try {
+      await testDataSource.query(`TRUNCATE TABLE ${table} RESTART IDENTITY CASCADE`);
+      console.log(`🧹 Cleaned table: ${table}`);
+    } catch (error) {
+      console.warn(`⚠️  Could not clean table ${table}:`, error);
+    }
+  }
+};
+
 // Initialize test database
 export const initializeTestDataSource = async (): Promise<DataSource> => {
   if (testDataSource && testDataSource.isInitialized) {
     return testDataSource;
   }
 
-  // Try Kubernetes PostgreSQL first (for CI/CD)
+  // Detect environment and use custom PostgreSQL image
+  const isDockerEnvironment = process.env.TEST_DB_HOST !== 'localhost';
+  const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
+  const isKubernetes = process.env.KUBERNETES_SERVICE_HOST !== undefined;
+
   try {
-    console.log('🐘 Attempting to connect to Kubernetes PostgreSQL test database...');
-    testDataSource = createKubernetesPostgresDataSource();
+    if (isGitHubActions || isDockerEnvironment) {
+      console.log('� Docker/CI environment detected, using custom PostgreSQL image...');
+      testDataSource = createCustomPostgresDataSource();
+    } else if (isKubernetes) {
+      console.log('☸️  Kubernetes environment detected');
+      testDataSource = createCustomPostgresDataSource();
+    } else {
+      console.log('💻 Local development environment detected');
+      testDataSource = createCustomPostgresDataSource();
+    }
+    
     await testDataSource.initialize();
-    console.log('✅ Kubernetes PostgreSQL test database connected successfully');
+    console.log(`✅ Database connected successfully (postgres)`);
+    
+    // Clean test data but preserve schema
+    await cleanTestData();
+    
     return testDataSource;
   } catch (error) {
-    console.log('❌ Kubernetes PostgreSQL connection failed, trying local PostgreSQL...');
-    console.log('📝 Error:', (error as Error).message);
-    
-    // Try local PostgreSQL
-    try {
-      console.log('🐘 Attempting to connect to local PostgreSQL test database...');
-      testDataSource = createLocalPostgresDataSource();
-      await testDataSource.initialize();
-      console.log('✅ Local PostgreSQL test database connected successfully');
-      return testDataSource;
-    } catch (localError) {
-      console.log('❌ Local PostgreSQL connection failed, falling back to SQLite...');
-      console.log('📝 Error:', (localError as Error).message);
-      
-      // Fallback to SQLite
-      try {
-        testDataSource = createSQLiteDataSource();
-        await testDataSource.initialize();
-        console.log('✅ SQLite test database initialized successfully');
-        return testDataSource;
-      } catch (sqliteError) {
-        console.error('❌ SQLite initialization failed:', sqliteError);
-        console.warn('⚠️  All database connections failed. Tests may not work properly.');
-        // Don't throw error, let tests continue with whatever connection we have
-        return testDataSource;
-      }
-    }
+    console.error('❌ Database connection failed:', error);
+    throw error;
   }
 };
 
