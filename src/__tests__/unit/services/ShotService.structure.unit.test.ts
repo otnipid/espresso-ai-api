@@ -34,49 +34,65 @@ describe('ShotService - Structure Tests', () => {
     it('should have createShot method', () => {
       expect(shotServiceInstance.createShot).toBeDefined();
       expect(typeof shotServiceInstance.createShot).toBe('function');
-      expect(shotServiceInstance.createShot.constructor.name).toBe('AsyncFunction');
+      // Check if method is async by checking if it returns a Promise when called with minimal args
+      const result = shotServiceInstance.createShot({} as any);
+      expect(result).toBeInstanceOf(Promise);
     });
 
     it('should have getShotById method', () => {
       expect(shotServiceInstance.getShotById).toBeDefined();
       expect(typeof shotServiceInstance.getShotById).toBe('function');
-      expect(shotServiceInstance.getShotById.constructor.name).toBe('AsyncFunction');
+      // Check if method is async by checking if it returns a Promise
+      const result = shotServiceInstance.getShotById('test-id');
+      expect(result).toBeInstanceOf(Promise);
     });
 
     it('should have getShots method', () => {
       expect(shotServiceInstance.getShots).toBeDefined();
       expect(typeof shotServiceInstance.getShots).toBe('function');
-      expect(shotServiceInstance.getShots.constructor.name).toBe('AsyncFunction');
+      // Check if method is async by checking if it returns a Promise
+      const result = shotServiceInstance.getShots();
+      expect(result).toBeInstanceOf(Promise);
     });
 
     it('should have updateShot method', () => {
       expect(shotServiceInstance.updateShot).toBeDefined();
       expect(typeof shotServiceInstance.updateShot).toBe('function');
-      expect(shotServiceInstance.updateShot.constructor.name).toBe('AsyncFunction');
+      // Check if method is async by checking if it returns a Promise
+      const result = shotServiceInstance.updateShot('test-id', {} as any);
+      expect(result).toBeInstanceOf(Promise);
     });
 
     it('should have softDeleteShot method', () => {
       expect(shotServiceInstance.softDeleteShot).toBeDefined();
       expect(typeof shotServiceInstance.softDeleteShot).toBe('function');
-      expect(shotServiceInstance.softDeleteShot.constructor.name).toBe('AsyncFunction');
+      // Check if method is async by checking if it returns a Promise
+      const result = shotServiceInstance.softDeleteShot('test-id');
+      expect(result).toBeInstanceOf(Promise);
     });
 
     it('should have hardDeleteShot method', () => {
       expect(shotServiceInstance.hardDeleteShot).toBeDefined();
       expect(typeof shotServiceInstance.hardDeleteShot).toBe('function');
-      expect(shotServiceInstance.hardDeleteShot.constructor.name).toBe('AsyncFunction');
+      // Check if method is async by checking if it returns a Promise
+      const result = shotServiceInstance.hardDeleteShot('test-id');
+      expect(result).toBeInstanceOf(Promise);
     });
 
     it('should have restoreShot method', () => {
       expect(shotServiceInstance.restoreShot).toBeDefined();
       expect(typeof shotServiceInstance.restoreShot).toBe('function');
-      expect(shotServiceInstance.restoreShot.constructor.name).toBe('AsyncFunction');
+      // Check if method is async by checking if it returns a Promise
+      const result = shotServiceInstance.restoreShot('test-id');
+      expect(result).toBeInstanceOf(Promise);
     });
 
     it('should have getShotStatistics method', () => {
       expect(shotServiceInstance.getShotStatistics).toBeDefined();
       expect(typeof shotServiceInstance.getShotStatistics).toBe('function');
-      expect(shotServiceInstance.getShotStatistics.constructor.name).toBe('AsyncFunction');
+      // Check if method is async by checking if it returns a Promise
+      const result = shotServiceInstance.getShotStatistics();
+      expect(result).toBeInstanceOf(Promise);
     });
   });
 

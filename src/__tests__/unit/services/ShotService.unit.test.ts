@@ -96,22 +96,30 @@ describe('ShotService - Unit Tests', () => {
   describe('Method Validation', () => {
     it('should validate input parameters for createShot', () => {
       expect(shotService.createShot).toBeDefined();
-      expect(shotService.createShot.constructor.name).toBe('AsyncFunction');
+      // Check if method is async by checking if it returns a Promise
+      const result = shotService.createShot({} as any);
+      expect(result).toBeInstanceOf(Promise);
     });
 
     it('should validate input parameters for getShotById', () => {
       expect(shotService.getShotById).toBeDefined();
-      expect(shotService.getShotById.constructor.name).toBe('AsyncFunction');
+      // Check if method is async by checking if it returns a Promise
+      const result = shotService.getShotById('test-id');
+      expect(result).toBeInstanceOf(Promise);
     });
 
     it('should validate input parameters for getShots', () => {
       expect(shotService.getShots).toBeDefined();
-      expect(shotService.getShots.constructor.name).toBe('AsyncFunction');
+      // Check if method is async by checking if it returns a Promise
+      const result = shotService.getShots();
+      expect(result).toBeInstanceOf(Promise);
     });
 
     it('should validate input parameters for updateShot', () => {
       expect(shotService.updateShot).toBeDefined();
-      expect(shotService.updateShot.constructor.name).toBe('AsyncFunction');
+      // Check if method is async by checking if it returns a Promise
+      const result = shotService.updateShot('test-id', {} as any);
+      expect(result).toBeInstanceOf(Promise);
     });
   });
 
