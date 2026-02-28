@@ -1,4 +1,5 @@
 import { FindOptionsWhere } from "typeorm";
+import { Request, Response } from 'express';
 import { AppDataSource } from "../data-source";
 import { ShotPreparation } from "../entities/ShotPreparation";
 

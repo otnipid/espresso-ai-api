@@ -1,3 +1,4 @@
+import { Request, Response } from 'express';
 import { AppDataSource } from "../data-source";
 import { BeanBatch } from "../entities/BeanBatch";
 
