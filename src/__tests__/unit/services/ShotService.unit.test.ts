@@ -16,7 +16,7 @@ describe('ShotService - Unit Tests', () => {
     // Create mock repositories with Jest mocks
     const mockMachineRepo = {
       findOne: jest.fn().mockResolvedValue({
-        id: 'test-machine-id',
+        id: '550e8400-e29b-41d4-a716-446655440000',
         model: 'Test Machine',
         firmware_version: '1.0.0',
         created_at: new Date(),
@@ -32,7 +32,7 @@ describe('ShotService - Unit Tests', () => {
 
     const mockBeanRepo = {
       findOne: jest.fn().mockResolvedValue({
-        id: 'test-batch-id',
+        id: '550e8400-e29b-41d4-a716-446655440001',
         name: 'Test Bean Batch',
         origin: 'Test Origin',
         created_at: new Date(),
@@ -122,8 +122,8 @@ describe('ShotService - Unit Tests', () => {
       expect(shotService.createShot).toBeDefined();
       // Check if method is async by checking if it returns a Promise
       const result = shotService.createShot({
-        machineId: 'test-machine-id',
-        beanBatchId: 'test-batch-id',
+        machineId: '550e8400-e29b-41d4-a716-446655440000',
+        beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
         shot_type: 'normale' as const,
       } as any);
       expect(result).toBeInstanceOf(Promise);

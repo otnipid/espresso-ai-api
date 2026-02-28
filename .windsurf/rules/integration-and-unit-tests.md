@@ -21,6 +21,49 @@ trigger: always_on
 - Fast execution, no external dependencies
 - Tests validation, calculations, transformations
 
+## 🚨 Unit Test Data Rules
+
+### **Rule: Use Valid UUID Format for Test Data**
+
+**Problem**: Tests using invalid UUID formats (like 'test-machine-id') cause database validation errors when services expect proper UUIDs.
+
+**❌ WRONG - Invalid UUID format:**
+```typescript
+const result = shotService.createShot({
+  machineId: 'test-machine-id', // ❌ Invalid UUID format
+  beanBatchId: 'test-batch-id', // ❌ Invalid UUID format
+  shot_type: 'normale' as const,
+} as any);
+```
+
+**✅ CORRECT - Valid UUID format:**
+```typescript
+const result = shotService.createShot({
+  machineId: '550e8400-e29b-41d4-a716-446655440000', // ✅ Valid UUID
+  beanBatchId: '550e8400-e29b-41d4-a716-446655440001', // ✅ Valid UUID
+  shot_type: 'normale' as const,
+} as any);
+```
+
+**Mock Repository Setup:**
+```typescript
+const mockMachineRepo = {
+  findOne: jest.fn().mockResolvedValue({
+    id: '550e8400-e29b-41d4-a716-446655440000', // ✅ Valid UUID
+    model: 'Test Machine',
+    firmware_version: '1.0.0',
+    created_at: new Date(),
+  }),
+  // ... other methods
+};
+```
+
+**Common UUID Patterns for Tests:**
+- Machine IDs: `550e8400-e29b-41d4-a716-446655440000`
+- Bean Batch IDs: `550e8400-e29b-41d4-a716-446655440001`
+- Shot IDs: `550e8400-e29b-41d4-a716-446655440002`
+- User IDs: `550e8400-e29b-41d4-a716-446655440003`
+
 **Usage:**
 ```bash
 # Run unit tests only

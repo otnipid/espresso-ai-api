@@ -1,4 +1,5 @@
 import { ShotService } from '../../../services/ShotService';
+import { Machine } from '../../../entities/Machine';
 
 // Unmock ShotService for this test file
 jest.unmock('../../../services/ShotService');
@@ -24,37 +25,65 @@ describe('ShotService - Structure Tests', () => {
     beforeAll(() => {
       // Create instance with mock DataSource to avoid database issues
       const mockDataSource = {
-        getRepository: jest.fn().mockReturnValue({
-          findOne: jest.fn().mockImplementation(entity => {
-            if (entity.name === 'Machine') {
-              return Promise.resolve({
-                id: 'test-machine-id',
-                model: 'Test Machine',
-                firmware_version: '1.0.0',
-                created_at: new Date(),
-              });
-            }
-            return Promise.resolve(null);
-          }),
-          find: jest.fn(),
-          save: jest.fn(),
-          remove: jest.fn(),
-          create: jest.fn(),
-          update: jest.fn(),
-          delete: jest.fn(),
-          restore: jest.fn(),
-          // Add manager property for createQueryRunner
-          manager: {
-            connection: {
-              createQueryRunner: jest.fn().mockReturnValue({
-                connect: jest.fn().mockResolvedValue(undefined),
-                startTransaction: jest.fn().mockResolvedValue(undefined),
-                commitTransaction: jest.fn().mockResolvedValue(undefined),
-                rollbackTransaction: jest.fn().mockResolvedValue(undefined),
-                release: jest.fn().mockResolvedValue(undefined),
+        getRepository: jest.fn().mockImplementation((entity) => {
+          if (entity === Machine) {
+            return {
+              findOne: jest.fn().mockImplementation((options) => {
+                if (options.where.id === '550e8400-e29b-41d4-a716-446655440000') {
+                  return Promise.resolve({
+                    id: '550e8400-e29b-41d4-a716-446655440000',
+                    model: 'Test Machine',
+                    firmware_version: '1.0.0',
+                    created_at: new Date(),
+                  });
+                }
+                return Promise.resolve(null);
               }),
+              find: jest.fn(),
+              save: jest.fn(),
+              remove: jest.fn(),
+              create: jest.fn(),
+              update: jest.fn(),
+              delete: jest.fn(),
+              restore: jest.fn(),
+              // Add manager property for createQueryRunner
+              manager: {
+                connection: {
+                  createQueryRunner: jest.fn().mockReturnValue({
+                    connect: jest.fn().mockResolvedValue(undefined),
+                    startTransaction: jest.fn().mockResolvedValue(undefined),
+                    commitTransaction: jest.fn().mockResolvedValue(undefined),
+                    rollbackTransaction: jest.fn().mockResolvedValue(undefined),
+                    release: jest.fn().mockResolvedValue(undefined),
+                  }),
+                },
+              },
+            };
+          }
+          
+          // Default mock for other entities
+          return {
+            findOne: jest.fn().mockResolvedValue(null),
+            find: jest.fn(),
+            save: jest.fn(),
+            remove: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+            restore: jest.fn(),
+            // Add manager property for createQueryRunner
+            manager: {
+              connection: {
+                createQueryRunner: jest.fn().mockReturnValue({
+                  connect: jest.fn().mockResolvedValue(undefined),
+                  startTransaction: jest.fn().mockResolvedValue(undefined),
+                  commitTransaction: jest.fn().mockResolvedValue(undefined),
+                  rollbackTransaction: jest.fn().mockResolvedValue(undefined),
+                  release: jest.fn().mockResolvedValue(undefined),
+                }),
+              },
             },
-          },
+          };
         }),
         createQueryRunner: jest.fn(),
       } as any;
@@ -67,8 +96,8 @@ describe('ShotService - Structure Tests', () => {
       expect(typeof shotServiceInstance.createShot).toBe('function');
       // Check if method is async by checking if it returns a Promise when called with minimal args
       const result = shotServiceInstance.createShot({
-        machineId: 'test-machine-id',
-        beanBatchId: 'test-batch-id',
+        machineId: '550e8400-e29b-41d4-a716-446655440000',
+        beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
         shot_type: 'normale' as const,
       } as any);
       expect(result).toBeInstanceOf(Promise);
