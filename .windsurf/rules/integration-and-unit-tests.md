@@ -64,6 +64,184 @@ const mockMachineRepo = {
 - Shot IDs: `550e8400-e29b-41d4-a716-446655440002`
 - User IDs: `550e8400-e29b-41d4-a716-446655440003`
 
+## 🚨 Complete Entity Coverage in Unit Test Mocks
+
+### **Rule: Mock All Entities the Service Depends On**
+
+**Problem**: Unit tests fail when only some entities are mocked, causing cascading failures as the service tries to access unmocked dependencies.
+
+**❌ WRONG - Incomplete mocking (only mocks Machine):**
+```typescript
+getRepository: jest.fn().mockImplementation((entity) => {
+  if (entity === Machine) {
+    return { /* Machine mock */ };
+  }
+  // ❌ Missing BeanBatch mock - causes test failure
+  return { /* default mock */ };
+});
+```
+
+**✅ CORRECT - Complete entity coverage:**
+```typescript
+getRepository: jest.fn().mockImplementation((entity) => {
+  if (entity === Machine) {
+    return createMockMachineRepo();
+  }
+  if (entity === BeanBatch) {
+    return createMockBeanBatchRepo();
+  }
+  if (entity === Shot) {
+    return createMockShotRepo();
+  }
+  // ✅ All required entities are covered
+  return createMockDefaultRepo();
+});
+```
+
+### **Dependency Mapping Process**
+
+#### **Step 1: Identify All Dependencies**
+```bash
+# Before writing tests, map all dependencies:
+grep -r "getRepository\|findOne\|find" src/services/YourService.ts
+
+# Or analyze the service constructor and methods
+class ShotService {
+  constructor(
+    private shotRepository: Repository<Shot>,        // ✅ Mock needed
+    private machineRepository: Repository<Machine>,    // ✅ Mock needed  
+    private beanBatchRepository: Repository<BeanBatch>, // ✅ Mock needed
+  ) {}
+}
+```
+
+#### **Step 2: Create Complete Mock Setup**
+```typescript
+// ✅ COMPLETE MOCKING PATTERN
+const createMockDataSource = () => ({
+  getRepository: jest.fn().mockImplementation((entity) => {
+    // ✅ Entity-specific mocks with complete method coverage
+    if (entity === Machine) {
+      return {
+        findOne: jest.fn().mockImplementation((options) => {
+          if (options.where.id === TEST_DATA.MACHINE_ID) {
+            return Promise.resolve({
+              id: TEST_DATA.MACHINE_ID,
+              model: 'Test Machine',
+              firmware_version: '1.0.0',
+              created_at: new Date(),
+            });
+          }
+          return Promise.resolve(null);
+        }),
+        find: jest.fn(),
+        save: jest.fn(),
+        remove: jest.fn(),
+        create: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+        restore: jest.fn(),
+        // ✅ Don't forget queryRunner for transaction methods
+        manager: {
+          connection: {
+            createQueryRunner: jest.fn().mockReturnValue({
+              connect: jest.fn().mockResolvedValue(undefined),
+              startTransaction: jest.fn().mockResolvedValue(undefined),
+              commitTransaction: jest.fn().mockResolvedValue(undefined),
+              rollbackTransaction: jest.fn().mockResolvedValue(undefined),
+              release: jest.fn().mockResolvedValue(undefined),
+            }),
+          },
+        },
+      };
+    }
+    
+    // ✅ Repeat for all other entities
+    if (entity === BeanBatch) return createMockBeanBatchRepo();
+    if (entity === Shot) return createMockShotRepo();
+    
+    // ✅ Default fallback for unknown entities
+    return createMockDefaultRepo();
+  }),
+});
+```
+
+#### **Step 3: Use Consistent Test Data**
+```typescript
+// ✅ CONSISTENT TEST DATA CONSTANTS
+const TEST_DATA = {
+  MACHINE_ID: '550e8400-e29b-41d4-a716-446655440000',
+  BEAN_BATCH_ID: '550e8400-e29b-41d4-a716-446655440001',
+  SHOT_ID: '550e8400-e29b-41d4-a716-446655440002',
+};
+
+// ✅ Ensure test data matches mock responses
+const result = service.createShot({
+  machineId: TEST_DATA.MACHINE_ID,        // ✅ Matches mock
+  beanBatchId: TEST_DATA.BEAN_BATCH_ID,  // ✅ Matches mock
+  shot_type: 'normale' as const,
+});
+```
+
+### **Mock Coverage Checklist**
+
+#### **For Each Service Unit Test:**
+- [ ] **All Repository Entities**: Every entity in constructor is mocked
+- [ ] **Complete Method Coverage**: All repository methods (findOne, save, remove, etc.)
+- [ ] **QueryRunner Support**: All transaction methods (connect, startTransaction, etc.)
+- [ ] **Valid UUID Format**: All IDs use proper UUID format
+- [ ] **Data Consistency**: Test data matches mock responses
+- [ ] **Default Fallback**: Handle unknown entities gracefully
+
+#### **Common Missing Mocks:**
+```typescript
+// ❌ FORGOTTEN - Transaction support
+manager: {
+  connection: {
+    createQueryRunner: jest.fn(), // ❌ Returns undefined
+  },
+},
+
+// ❌ FORGOTTEN - Complete method set
+findOne: jest.fn(),
+// ❌ Missing: save, remove, create, update, delete, restore
+
+// ❌ FORGOTTEN - Entity coverage
+if (entity === Machine) return mockMachineRepo;
+// ❌ Missing: BeanBatch, Shot, other entities
+```
+
+### **Incremental Testing Strategy**
+
+#### **Test One Dependency at a Time:**
+```typescript
+// ✅ Test machine validation first
+it('should validate machine exists', async () => {
+  const mockMachineRepo = createMockMachineRepo();
+  // Only test machine lookup logic
+});
+
+// ✅ Then test bean batch validation
+it('should validate bean batch exists', async () => {
+  const mockBeanBatchRepo = createMockBeanBatchRepo();
+  // Only test bean batch lookup logic
+});
+
+// ✅ Finally test complete flow
+it('should create shot successfully', async () => {
+  const mockDataSource = createMockDataSource();
+  // Test complete flow with all mocks
+});
+```
+
+### **Benefits of Complete Coverage:**
+
+1. **Prevents Cascading Failures**: One missing mock won't cause multiple test failures
+2. **Improves Debugging**: Clear separation of concerns in test failures
+3. **Ensures Comprehensive Testing**: All service paths are properly tested
+4. **Maintainability**: Easy to identify and fix missing dependencies
+5. **Consistency**: Standardized pattern across all unit tests
+
 **Usage:**
 ```bash
 # Run unit tests only
