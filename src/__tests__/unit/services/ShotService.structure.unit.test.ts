@@ -25,7 +25,7 @@ describe('ShotService - Structure Tests', () => {
       // Create instance with mock DataSource to avoid database issues
       const mockDataSource = {
         getRepository: jest.fn().mockReturnValue({
-          findOne: jest.fn().mockImplementation((entity) => {
+          findOne: jest.fn().mockImplementation(entity => {
             if (entity.name === 'Machine') {
               return Promise.resolve({
                 id: 'test-machine-id',
