@@ -40,8 +40,8 @@ jobs:
       - name: Run ESLint (if configured)
         run: |
           if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ]; then
-            # Use ESLint v8 for legacy configuration support
-            npm install -g eslint@8
+            # Use ESLint v8 for legacy configuration support with TypeScript plugins
+            npm install -g eslint@8 @typescript-eslint/parser@6 @typescript-eslint/eslint-plugin@6
             npx eslint src/ --max-warnings=0
           elif [ -f "eslint.config.js" ]; then
             npx eslint src/ --max-warnings=0
