@@ -31,9 +31,9 @@ describe('ShotService - Structure Tests', () => {
           if (entity === Machine) {
             return {
               findOne: jest.fn().mockImplementation(options => {
-                if (options.where.id === '550e8400-e29b-41d4-a716-446655440000') {
+                if (options.where.id === '550e8400-e29b-41d4-a716-4466554400000') {
                   return Promise.resolve({
-                    id: '550e8400-e29b-41d4-a716-446655440000',
+                    id: '550e8400-e29b-41d4-a716-4466554400000',
                     model: 'Test Machine',
                     firmware_version: '1.0.0',
                     created_at: new Date(),
@@ -48,7 +48,7 @@ describe('ShotService - Structure Tests', () => {
               update: jest.fn(),
               delete: jest.fn(),
               restore: jest.fn(),
-              // Add manager property for createQueryRunner
+              // Add manager property with connection.createQueryRunner
               manager: {
                 connection: {
                   createQueryRunner: jest.fn().mockReturnValue({
@@ -57,13 +57,6 @@ describe('ShotService - Structure Tests', () => {
                     commitTransaction: jest.fn().mockResolvedValue(undefined),
                     rollbackTransaction: jest.fn().mockResolvedValue(undefined),
                     release: jest.fn().mockResolvedValue(undefined),
-                    manager: {
-                      save: jest.fn().mockResolvedValue({
-                        id: '550e8400-e29b-41d4-a716-4466554402',
-                        shot_type: 'normale',
-                        created_at: new Date(),
-                      }),
-                    },
                   }),
                 },
               },
@@ -90,7 +83,7 @@ describe('ShotService - Structure Tests', () => {
               update: jest.fn(),
               delete: jest.fn(),
               restore: jest.fn(),
-              // Add manager property for createQueryRunner
+              // Add manager property with connection.createQueryRunner
               manager: {
                 connection: {
                   createQueryRunner: jest.fn().mockReturnValue({
@@ -99,13 +92,6 @@ describe('ShotService - Structure Tests', () => {
                     commitTransaction: jest.fn().mockResolvedValue(undefined),
                     rollbackTransaction: jest.fn().mockResolvedValue(undefined),
                     release: jest.fn().mockResolvedValue(undefined),
-                    manager: {
-                      save: jest.fn().mockResolvedValue({
-                        id: '550e8400-e29b-41d4-a716-4466554402',
-                        shot_type: 'normale',
-                        created_at: new Date(),
-                      }),
-                    },
                   }),
                 },
               },
@@ -131,7 +117,7 @@ describe('ShotService - Structure Tests', () => {
               update: jest.fn(),
               delete: jest.fn(),
               restore: jest.fn(),
-              // Add manager property for createQueryRunner
+              // Add manager property with connection.createQueryRunner
               manager: {
                 connection: {
                   createQueryRunner: jest.fn().mockReturnValue({
@@ -140,13 +126,6 @@ describe('ShotService - Structure Tests', () => {
                     commitTransaction: jest.fn().mockResolvedValue(undefined),
                     rollbackTransaction: jest.fn().mockResolvedValue(undefined),
                     release: jest.fn().mockResolvedValue(undefined),
-                    manager: {
-                      save: jest.fn().mockResolvedValue({
-                        id: '550e8400-e29b-41d4-a716-4466554402',
-                        shot_type: 'normale',
-                        created_at: new Date(),
-                      }),
-                    },
                   }),
                 },
               },
