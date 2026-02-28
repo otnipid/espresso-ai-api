@@ -64,6 +64,285 @@ npm run test:integration:coverage
 npm run test:integration:watch
 ```
 
+# Critical Integration Test Rules
+
+## 🚨 Test Isolation & Data Synchronization
+
+### **Rule: Prevent Shared Database State Between Test Files**
+
+**Problem**: Multiple integration test files sharing the same database cause data conflicts and test failures.
+
+**❌ WRONG - Multiple test files with shared initialization:**
+```typescript
+// File 1: ShotService.basic.integration.test.ts
+beforeAll(async () => {
+  await initializeTestDataSource(); // Creates schema + data
+});
+
+// File 2: ShotService.integration.test.ts  
+beforeAll(async () => {
+  await initializeTestDataSource(); // Tries to create schema again!
+});
+```
+
+**✅ CORRECT - Shared initialization with proper isolation:**
+```typescript
+// setup.integration.ts
+export const initializeTestDataSource = async (): Promise<DataSource> => {
+  try {
+    // If already initialized, just clean the data
+    if (testDataSource && testDataSource.isInitialized) {
+      console.log('🔄 Database already initialized, cleaning data...');
+      await cleanTestData();
+      return testDataSource;
+    }
+
+    // Initialize only once
+    console.log('🔌 Initializing test database connection...');
+    testDataSource = createCustomPostgresDataSource();
+    await testDataSource.initialize();
+    await cleanTestData();
+    return testDataSource;
+  } catch (error) {
+    console.error('❌ Database connection failed:', error);
+    throw error;
+  }
+};
+
+// Global setup - runs once per test suite
+beforeAll(async () => {
+  if (!isInitialized) {
+    await initializeTestDataSource();
+    isInitialized = true;
+  }
+});
+
+// Clean data between tests - NOT schema recreation
+beforeEach(async () => {
+  if (isInitialized && testDataSource && testDataSource.isInitialized) {
+    try {
+      await cleanTestData(); // Only clean data, don't recreate schema
+    } catch (cleanupError) {
+      console.warn('⚠️  Database cleanup failed:', cleanupError);
+    }
+  }
+});
+```
+
+### **Rule: Use Data Cleanup, Not Schema Recreation**
+
+**Problem**: Using `testDataSource.synchronize(true)` in `beforeEach` causes PostgreSQL type conflicts.
+
+**❌ WRONG - Schema recreation in beforeEach:**
+```typescript
+beforeEach(async () => {
+  // This causes PostgreSQL type conflicts!
+  await testDataSource.synchronize(true);
+});
+```
+
+**✅ CORRECT - Data cleanup only:**
+```typescript
+const cleanTestData = async () => {
+  const tables = [
+    'shots', 'shot_preparation', 'shot_extraction', 
+    'shot_environment', 'shot_feedback', 
+    'bean_batches', 'machines', 'bean'
+  ];
+  
+  for (const table of tables) {
+    try {
+      await testDataSource.query(`TRUNCATE TABLE ${table} RESTART IDENTITY CASCADE`);
+      console.log(`🧹 Cleaned table: ${table}`);
+    } catch (error) {
+      console.warn(`⚠️  Could not clean table ${table}:`, error);
+    }
+  }
+};
+
+beforeEach(async () => {
+  await cleanTestData(); // Safe data cleanup only
+});
+```
+
+### **Rule: Sequential Test Execution for Database Tests**
+
+**Problem**: Parallel database tests cause race conditions and deadlocks.
+
+**✅ CORRECT Jest Configuration:**
+```javascript
+// jest.config.js
+projects: [
+  {
+    displayName: 'integration',
+    preset: 'ts-jest',
+    testEnvironment: 'node',
+    testMatch: ['<rootDir>/src/__tests__/integration/**/*.test.ts'],
+    setupFiles: ['<rootDir>/src/__tests__/env-setup.ts'],
+    setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.integration.ts'],
+    runInBand: true, // ✅ Run tests sequentially to avoid database conflicts
+  },
+],
+```
+
+### **Rule: One Database Schema per Test Session**
+
+**Problem**: Multiple schema initializations cause PostgreSQL type conflicts.
+
+**✅ CORRECT - Single initialization pattern:**
+```typescript
+// setup.integration.ts
+let testDataSource: DataSource;
+let isInitialized = false;
+
+export const initializeTestDataSource = async (): Promise<DataSource> => {
+  // Initialize only once per test session
+  if (testDataSource && testDataSource.isInitialized) {
+    await cleanTestData();
+    return testDataSource;
+  }
+  
+  // Create schema only once
+  testDataSource = createCustomPostgresDataSource();
+  await testDataSource.initialize();
+  await cleanTestData();
+  return testDataSource;
+};
+```
+
+### **Rule: Separate Jest Projects for Multiple Integration Test Files**
+
+**Problem**: Multiple integration test files sharing the same setup file cause database conflicts and test isolation issues.
+
+**❌ WRONG - Single project for all integration tests:**
+```javascript
+// jest.config.js
+projects: [
+  {
+    displayName: 'integration',
+    preset: 'ts-jest',
+    testEnvironment: 'node',
+    testMatch: ['<rootDir>/src/__tests__/integration/**/*.test.ts'], // ❌ All files share setup
+    setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.integration.ts'],
+    runInBand: true,
+  },
+],
+```
+
+**✅ CORRECT - Separate projects with isolated setups:**
+```javascript
+// jest.config.js
+projects: [
+  {
+    displayName: 'integration-basic',
+    preset: 'ts-jest',
+    testEnvironment: 'node',
+    testMatch: ['<rootDir>/src/__tests__/integration/services/ShotService.basic.integration.test.ts'],
+    setupFiles: ['<rootDir>/src/__tests__/env-setup.ts'],
+    setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.integration.basic.ts'], // ✅ Separate setup
+    runInBand: true,
+  },
+  {
+    displayName: 'integration-main',
+    preset: 'ts-jest',
+    testEnvironment: 'node',
+    testMatch: ['<rootDir>/src/__tests__/integration/services/ShotService.integration.test.ts'],
+    setupFiles: ['<rootDir>/src/__tests__/env-setup.ts'],
+    setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.integration.main.ts'], // ✅ Separate setup
+    runInBand: true,
+  },
+],
+```
+
+**✅ CORRECT - Separate setup files with different databases:**
+```typescript
+// setup.integration.basic.ts
+const createCustomPostgresDataSource = () => new DataSource({
+  type: 'postgres',
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5433'),
+  username: process.env.DB_USERNAME || 'postgres_user',
+  password: process.env.DB_PASSWORD || 'postgres_password',
+  database: process.env.DB_NAME || 'espresso_ml_test_basic', // ✅ Different database
+  entities: [/* ... */],
+  synchronize: true,
+  logging: false,
+  dropSchema: true,
+  ssl: false,
+});
+
+// setup.integration.main.ts
+const createCustomPostgresDataSource = () => new DataSource({
+  type: 'postgres',
+  host: process.env.DB_HOST || 'localhost',
+  port: parseInt(process.env.DB_PORT || '5433'),
+  username: process.env.DB_USERNAME || 'postgres_user',
+  password: process.env.DB_PASSWORD || 'postgres_password',
+  database: process.env.DB_NAME || 'espresso_ml_test_main', // ✅ Different database
+  entities: [/* ... */],
+  synchronize: true,
+  logging: false,
+  dropSchema: true,
+  ssl: false,
+});
+```
+
+**✅ CORRECT - Update test file imports:**
+```typescript
+// ShotService.basic.integration.test.ts
+import { initializeTestDataSource, getTestDataSource, createTestMachine, createTestBean, createTestBeanBatch } from '../../setup.integration.basic'; // ✅ Import from basic setup
+
+// ShotService.integration.test.ts
+import { initializeTestDataSource, getTestDataSource, createTestMachine, createTestBean, createTestBeanBatch } from '../../setup.integration.main'; // ✅ Import from main setup
+```
+
+## 🐛 Common Integration Test Pitfalls
+
+### **1. PostgreSQL Type Conflicts**
+```bash
+# Error: duplicate key value violates unique constraint "pg_type_typname_nsp_index"
+```
+**Solution**: Initialize schema once, clean data between tests.
+
+### **2. Test Data Leaking Between Tests**
+```bash
+# Expected length: 2, Received length: 4
+```
+**Solution**: Use `TRUNCATE TABLE` with `CASCADE` in `beforeEach`.
+
+### **3. Database Connection Pool Exhaustion**
+```bash
+# Error: too many connections
+```
+**Solution**: Use `runInBand: true` and proper cleanup in `afterAll`.
+
+### **4. Concurrent Schema Creation**
+```bash
+# Error: relation "bean" does not exist
+```
+**Solution**: Shared initialization with proper state checking.
+
+### **5. Multiple Integration Test Files Conflicts**
+```bash
+# Expected length: 2, Received length: 0
+# Test Suites: 1 failed, 1 passed, 2 total
+```
+**Solution**: Create separate Jest projects with isolated setup files and databases.
+
+## 📋 Integration Test Checklist
+
+- [ ] **Single Schema Initialization**: Schema created once per test session
+- [ ] **Data Cleanup Between Tests**: Use `TRUNCATE` not `DROP/CREATE`
+- [ ] **Sequential Execution**: `runInBand: true` in Jest config
+- [ ] **Proper Table Names**: Verify exact table names in cleanup
+- [ ] **Connection Management**: Proper `afterAll` cleanup
+- [ ] **Error Handling**: Graceful handling of cleanup failures
+- [ ] **Environment Variables**: Proper `NODE_ENV=test` setup
+- [ ] **Separate Jest Projects**: Each integration test file in its own project
+- [ ] **Isolated Setup Files**: Separate setup files for each test project
+- [ ] **Different Database Names**: Use unique database names per project
+- [ ] **Correct Import Paths**: Update test files to import from correct setup
+
 # All Tests
 ```bash
 # Run all tests (unit + integration)
