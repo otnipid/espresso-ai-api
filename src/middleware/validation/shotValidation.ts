@@ -44,11 +44,11 @@ export const validate = <T>(schema: ZodSchema<T>, source: 'body' | 'query' | 'pa
     try {
       const data = req[source];
       const validatedData = await schema.parseAsync(data);
-      
+
       // Store validated data in request for use in controllers
       req.validated = req.validated || {};
       (req.validated as any)[source] = validatedData;
-      
+
       next();
     } catch (error) {
       if (error instanceof ZodError) {
@@ -57,14 +57,14 @@ export const validate = <T>(schema: ZodSchema<T>, source: 'body' | 'query' | 'pa
           message: err.message,
           code: err.code,
         }));
-        
+
         return res.status(400).json({
           error: 'Validation failed',
           message: 'Invalid input data',
           details: validationErrors,
         });
       }
-      
+
       // For non-Zod errors, pass to next error handler
       next(error);
     }
@@ -78,17 +78,17 @@ export const validate = <T>(schema: ZodSchema<T>, source: 'body' | 'query' | 'pa
 export const validateMachineExists = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const machineId = (req.validated?.body as any)?.machineId || req.body?.machineId;
-    
+
     if (!machineId) {
       return res.status(400).json({
         error: 'Validation failed',
         message: 'Machine ID is required',
       });
     }
-    
+
     const machineRepository = AppDataSource.getRepository(Machine);
     const machine = await machineRepository.findOne({ where: { id: machineId } });
-    
+
     if (!machine) {
       return res.status(404).json({
         error: 'Validation failed',
@@ -96,11 +96,11 @@ export const validateMachineExists = async (req: Request, res: Response, next: N
         field: 'machineId',
       });
     }
-    
+
     // Store the machine in request for use in controllers
     req.validated = req.validated || {};
     req.validated.machine = machine;
-    
+
     next();
   } catch (error) {
     next(error);
@@ -114,20 +114,20 @@ export const validateMachineExists = async (req: Request, res: Response, next: N
 export const validateBeanBatchExists = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const beanBatchId = (req.validated?.body as any)?.beanBatchId || req.body?.beanBatchId;
-    
+
     if (!beanBatchId) {
       return res.status(400).json({
         error: 'Validation failed',
         message: 'Bean batch ID is required',
       });
     }
-    
+
     const beanBatchRepository = AppDataSource.getRepository(BeanBatch);
-    const beanBatch = await beanBatchRepository.findOne({ 
+    const beanBatch = await beanBatchRepository.findOne({
       where: { id: beanBatchId },
-      relations: ['bean']
+      relations: ['bean'],
     });
-    
+
     if (!beanBatch) {
       return res.status(404).json({
         error: 'Validation failed',
@@ -135,11 +135,11 @@ export const validateBeanBatchExists = async (req: Request, res: Response, next:
         field: 'beanBatchId',
       });
     }
-    
+
     // Store the bean batch in request for use in controllers
     req.validated = req.validated || {};
     req.validated.beanBatch = beanBatch;
-    
+
     next();
   } catch (error) {
     next(error);
@@ -153,20 +153,20 @@ export const validateBeanBatchExists = async (req: Request, res: Response, next:
 export const validateShotExists = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const shotId = req.validated?.params?.id || req.params?.id;
-    
+
     if (!shotId) {
       return res.status(400).json({
         error: 'Validation failed',
         message: 'Shot ID is required',
       });
     }
-    
+
     const shotRepository = AppDataSource.getRepository(Shot);
-    const shot = await shotRepository.findOne({ 
+    const shot = await shotRepository.findOne({
       where: { id: shotId },
-      relations: ['machine', 'beanBatch', 'preparation', 'extraction', 'environment', 'feedback']
+      relations: ['machine', 'beanBatch', 'preparation', 'extraction', 'environment', 'feedback'],
     });
-    
+
     if (!shot) {
       return res.status(404).json({
         error: 'Validation failed',
@@ -174,11 +174,11 @@ export const validateShotExists = async (req: Request, res: Response, next: Next
         field: 'id',
       });
     }
-    
+
     // Store the shot in request for use in controllers
     req.validated = req.validated || {};
     req.validated.shot = shot;
-    
+
     next();
   } catch (error) {
     next(error);
@@ -189,38 +189,42 @@ export const validateShotExists = async (req: Request, res: Response, next: Next
  * Custom validation middleware for multiple shot existence
  * Validates that all shot IDs in an array exist in the database
  */
-export const validateMultipleShotsExist = async (req: Request, res: Response, next: NextFunction) => {
+export const validateMultipleShotsExist = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const ids = (req.validated?.body as any)?.ids || req.body?.ids;
-    
+
     if (!Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({
         error: 'Validation failed',
         message: 'At least one shot ID is required',
       });
     }
-    
+
     const shotRepository = AppDataSource.getRepository(Shot);
     const shots = await shotRepository.find({
       where: ids.map(id => ({ id })),
-      relations: ['machine', 'beanBatch']
+      relations: ['machine', 'beanBatch'],
     });
-    
+
     if (shots.length !== ids.length) {
       const foundIds = shots.map(shot => shot.id);
       const missingIds = ids.filter((id: string) => !foundIds.includes(id));
-      
+
       return res.status(404).json({
         error: 'Validation failed',
         message: 'Some shots not found',
         missingIds,
       });
     }
-    
+
     // Store the shots in request for use in controllers
     req.validated = req.validated || {};
     req.validated.shots = shots;
-    
+
     next();
   } catch (error) {
     next(error);
@@ -231,16 +235,20 @@ export const validateMultipleShotsExist = async (req: Request, res: Response, ne
  * Business logic validation middleware
  * Validates business rules that require database context
  */
-export const validateShotBusinessRules = async (req: Request, res: Response, next: NextFunction) => {
+export const validateShotBusinessRules = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     const shotData = req.validated?.body || req.body;
-    
+
     // Validate extraction ratios if both dose and yield are provided
     if (shotData.extraction?.dose_grams && shotData.extraction?.yield_grams) {
       const dose = shotData.extraction.dose_grams;
       const yield_ = shotData.extraction.yield_grams;
       const ratio = yield_ / dose;
-      
+
       if (ratio < 0.5 || ratio > 3.0) {
         return res.status(400).json({
           error: 'Business rule violation',
@@ -251,13 +259,13 @@ export const validateShotBusinessRules = async (req: Request, res: Response, nex
         });
       }
     }
-    
+
     // Validate dose consistency between preparation and extraction
     if (shotData.preparation?.dose_grams && shotData.extraction?.dose_grams) {
       const prepDose = shotData.preparation.dose_grams;
       const extDose = shotData.extraction.dose_grams;
       const difference = Math.abs(prepDose - extDose);
-      
+
       if (difference > 0.5) {
         return res.status(400).json({
           error: 'Business rule violation',
@@ -269,12 +277,12 @@ export const validateShotBusinessRules = async (req: Request, res: Response, nex
         });
       }
     }
-    
+
     // Validate date ranges
     if (shotData.pulled_at) {
       const pulledAt = new Date(shotData.pulled_at);
       const now = new Date();
-      
+
       if (pulledAt > now) {
         return res.status(400).json({
           error: 'Business rule violation',
@@ -284,11 +292,11 @@ export const validateShotBusinessRules = async (req: Request, res: Response, nex
           currentTime: now.toISOString(),
         });
       }
-      
+
       // Don't allow shots older than 1 year in the future
       const oneYearAgo = new Date();
       oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-      
+
       if (pulledAt < oneYearAgo) {
         return res.status(400).json({
           error: 'Business rule violation',
@@ -299,7 +307,7 @@ export const validateShotBusinessRules = async (req: Request, res: Response, nex
         });
       }
     }
-    
+
     next();
   } catch (error) {
     next(error);
@@ -332,8 +340,8 @@ export const validateUpdateShot = [
   // Only validate machine/bean batch if they're being updated
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const updateData = (req.validated?.body as any);
-      
+      const updateData = req.validated?.body as any;
+
       if (updateData?.machineId) {
         await validateMachineExists(req, res, next);
       } else {
@@ -345,8 +353,8 @@ export const validateUpdateShot = [
   },
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const updateData = (req.validated?.body as any);
-      
+      const updateData = req.validated?.body as any;
+
       if (updateData?.beanBatchId) {
         await validateBeanBatchExists(req, res, next);
       } else {
@@ -362,10 +370,7 @@ export const validateUpdateShot = [
 /**
  * Validation middleware for shot ID parameter
  */
-export const validateShotId = [
-  validate(ShotIdSchema, 'params'),
-  validateShotExists,
-];
+export const validateShotId = [validate(ShotIdSchema, 'params'), validateShotExists];
 
 /**
  * Validation middleware for bulk operations

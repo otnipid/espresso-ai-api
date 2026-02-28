@@ -49,7 +49,7 @@ describe('ShotService - Unit Tests', () => {
 
     // Create a mock data source that returns mock repositories
     mockDataSource = {
-      getRepository: jest.fn().mockImplementation((entity) => {
+      getRepository: jest.fn().mockImplementation(entity => {
         if (entity === Shot) {
           return mockShotRepo;
         } else if (entity === Machine) {
@@ -161,7 +161,7 @@ describe('ShotService - Unit Tests', () => {
 
       // Create test-specific dataSource that returns our mocks
       const testDataSource = {
-        getRepository: jest.fn().mockImplementation((entity) => {
+        getRepository: jest.fn().mockImplementation(entity => {
           if (entity === Machine) return mockMachineRepo;
           if (entity === Shot) return mockShotRepo;
           return {
@@ -180,18 +180,20 @@ describe('ShotService - Unit Tests', () => {
       // Create ShotService with mocked repositories
       const testShotService = new ShotService(testDataSource);
 
-      await expect(testShotService.updateShot('non-existent-id', invalidUpdateData)).rejects.toThrow();
+      await expect(
+        testShotService.updateShot('non-existent-id', invalidUpdateData)
+      ).rejects.toThrow();
     });
   });
 
   describe('Repository Access', () => {
     it('should have access to all required repositories', () => {
       expect(mockDataSource.getRepository).toBeDefined();
-      
+
       const machineRepo = mockDataSource.getRepository('Machine');
       const beanRepo = mockDataSource.getRepository('Bean');
       const shotRepo = mockDataSource.getRepository('Shot');
-      
+
       expect(machineRepo).toBeDefined();
       expect(beanRepo).toBeDefined();
       expect(shotRepo).toBeDefined();

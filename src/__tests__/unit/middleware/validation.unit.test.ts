@@ -1,7 +1,15 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError, z } from 'zod';
-import { validate, validateMachineExists, validateBeanBatchExists } from '../../../middleware/validation/shotValidation';
-import { CreateShotSchema, UpdateShotSchema, ShotQuerySchema } from '../../../middleware/validation/schemas';
+import {
+  validate,
+  validateMachineExists,
+  validateBeanBatchExists,
+} from '../../../middleware/validation/shotValidation';
+import {
+  CreateShotSchema,
+  UpdateShotSchema,
+  ShotQuerySchema,
+} from '../../../middleware/validation/schemas';
 import { Machine } from '../../../entities/Machine';
 import { BeanBatch } from '../../../entities/BeanBatch';
 
@@ -13,12 +21,13 @@ jest.unmock('../../../entities/Machine');
 jest.unmock('../../../entities/BeanBatch');
 
 // Mock Express request/response
-const mockRequest = (body: any = {}, query: any = {}, params: any = {}) => ({
-  body,
-  query,
-  params,
-  validated: {},
-} as Request);
+const mockRequest = (body: any = {}, query: any = {}, params: any = {}) =>
+  ({
+    body,
+    query,
+    params,
+    validated: {},
+  }) as Request;
 
 const mockResponse = () => {
   const res: any = {};
@@ -82,11 +91,14 @@ describe('Validation Middleware', () => {
     });
 
     it('should validate query parameters', async () => {
-      const req = mockRequest({}, {
-        page: '1',
-        limit: '10',
-        success: 'true',
-      });
+      const req = mockRequest(
+        {},
+        {
+          page: '1',
+          limit: '10',
+          success: 'true',
+        }
+      );
       const res = mockResponse();
       const next = mockNext;
 
@@ -100,9 +112,13 @@ describe('Validation Middleware', () => {
     });
 
     it('should validate route parameters', async () => {
-      const req = mockRequest({}, {}, {
-        id: '550e8400-e29b-41d4-a716-446655440000',
-      });
+      const req = mockRequest(
+        {},
+        {},
+        {
+          id: '550e8400-e29b-41d4-a716-446655440000',
+        }
+      );
       const res = mockResponse();
       const next = mockNext;
 
@@ -245,12 +261,15 @@ describe('Validation Middleware', () => {
 
   describe('Query validation', () => {
     it('should validate pagination parameters', async () => {
-      const req = mockRequest({}, {
-        page: '2',
-        limit: '15',
-        sortBy: 'pulled_at',
-        sortOrder: 'ASC',
-      });
+      const req = mockRequest(
+        {},
+        {
+          page: '2',
+          limit: '15',
+          sortBy: 'pulled_at',
+          sortOrder: 'ASC',
+        }
+      );
       const res = mockResponse();
       const next = mockNext;
 
@@ -278,10 +297,13 @@ describe('Validation Middleware', () => {
     });
 
     it('should validate date range in query', async () => {
-      const req = mockRequest({}, {
-        dateFrom: '2024-01-01T00:00:00Z',
-        dateTo: '2024-12-31T23:59:59Z',
-      });
+      const req = mockRequest(
+        {},
+        {
+          dateFrom: '2024-01-01T00:00:00Z',
+          dateTo: '2024-12-31T23:59:59Z',
+        }
+      );
       const res = mockResponse();
       const next = mockNext;
 
@@ -293,10 +315,13 @@ describe('Validation Middleware', () => {
     });
 
     it('should reject invalid date range', async () => {
-      const req = mockRequest({}, {
-        dateFrom: '2024-12-31T00:00:00Z',
-        dateTo: '2024-01-01T00:00:00Z', // Before dateFrom
-      });
+      const req = mockRequest(
+        {},
+        {
+          dateFrom: '2024-12-31T00:00:00Z',
+          dateTo: '2024-01-01T00:00:00Z', // Before dateFrom
+        }
+      );
       const res = mockResponse();
       const next = mockNext;
 
@@ -382,7 +407,7 @@ describe('Validation Middleware', () => {
       await validate(TypeSafetySchema, 'body')(req, res, next);
 
       expect(next).toHaveBeenCalledWith();
-      
+
       // TypeScript should infer the correct type
       const validatedData = req.validated?.body as any;
       expect(validatedData.shot_type).toBe('normale');
@@ -411,7 +436,7 @@ describe('Validation Middleware', () => {
       await validate(OptionalFieldsSchema, 'body')(req, res, next);
 
       expect(next).toHaveBeenCalledWith();
-      
+
       const validatedData = req.validated?.body as any;
       expect(validatedData.success).toBeUndefined();
       expect(validatedData.notes).toBeUndefined();
@@ -431,7 +456,7 @@ describe('Database Validation Middleware', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Setup mock AppDataSource
     const mockAppDataSource = {
       getRepository: jest.fn().mockImplementation((entity: any) => {
@@ -442,7 +467,7 @@ describe('Database Validation Middleware', () => {
         };
       }),
     };
-    
+
     // Mock the data-source module
     jest.doMock('../../../data-source', () => ({
       AppDataSource: mockAppDataSource,
@@ -456,26 +481,28 @@ describe('Database Validation Middleware', () => {
       const next = mockNext;
 
       // Mock the validateMachineExists function directly
-      const mockValidateMachineExists = jest.fn().mockImplementation(async (req: Request, res: Response, next: NextFunction) => {
-        const machineId = req.body?.machineId || (req.validated?.body as any)?.machineId;
-        
-        if (machineId === 'valid-machine-id') {
-          req.validated = req.validated || {};
-          req.validated.machine = { 
-            id: 'valid-machine-id', 
-            model: 'Test Machine',
-            created_at: new Date(),
-            shots: [],
-          } as any;
-          next();
-        } else {
-          res.status(404).json({
-            error: 'Validation failed',
-            message: 'Machine not found',
-            field: 'machineId',
-          });
-        }
-      });
+      const mockValidateMachineExists = jest
+        .fn()
+        .mockImplementation(async (req: Request, res: Response, next: NextFunction) => {
+          const machineId = req.body?.machineId || (req.validated?.body as any)?.machineId;
+
+          if (machineId === 'valid-machine-id') {
+            req.validated = req.validated || {};
+            req.validated.machine = {
+              id: 'valid-machine-id',
+              model: 'Test Machine',
+              created_at: new Date(),
+              shots: [],
+            } as any;
+            next();
+          } else {
+            res.status(404).json({
+              error: 'Validation failed',
+              message: 'Machine not found',
+              field: 'machineId',
+            });
+          }
+        });
 
       await mockValidateMachineExists(req, res, next);
 
@@ -490,26 +517,28 @@ describe('Database Validation Middleware', () => {
       const next = mockNext;
 
       // Mock the validateMachineExists function directly
-      const mockValidateMachineExists = jest.fn().mockImplementation(async (req: Request, res: Response, next: NextFunction) => {
-        const machineId = req.body?.machineId || (req.validated?.body as any)?.machineId;
-        
-        if (machineId === 'valid-machine-id') {
-          req.validated = req.validated || {};
-          req.validated.machine = { 
-            id: 'valid-machine-id', 
-            model: 'Test Machine',
-            created_at: new Date(),
-            shots: [],
-          } as any;
-          next();
-        } else {
-          res.status(404).json({
-            error: 'Validation failed',
-            message: 'Machine not found',
-            field: 'machineId',
-          });
-        }
-      });
+      const mockValidateMachineExists = jest
+        .fn()
+        .mockImplementation(async (req: Request, res: Response, next: NextFunction) => {
+          const machineId = req.body?.machineId || (req.validated?.body as any)?.machineId;
+
+          if (machineId === 'valid-machine-id') {
+            req.validated = req.validated || {};
+            req.validated.machine = {
+              id: 'valid-machine-id',
+              model: 'Test Machine',
+              created_at: new Date(),
+              shots: [],
+            } as any;
+            next();
+          } else {
+            res.status(404).json({
+              error: 'Validation failed',
+              message: 'Machine not found',
+              field: 'machineId',
+            });
+          }
+        });
 
       await mockValidateMachineExists(req, res, next);
 
@@ -562,26 +591,28 @@ describe('Database Validation Middleware', () => {
       const next = mockNext;
 
       // Mock the validateBeanBatchExists function directly
-      const mockValidateBeanBatchExists = jest.fn().mockImplementation(async (req: Request, res: Response, next: NextFunction) => {
-        const beanBatchId = req.body?.beanBatchId || (req.validated?.body as any)?.beanBatchId;
-        
-        if (beanBatchId === 'valid-batch-id') {
-          req.validated = req.validated || {};
-          req.validated.beanBatch = { 
-            id: 'valid-batch-id', 
-            bean: { id: 'bean-id', name: 'Test Bean' },
-            created_at: new Date(),
-            shots: [],
-          } as any;
-          next();
-        } else {
-          res.status(404).json({
-            error: 'Validation failed',
-            message: 'Bean batch not found',
-            field: 'beanBatchId',
-          });
-        }
-      });
+      const mockValidateBeanBatchExists = jest
+        .fn()
+        .mockImplementation(async (req: Request, res: Response, next: NextFunction) => {
+          const beanBatchId = req.body?.beanBatchId || (req.validated?.body as any)?.beanBatchId;
+
+          if (beanBatchId === 'valid-batch-id') {
+            req.validated = req.validated || {};
+            req.validated.beanBatch = {
+              id: 'valid-batch-id',
+              bean: { id: 'bean-id', name: 'Test Bean' },
+              created_at: new Date(),
+              shots: [],
+            } as any;
+            next();
+          } else {
+            res.status(404).json({
+              error: 'Validation failed',
+              message: 'Bean batch not found',
+              field: 'beanBatchId',
+            });
+          }
+        });
 
       await mockValidateBeanBatchExists(req, res, next);
 
@@ -596,26 +627,28 @@ describe('Database Validation Middleware', () => {
       const next = mockNext;
 
       // Mock the validateBeanBatchExists function directly
-      const mockValidateBeanBatchExists = jest.fn().mockImplementation(async (req: Request, res: Response, next: NextFunction) => {
-        const beanBatchId = req.body?.beanBatchId || (req.validated?.body as any)?.beanBatchId;
-        
-        if (beanBatchId === 'valid-batch-id') {
-          req.validated = req.validated || {};
-          req.validated.beanBatch = { 
-            id: 'valid-batch-id', 
-            bean: { id: 'bean-id', name: 'Test Bean' },
-            created_at: new Date(),
-            shots: [],
-          } as any;
-          next();
-        } else {
-          res.status(404).json({
-            error: 'Validation failed',
-            message: 'Bean batch not found',
-            field: 'beanBatchId',
-          });
-        }
-      });
+      const mockValidateBeanBatchExists = jest
+        .fn()
+        .mockImplementation(async (req: Request, res: Response, next: NextFunction) => {
+          const beanBatchId = req.body?.beanBatchId || (req.validated?.body as any)?.beanBatchId;
+
+          if (beanBatchId === 'valid-batch-id') {
+            req.validated = req.validated || {};
+            req.validated.beanBatch = {
+              id: 'valid-batch-id',
+              bean: { id: 'bean-id', name: 'Test Bean' },
+              created_at: new Date(),
+              shots: [],
+            } as any;
+            next();
+          } else {
+            res.status(404).json({
+              error: 'Validation failed',
+              message: 'Bean batch not found',
+              field: 'beanBatchId',
+            });
+          }
+        });
 
       await mockValidateBeanBatchExists(req, res, next);
 

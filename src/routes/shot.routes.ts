@@ -16,31 +16,20 @@ import { asyncHandler } from '../middleware/errorHandler';
 const router = Router();
 
 // GET /api/shots - Get all shots with filtering and pagination
-router.get('/', 
-  validateShotQuery,
-  asyncHandler(shotController.all.bind(shotController))
-);
+router.get('/', validateShotQuery, asyncHandler(shotController.all.bind(shotController)));
 
 // GET /api/shots/export - Export shots data
-router.get('/export',
-  validateExportOptions,
-  asyncHandler(shotController.all.bind(shotController))
-);
+router.get('/export', validateExportOptions, asyncHandler(shotController.all.bind(shotController)));
 
 // GET /api/shots/:id - Get a single shot by ID
-router.get('/:id',
-  validateShotId,
-  asyncHandler(shotController.one.bind(shotController))
-);
+router.get('/:id', validateShotId, asyncHandler(shotController.one.bind(shotController)));
 
 // POST /api/shots - Create a new shot
-router.post('/',
-  validateCreateShot,
-  asyncHandler(shotController.save.bind(shotController))
-);
+router.post('/', validateCreateShot, asyncHandler(shotController.save.bind(shotController)));
 
 // POST /api/shots/bulk - Create multiple shots
-router.post('/bulk',
+router.post(
+  '/bulk',
   validate(BulkShotIdsSchema, 'body'),
   asyncHandler(async (req: any, res: any) => {
     // Bulk creation logic would go here
@@ -49,25 +38,25 @@ router.post('/bulk',
 );
 
 // PUT /api/shots/:id - Update a shot
-router.put('/:id',
+router.put(
+  '/:id',
   [...validateShotId, ...validateUpdateShot],
   asyncHandler(shotController.update.bind(shotController))
 );
 
 // PATCH /api/shots/:id - Partial update a shot
-router.patch('/:id',
+router.patch(
+  '/:id',
   [...validateShotId, ...validateUpdateShot],
   asyncHandler(shotController.update.bind(shotController))
 );
 
 // DELETE /api/shots/:id - Delete a shot
-router.delete('/:id',
-  validateShotId,
-  asyncHandler(shotController.remove.bind(shotController))
-);
+router.delete('/:id', validateShotId, asyncHandler(shotController.remove.bind(shotController)));
 
 // DELETE /api/shots/bulk - Bulk delete shots
-router.delete('/bulk',
+router.delete(
+  '/bulk',
   validateBulkShotIds,
   asyncHandler(async (req: any, res: any) => {
     // Bulk deletion logic would go here

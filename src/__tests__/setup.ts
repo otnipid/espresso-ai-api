@@ -12,67 +12,70 @@ import { Bean } from '../entities/Bean';
 
 let testDataSource: DataSource;
 
-const createKubernetesPostgresDataSource = () => new DataSource({
-  type: 'postgres',
-  host: process.env.TEST_DB_HOST || 'espresso-db-postgres.espresso-development.svc.cluster.local',
-  port: parseInt(process.env.TEST_DB_PORT || '5432'),
-  username: process.env.TEST_DB_USERNAME || 'postgres_user',
-  password: process.env.TEST_DB_PASSWORD || 'postgres_password',
-  database: process.env.TEST_DB_DATABASE || 'espresso_ml_dev',
-  entities: [
-    Shot,
-    ShotPreparation,
-    ShotExtraction,
-    ShotEnvironment,
-    ShotFeedback,
-    Machine,
-    Bean,
-    BeanBatch,
-  ],
-  synchronize: true,
-  logging: false,
-  dropSchema: true,
-  ssl: process.env.TEST_DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
-});
+const createKubernetesPostgresDataSource = () =>
+  new DataSource({
+    type: 'postgres',
+    host: process.env.TEST_DB_HOST || 'espresso-db-postgres.espresso-development.svc.cluster.local',
+    port: parseInt(process.env.TEST_DB_PORT || '5432'),
+    username: process.env.TEST_DB_USERNAME || 'postgres_user',
+    password: process.env.TEST_DB_PASSWORD || 'postgres_password',
+    database: process.env.TEST_DB_DATABASE || 'espresso_ml_dev',
+    entities: [
+      Shot,
+      ShotPreparation,
+      ShotExtraction,
+      ShotEnvironment,
+      ShotFeedback,
+      Machine,
+      Bean,
+      BeanBatch,
+    ],
+    synchronize: true,
+    logging: false,
+    dropSchema: true,
+    ssl: process.env.TEST_DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  });
 
-const createLocalPostgresDataSource = () => new DataSource({
-  type: 'postgres',
-  host: process.env.TEST_DB_HOST || 'localhost',
-  port: parseInt(process.env.TEST_DB_PORT || '5432'),
-  username: process.env.TEST_DB_USERNAME || 'postgres',
-  password: process.env.TEST_DB_PASSWORD || 'password',
-  database: process.env.TEST_DB_DATABASE || 'espresso_ml_test',
-  entities: [
-    Shot,
-    ShotPreparation,
-    ShotExtraction,
-    ShotEnvironment,
-    ShotFeedback,
-    Machine,
-    Bean,
-    BeanBatch,
-  ],
-  synchronize: true,
-  logging: false,
-  dropSchema: true,
-});
+const createLocalPostgresDataSource = () =>
+  new DataSource({
+    type: 'postgres',
+    host: process.env.TEST_DB_HOST || 'localhost',
+    port: parseInt(process.env.TEST_DB_PORT || '5432'),
+    username: process.env.TEST_DB_USERNAME || 'postgres',
+    password: process.env.TEST_DB_PASSWORD || 'password',
+    database: process.env.TEST_DB_DATABASE || 'espresso_ml_test',
+    entities: [
+      Shot,
+      ShotPreparation,
+      ShotExtraction,
+      ShotEnvironment,
+      ShotFeedback,
+      Machine,
+      Bean,
+      BeanBatch,
+    ],
+    synchronize: true,
+    logging: false,
+    dropSchema: true,
+  });
 
-const createSQLiteDataSource = () => new DataSource({
-  type: 'sqlite',
-  database: ':memory:',
-  entities: [
-    Shot,
-    ShotPreparation,
-    ShotExtraction,
-    ShotEnvironment,
-    ShotFeedback,
-    Machine,
-    Bean,
-    BeanBatch,
-  ],
-  synchronize: true,
-  logging: false,
-});
+const createSQLiteDataSource = () =>
+  new DataSource({
+    type: 'sqlite',
+    database: ':memory:',
+    entities: [
+      Shot,
+      ShotPreparation,
+      ShotExtraction,
+      ShotEnvironment,
+      ShotFeedback,
+      Machine,
+      Bean,
+      BeanBatch,
+    ],
+    synchronize: true,
+    logging: false,
+  });
 
 // Initialize test database
 export const initializeTestDataSource = async (): Promise<DataSource> => {
@@ -90,7 +93,7 @@ export const initializeTestDataSource = async (): Promise<DataSource> => {
   } catch (error) {
     console.log('❌ Kubernetes PostgreSQL connection failed, trying local PostgreSQL...');
     console.log('📝 Error:', (error as Error).message);
-    
+
     // Try local PostgreSQL
     try {
       console.log('🐘 Attempting to connect to local PostgreSQL test database...');
@@ -101,7 +104,7 @@ export const initializeTestDataSource = async (): Promise<DataSource> => {
     } catch (localError) {
       console.log('❌ Local PostgreSQL connection failed, falling back to SQLite...');
       console.log('📝 Error:', (localError as Error).message);
-      
+
       // Fallback to SQLite
       try {
         testDataSource = createSQLiteDataSource();

@@ -1,4 +1,12 @@
-import { Repository, DataSource, FindManyOptions, FindOneOptions, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import {
+  Repository,
+  DataSource,
+  FindManyOptions,
+  FindOneOptions,
+  Between,
+  MoreThanOrEqual,
+  LessThanOrEqual,
+} from 'typeorm';
 import { Shot } from '../entities/Shot';
 import { ShotPreparation } from '../entities/ShotPreparation';
 import { ShotExtraction } from '../entities/ShotExtraction';
@@ -89,15 +97,15 @@ export class ShotService {
 
     try {
       // Validate related entities exist
-      const machine = await this.machineRepository.findOne({ 
-        where: { id: shotData.machineId } 
+      const machine = await this.machineRepository.findOne({
+        where: { id: shotData.machineId },
       });
       if (!machine) {
         throw new Error(`Machine with ID ${shotData.machineId} not found`);
       }
 
-      const beanBatch = await this.beanBatchRepository.findOne({ 
-        where: { id: shotData.beanBatchId } 
+      const beanBatch = await this.beanBatchRepository.findOne({
+        where: { id: shotData.beanBatchId },
       });
       if (!beanBatch) {
         throw new Error(`BeanBatch with ID ${shotData.beanBatchId} not found`);
@@ -168,14 +176,7 @@ export class ShotService {
   async getShotById(id: string): Promise<Shot> {
     const shot = await this.shotRepository.findOne({
       where: { id },
-      relations: [
-        'machine',
-        'beanBatch',
-        'preparation',
-        'extraction',
-        'environment',
-        'feedback'
-      ]
+      relations: ['machine', 'beanBatch', 'preparation', 'extraction', 'environment', 'feedback'],
     });
 
     if (!shot) {
@@ -201,12 +202,12 @@ export class ShotService {
       page = 1,
       limit = 20,
       sortBy = 'pulled_at',
-      sortOrder = 'DESC'
+      sortOrder = 'DESC',
     } = options;
 
     // Build where conditions
     const where: any = {};
-    
+
     if (machineId) where.machine = { id: machineId };
     if (beanBatchId) where.beanBatch = { id: beanBatchId };
     if (shot_type) where.shot_type = shot_type;
@@ -227,17 +228,10 @@ export class ShotService {
     // Build find options
     const findOptions: FindManyOptions<Shot> = {
       where,
-      relations: [
-        'machine',
-        'beanBatch',
-        'preparation',
-        'extraction',
-        'environment',
-        'feedback'
-      ],
+      relations: ['machine', 'beanBatch', 'preparation', 'extraction', 'environment', 'feedback'],
       order: { [sortBy]: sortOrder },
       skip,
-      take: limit
+      take: limit,
     };
 
     // Execute queries
@@ -248,7 +242,7 @@ export class ShotService {
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit)
+      totalPages: Math.ceil(total / limit),
     };
   }
 
@@ -269,8 +263,8 @@ export class ShotService {
 
       // Validate related entities if they're being updated
       if (updateData.machineId) {
-        const machine = await this.machineRepository.findOne({ 
-          where: { id: updateData.machineId } 
+        const machine = await this.machineRepository.findOne({
+          where: { id: updateData.machineId },
         });
         if (!machine) {
           throw new Error(`Machine with ID ${updateData.machineId} not found`);
@@ -279,8 +273,8 @@ export class ShotService {
       }
 
       if (updateData.beanBatchId) {
-        const beanBatch = await this.beanBatchRepository.findOne({ 
-          where: { id: updateData.beanBatchId } 
+        const beanBatch = await this.beanBatchRepository.findOne({
+          where: { id: updateData.beanBatchId },
         });
         if (!beanBatch) {
           throw new Error(`BeanBatch with ID ${updateData.beanBatchId} not found`);
@@ -300,7 +294,7 @@ export class ShotService {
       if (updateData.preparation) {
         const prepRepo = queryRunner.manager.getRepository(ShotPreparation);
         const existingPrep = await prepRepo.findOne({ where: { shot_id: id } });
-        
+
         if (existingPrep) {
           Object.assign(existingPrep, updateData.preparation);
           await prepRepo.save(existingPrep);
@@ -316,7 +310,7 @@ export class ShotService {
       if (updateData.extraction) {
         const extRepo = queryRunner.manager.getRepository(ShotExtraction);
         const existingExt = await extRepo.findOne({ where: { shot_id: id } });
-        
+
         if (existingExt) {
           Object.assign(existingExt, updateData.extraction);
           await extRepo.save(existingExt);
@@ -331,10 +325,10 @@ export class ShotService {
 
       if (updateData.environment) {
         const envRepo = queryRunner.manager.getRepository(ShotEnvironment);
-        const existingEnv = await envRepo.findOne({ 
-          where: { shot: { id } } 
+        const existingEnv = await envRepo.findOne({
+          where: { shot: { id } },
         });
-        
+
         if (existingEnv) {
           Object.assign(existingEnv, updateData.environment);
           await envRepo.save(existingEnv);
@@ -349,10 +343,10 @@ export class ShotService {
 
       if (updateData.feedback) {
         const feedbackRepo = queryRunner.manager.getRepository(ShotFeedback);
-        const existingFeedback = await feedbackRepo.findOne({ 
-          where: { shot: { id } } 
+        const existingFeedback = await feedbackRepo.findOne({
+          where: { shot: { id } },
         });
-        
+
         if (existingFeedback) {
           Object.assign(existingFeedback, updateData.feedback);
           await feedbackRepo.save(existingFeedback);
@@ -405,17 +399,17 @@ export class ShotService {
       // Delete related entities first
       await queryRunner.manager.delete(ShotPreparation, { shot_id: id });
       await queryRunner.manager.delete(ShotExtraction, { shot_id: id });
-      
+
       // For entities with relationships, we need to find them first
-      const environment = await queryRunner.manager.findOne(ShotEnvironment, { 
-        where: { shot: { id } } 
+      const environment = await queryRunner.manager.findOne(ShotEnvironment, {
+        where: { shot: { id } },
       });
       if (environment) {
         await queryRunner.manager.remove(ShotEnvironment, environment);
       }
-      
-      const feedback = await queryRunner.manager.findOne(ShotFeedback, { 
-        where: { shot: { id } } 
+
+      const feedback = await queryRunner.manager.findOne(ShotFeedback, {
+        where: { shot: { id } },
       });
       if (feedback) {
         await queryRunner.manager.remove(ShotFeedback, feedback);
@@ -458,7 +452,7 @@ export class ShotService {
    */
   async getShotStatistics(options: ShotFilterOptions = {}): Promise<any> {
     const where: any = {};
-    
+
     if (options.machineId) where.machine = { id: options.machineId };
     if (options.beanBatchId) where.beanBatch = { id: options.beanBatchId };
     if (options.dateFrom || options.dateTo) {
@@ -468,8 +462,8 @@ export class ShotService {
     }
 
     const totalShots = await this.shotRepository.count({ where });
-    const successfulShots = await this.shotRepository.count({ 
-      where: { ...where, success: true } 
+    const successfulShots = await this.shotRepository.count({
+      where: { ...where, success: true },
     });
     const failedShots = totalShots - successfulShots;
 
@@ -477,7 +471,7 @@ export class ShotService {
       total: totalShots,
       successful: successfulShots,
       failed: failedShots,
-      successRate: totalShots > 0 ? (successfulShots / totalShots) * 100 : 0
+      successRate: totalShots > 0 ? (successfulShots / totalShots) * 100 : 0,
     };
   }
 }

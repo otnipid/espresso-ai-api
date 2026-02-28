@@ -12,37 +12,43 @@ import { Bean } from '../entities/Bean';
 let testDataSource: DataSource;
 let isInitialized = false;
 
-const createCustomPostgresDataSource = () => new DataSource({
-  type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5433'),
-  username: process.env.DB_USERNAME || 'postgres_user',
-  password: process.env.DB_PASSWORD || 'postgres_password',
-  database: process.env.DB_NAME || 'espresso_ml_test_main', // Different database name
-  entities: [
-    Shot,
-    ShotPreparation,
-    ShotExtraction,
-    ShotEnvironment,
-    ShotFeedback,
-    Machine,
-    Bean,
-    BeanBatch,
-  ],
-  synchronize: true, // Enable synchronization for official PostgreSQL image
-  logging: false,
-  dropSchema: true, // Clean schema for tests
-  ssl: false,
-});
+const createCustomPostgresDataSource = () =>
+  new DataSource({
+    type: 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5433'),
+    username: process.env.DB_USERNAME || 'postgres_user',
+    password: process.env.DB_PASSWORD || 'postgres_password',
+    database: process.env.DB_NAME || 'espresso_ml_test_main', // Different database name
+    entities: [
+      Shot,
+      ShotPreparation,
+      ShotExtraction,
+      ShotEnvironment,
+      ShotFeedback,
+      Machine,
+      Bean,
+      BeanBatch,
+    ],
+    synchronize: true, // Enable synchronization for official PostgreSQL image
+    logging: false,
+    dropSchema: true, // Clean schema for tests
+    ssl: false,
+  });
 
 // Clean test data but preserve schema
 const cleanTestData = async () => {
   const tables = [
-    'shots', 'shot_preparation', 'shot_extraction', 
-    'shot_environment', 'shot_feedback', 
-    'bean_batches', 'machines', 'bean'
+    'shots',
+    'shot_preparation',
+    'shot_extraction',
+    'shot_environment',
+    'shot_feedback',
+    'bean_batches',
+    'machines',
+    'bean',
   ];
-  
+
   for (const table of tables) {
     try {
       await testDataSource.query(`TRUNCATE TABLE ${table} RESTART IDENTITY CASCADE`);
@@ -64,14 +70,14 @@ export const initializeTestDataSource = async (): Promise<DataSource> => {
     }
 
     console.log('🔌 Initializing test database connection...');
-    
+
     testDataSource = createCustomPostgresDataSource();
     await testDataSource.initialize();
     console.log(`✅ Database connected successfully (postgres)`);
-    
+
     // Clean test data but preserve schema
     await cleanTestData();
-    
+
     return testDataSource;
   } catch (error) {
     console.error('❌ Database connection failed:', error);
@@ -145,16 +151,16 @@ export const createTestBeanBatch = async (bean?: Bean) => {
   const beanBatch = beanBatchRepository.create({
     roastDate: new Date('2024-01-01'),
     bestByDate: new Date('2024-07-01'),
-    weightKg: 5.00,
+    weightKg: 5.0,
     notes: 'Test batch',
   });
-  
+
   // Set the bean relationship separately if provided
   if (bean) {
     beanBatch.bean = bean;
   } else {
     beanBatch.bean = await createTestBean();
   }
-  
+
   return await beanBatchRepository.save(beanBatch);
 };

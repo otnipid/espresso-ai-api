@@ -27,7 +27,7 @@ describe('ShotService - Structure Tests', () => {
         getRepository: jest.fn(),
         createQueryRunner: jest.fn(),
       } as any;
-      
+
       shotServiceInstance = new ShotService(mockDataSource);
     });
 
@@ -84,7 +84,7 @@ describe('ShotService - Structure Tests', () => {
     it('should export CreateShotData interface', () => {
       // Test that the interface types are available through the service file
       const serviceModule = require('../../../services/ShotService');
-      
+
       // These should be available as types (checked at compile time)
       expect(serviceModule).toBeDefined();
       expect(serviceModule.ShotService).toBeDefined();
@@ -115,7 +115,7 @@ describe('ShotService - Structure Tests', () => {
         getRepository: jest.fn(),
         createQueryRunner: jest.fn(),
       } as any;
-      
+
       shotServiceInstance = new ShotService(mockDataSource);
     });
 
@@ -131,10 +131,10 @@ describe('ShotService - Structure Tests', () => {
 
     it('getShots should accept optional filter parameters', () => {
       const method = shotServiceInstance.getShots;
-      
+
       // Check that the method exists and is a function
       expect(typeof method).toBe('function');
-      
+
       // Check the method signature by looking for key parts
       const methodString = method.toString();
       expect(methodString).toContain('getShots');
@@ -156,10 +156,10 @@ describe('ShotService - Structure Tests', () => {
 
     it('getShotStatistics should accept optional filter parameters', () => {
       const method = shotServiceInstance.getShotStatistics;
-      
+
       // Check that the method exists and is a function
       expect(typeof method).toBe('function');
-      
+
       // Check the method signature by looking for key parts
       const methodString = method.toString();
       expect(methodString).toContain('getShotStatistics');
@@ -178,7 +178,7 @@ describe('ShotService - Structure Tests', () => {
         getRepository: jest.fn(),
         createQueryRunner: jest.fn(),
       } as any;
-      
+
       shotServiceInstance = new ShotService(mockDataSource);
     });
 
@@ -199,29 +199,42 @@ describe('ShotService - Structure Tests', () => {
         getRepository: jest.fn(),
         createQueryRunner: jest.fn(),
       } as any;
-      
+
       shotServiceInstance = new ShotService(mockDataSource);
     });
 
     it('should cover all CRUD operations', () => {
-      const methods = Object.getOwnPropertyNames(ShotService.prototype)
-        .filter(name => name !== 'constructor' && typeof shotServiceInstance[name as keyof ShotService] === 'function');
+      const methods = Object.getOwnPropertyNames(ShotService.prototype).filter(
+        name =>
+          name !== 'constructor' &&
+          typeof shotServiceInstance[name as keyof ShotService] === 'function'
+      );
 
       // Should have methods for Create, Read, Update, Delete operations
-      const crudMethods = ['createShot', 'getShotById', 'getShots', 'updateShot', 'softDeleteShot', 'hardDeleteShot'];
+      const crudMethods = [
+        'createShot',
+        'getShotById',
+        'getShots',
+        'updateShot',
+        'softDeleteShot',
+        'hardDeleteShot',
+      ];
       const hasAllCRUD = crudMethods.every(method => methods.includes(method));
-      
+
       expect(hasAllCRUD).toBe(true);
     });
 
     it('should include additional business logic methods', () => {
-      const methods = Object.getOwnPropertyNames(ShotService.prototype)
-        .filter(name => name !== 'constructor' && typeof shotServiceInstance[name as keyof ShotService] === 'function');
+      const methods = Object.getOwnPropertyNames(ShotService.prototype).filter(
+        name =>
+          name !== 'constructor' &&
+          typeof shotServiceInstance[name as keyof ShotService] === 'function'
+      );
 
       // Should have additional methods for business logic
       const businessMethods = ['restoreShot', 'getShotStatistics'];
       const hasBusinessMethods = businessMethods.every(method => methods.includes(method));
-      
+
       expect(hasBusinessMethods).toBe(true);
     });
   });
