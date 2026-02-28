@@ -25,10 +25,10 @@ describe('ShotService - Structure Tests', () => {
     beforeAll(() => {
       // Create instance with mock DataSource to avoid database issues
       const mockDataSource = {
-        getRepository: jest.fn().mockImplementation((entity) => {
+        getRepository: jest.fn().mockImplementation(entity => {
           if (entity === Machine) {
             return {
-              findOne: jest.fn().mockImplementation((options) => {
+              findOne: jest.fn().mockImplementation(options => {
                 if (options.where.id === '550e8400-e29b-41d4-a716-446655440000') {
                   return Promise.resolve({
                     id: '550e8400-e29b-41d4-a716-446655440000',
@@ -60,7 +60,7 @@ describe('ShotService - Structure Tests', () => {
               },
             };
           }
-          
+
           // Default mock for other entities
           return {
             findOne: jest.fn().mockResolvedValue(null),
