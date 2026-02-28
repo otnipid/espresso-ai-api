@@ -40,8 +40,8 @@ jobs:
       - name: Run ESLint (if configured)
         run: |
           if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ]; then
-            # Use ESLint v8 for legacy configuration support with TypeScript plugins
-            npm install -g eslint@8 @typescript-eslint/parser@6 @typescript-eslint/eslint-plugin@6
+            # Install ESLint v8 and TypeScript plugins locally to avoid conflicts
+            npm install --save-dev eslint@8 @typescript-eslint/parser@6 @typescript-eslint/eslint-plugin@6
             npx eslint src/ --max-warnings=0
           elif [ -f "eslint.config.js" ]; then
             npx eslint src/ --max-warnings=0
@@ -66,8 +66,9 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: espresso_test
+          POSTGRES_USER: ${{ secrets.DB_USERNAME }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.DB_NAME }}
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -92,16 +93,20 @@ jobs:
       - name: Setup test environment
         run: |
           cp .env.example .env.test
-          echo "DB_HOST=localhost" >> .env.test
-          echo "DB_PORT=5432" >> .env.test
-          echo "DB_USERNAME=postgres" >> .env.test
-          echo "DB_PASSWORD=postgres" >> .env.test
-          echo "DB_DATABASE=espresso_test" >> .env.test
+          
+          # Substitute GitHub Secrets in the test environment
+          sed -i 's/${POSTGRES_USER}/${{ secrets.DB_USERNAME }}/g' .env.test
+          sed -i 's/${POSTGRES_PASSWORD}/${{ secrets.DB_PASSWORD }}/g' .env.test
+          sed -i 's/${POSTGRES_DB}/${{ secrets.DB_NAME }}/g' .env.test
+          
+          # Add CI-specific overrides
           echo "NODE_ENV=test" >> .env.test
+          echo "COMPOSE_PROJECT_NAME=espresso_ml_test" >> .env.test
+          echo "COMPOSE_PROFILES=test" >> .env.test
 
       - name: Wait for PostgreSQL
         run: |
-          timeout 60 bash -c 'until pg_isready -h localhost -p 5432; do sleep 1; done'
+          timeout 60 bash -c 'until pg_isready -h localhost -p 5432 -U ${{ secrets.DB_USERNAME }}; do sleep 1; done'
 
       - name: Run database migrations (if any)
         run: |
