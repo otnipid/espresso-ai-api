@@ -71,11 +71,35 @@ const mockRepo = {
 // ❌ WRONG - Extra space in parameter
 findOne: jest.fn().mockImplementation((entity) => {
 
+// ❌ WRONG - Extra space in nested parameter
+findOne: jest.fn().mockImplementation((options) => {
+
 // ✅ CORRECT - Proper spacing
 findOne: jest.fn().mockImplementation(entity => {
+
+// ✅ CORRECT - Proper spacing for nested parameters
+findOne: jest.fn().mockImplementation(options => {
 ```
 
-#### 5. Import and Export Statements
+#### 5. Blank Line Consistency
+- **Single blank lines**: Use exactly one blank line between logical blocks
+- **No excessive blank lines**: Remove unnecessary empty lines
+- **Consistent spacing**: Maintain consistent spacing patterns
+
+**Example:**
+```typescript
+// ❌ WRONG - Excessive blank lines
+}
+          
+// Default mock for other entities
+
+// ✅ CORRECT - Single blank line
+}
+
+// Default mock for other entities
+```
+
+#### 6. Import and Export Statements
 - **Alphabetical ordering**: Group imports logically
 - **Consistent spacing**: Single spaces around import keywords
 - **Line length**: Break long imports across multiple lines
@@ -127,14 +151,33 @@ const config = { host: 'localhost', port: 5432 };
 
 #### Pattern 3: Function Parameter Spacing
 ```typescript
-// Before
+// Before - Extra space in parameter
 findOne: jest.fn().mockImplementation((entity) => {
 
-// After
+// Before - Extra space in nested parameter  
+findOne: jest.fn().mockImplementation((options) => {
+
+// After - Proper spacing
 findOne: jest.fn().mockImplementation(entity => {
+
+// After - Proper spacing for nested parameters
+findOne: jest.fn().mockImplementation(options => {
 ```
 
-#### Pattern 4: Consistent Import Formatting
+#### Pattern 4: Blank Line Consistency
+```typescript
+// Before - Excessive blank lines
+}
+          
+// Default mock for other entities
+
+// After - Single blank line
+}
+
+// Default mock for other entities
+```
+
+#### Pattern 5: Consistent Import Formatting
 ```typescript
 // Before
 import {Shot} from'../entities/Shot';
