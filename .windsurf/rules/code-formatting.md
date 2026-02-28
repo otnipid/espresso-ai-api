@@ -61,7 +61,21 @@ const mockRepo = {
 };
 ```
 
-#### 3. Import and Export Statements
+#### 4. Function Parameter Formatting
+- **No extra spaces**: Remove unnecessary spaces in function parameters
+- **Consistent spacing**: Single spaces around function parameters
+- **Proper line breaks**: Break long parameter lists across multiple lines
+
+**Example:**
+```typescript
+// ❌ WRONG - Extra space in parameter
+findOne: jest.fn().mockImplementation((entity) => {
+
+// ✅ CORRECT - Proper spacing
+findOne: jest.fn().mockImplementation(entity => {
+```
+
+#### 5. Import and Export Statements
 - **Alphabetical ordering**: Group imports logically
 - **Consistent spacing**: Single spaces around import keywords
 - **Line length**: Break long imports across multiple lines
@@ -111,7 +125,16 @@ const config={host:'localhost',port:5432};
 const config = { host: 'localhost', port: 5432 };
 ```
 
-#### Pattern 3: Consistent Import Formatting
+#### Pattern 3: Function Parameter Spacing
+```typescript
+// Before
+findOne: jest.fn().mockImplementation((entity) => {
+
+// After
+findOne: jest.fn().mockImplementation(entity => {
+```
+
+#### Pattern 4: Consistent Import Formatting
 ```typescript
 // Before
 import {Shot} from'../entities/Shot';
