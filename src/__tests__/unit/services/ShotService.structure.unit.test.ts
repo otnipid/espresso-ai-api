@@ -2,6 +2,10 @@ import { ShotService } from '../../../services/ShotService';
 import { Machine } from '../../../entities/Machine';
 import { BeanBatch } from '../../../entities/BeanBatch';
 import { Shot } from '../../../entities/Shot';
+import { ShotPreparation } from '../../../entities/ShotPreparation';
+import { ShotExtraction } from '../../../entities/ShotExtraction';
+import { ShotEnvironment } from '../../../entities/shotEnvironment';
+import { ShotFeedback } from '../../../entities/shotFeedback';
 
 // Unmock ShotService for this test file
 jest.unmock('../../../services/ShotService');
@@ -57,6 +61,14 @@ describe('ShotService - Structure Tests', () => {
                     commitTransaction: jest.fn().mockResolvedValue(undefined),
                     rollbackTransaction: jest.fn().mockResolvedValue(undefined),
                     release: jest.fn().mockResolvedValue(undefined),
+                    // Add manager property at queryRunner level for save operations
+                    manager: {
+                      save: jest.fn().mockResolvedValue({
+                        id: '550e8400-e29b-41d4-a716-4466554402',
+                        shot_type: 'normale',
+                        created_at: new Date(),
+                      }),
+                    },
                   }),
                 },
               },
@@ -92,11 +104,60 @@ describe('ShotService - Structure Tests', () => {
                     commitTransaction: jest.fn().mockResolvedValue(undefined),
                     rollbackTransaction: jest.fn().mockResolvedValue(undefined),
                     release: jest.fn().mockResolvedValue(undefined),
+                    // Add manager property at queryRunner level for save operations
+                    manager: {
+                      save: jest.fn().mockResolvedValue({
+                        id: '550e8400-e29b-41d4-a716-4466554402',
+                        shot_type: 'normale',
+                        created_at: new Date(),
+                      }),
+                    },
                   }),
                 },
               },
             };
           }
+
+          if (entity === ShotPreparation) {
+            return {
+              findOne: jest.fn().mockImplementation((options) => {
+                if (options.where.id === '550e8400-e29b-41d4-a716-4466554403') {
+                  return Promise.resolve({
+                    id: '550e8400-e29b-41d4-a716-4466554403',
+                    shot_id: '550e8400-e29b-41d4-a716-4466554402',
+                    created_at: new Date(),
+                  });
+                }
+                return Promise.resolve(null);
+              }),
+              find: jest.fn(),
+              save: jest.fn(),
+              remove: jest.fn(),
+              create: jest.fn(),
+              update: jest.fn(),
+              delete: jest.fn(),
+              restore: jest.fn(),
+              // Add manager property with connection.createQueryRunner
+              manager: {
+                connection: {
+                  createQueryRunner: jest.fn().mockReturnValue({
+                    connect: jest.fn().mockResolvedValue(undefined),
+                    startTransaction: jest.fn().mockResolvedValue(undefined),
+                    commitTransaction: jest.fn().mockResolvedValue(undefined),
+                    rollbackTransaction: jest.fn().mockResolvedValue(undefined),
+                    release: jest.fn().mockResolvedValue(undefined),
+                    // Add manager property at queryRunner level for save operations
+                    manager: {
+                      save: jest.fn().mockResolvedValue({
+                        id: '550e8400-e29b-41d4-a716-4466554402',
+                        shot_type: 'normale',
+                        created_at: new Date(),
+                      }),
+                    },
+                  }),
+                },
+              },
+            }
 
           if (entity === Shot) {
             return {
@@ -126,6 +187,14 @@ describe('ShotService - Structure Tests', () => {
                     commitTransaction: jest.fn().mockResolvedValue(undefined),
                     rollbackTransaction: jest.fn().mockResolvedValue(undefined),
                     release: jest.fn().mockResolvedValue(undefined),
+                    // Add manager property at queryRunner level for save operations
+                    manager: {
+                      save: jest.fn().mockResolvedValue({
+                        id: '550e8400-e29b-41d4-a716-4466554402',
+                        shot_type: 'normale',
+                        created_at: new Date(),
+                      }),
+                    },
                   }),
                 },
               },
