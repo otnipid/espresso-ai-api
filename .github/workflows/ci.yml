@@ -40,8 +40,8 @@ jobs:
       - name: Run ESLint (if configured)
         run: |
           if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ]; then
-            # Install ESLint v8 and TypeScript plugins locally to avoid conflicts
-            npm install --save-dev eslint@8 @typescript-eslint/parser@6 @typescript-eslint/eslint-plugin@6
+            # Use compatible ESLint v8 and TypeScript ESLint v5 versions
+            npm install --save-dev eslint@8.57.0 @typescript-eslint/parser@5.62.0 @typescript-eslint/eslint-plugin@5.62.0
             npx eslint src/ --max-warnings=0
           elif [ -f "eslint.config.js" ]; then
             npx eslint src/ --max-warnings=0
