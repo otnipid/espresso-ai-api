@@ -66,7 +66,7 @@ describe('ShotService - Unit Tests', () => {
             },
           },
         };
-        
+
         if (entity === Shot) {
           return { ...mockRepo, ...mockShotRepo };
         } else if (entity === Machine) {
