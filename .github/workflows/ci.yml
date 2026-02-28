@@ -47,9 +47,9 @@ jobs:
             echo "🔍 Verifying ESLint packages..."
             npm list eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin
             
-            # Run ESLint with verbose output
+            # Run ESLint
             echo "🔍 Running ESLint..."
-            npx eslint src/ --max-warnings=0 --verbose
+            npx eslint src/ --max-warnings=0
           elif [ -f "eslint.config.js" ]; then
             npx eslint src/ --max-warnings=0
           else
