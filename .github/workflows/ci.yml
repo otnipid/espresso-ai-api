@@ -71,7 +71,7 @@ jobs:
         env:
           POSTGRES_USER: ${{ secrets.DB_USERNAME }}
           POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.DB_NAME }}
+          POSTGRES_DB: espresso_ml_test_main
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -110,6 +110,10 @@ jobs:
       - name: Wait for PostgreSQL
         run: |
           timeout 60 bash -c 'until pg_isready -h localhost -p 5432 -U ${{ secrets.DB_USERNAME }}; do sleep 1; done'
+
+      - name: Create additional test database
+        run: |
+          PGPASSWORD=${{ secrets.DB_PASSWORD }} psql -h localhost -p 5432 -U ${{ secrets.DB_USERNAME }} -d postgres -c "CREATE DATABASE espresso_ml_test_basic;"
 
       - name: Run database migrations (if any)
         run: |
@@ -165,10 +169,16 @@ jobs:
           echo "NODE_ENV=test" >> $GITHUB_ENV
           echo "POSTGRES_USER=${{ secrets.DB_USERNAME }}" >> $GITHUB_ENV
           echo "POSTGRES_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $GITHUB_ENV
-          echo "POSTGRES_DB=${{ secrets.DB_NAME }}" >> $GITHUB_ENV
+          echo "POSTGRES_DB=espresso_ml_test_main" >> $GITHUB_ENV
           echo "POSTGRES_PORT=5432" >> $GITHUB_ENV
           echo "REDIS_PORT=6379" >> $GITHUB_ENV
           echo "API_PORT=3001" >> $GITHUB_ENV
+          # Set database names that tests expect
+          echo "DB_NAME=espresso_ml_test_main" >> $GITHUB_ENV
+          echo "DB_HOST=localhost" >> $GITHUB_ENV
+          echo "DB_PORT=5432" >> $GITHUB_ENV
+          echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> $GITHUB_ENV
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $GITHUB_ENV
 
       - name: Pull custom PostgreSQL image
         run: |
