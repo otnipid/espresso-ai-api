@@ -25,7 +25,17 @@ describe('ShotService - Structure Tests', () => {
       // Create instance with mock DataSource to avoid database issues
       const mockDataSource = {
         getRepository: jest.fn().mockReturnValue({
-          findOne: jest.fn(),
+          findOne: jest.fn().mockImplementation((entity) => {
+            if (entity.name === 'Machine') {
+              return Promise.resolve({
+                id: 'test-machine-id',
+                model: 'Test Machine',
+                firmware_version: '1.0.0',
+                created_at: new Date(),
+              });
+            }
+            return Promise.resolve(null);
+          }),
           find: jest.fn(),
           save: jest.fn(),
           remove: jest.fn(),
@@ -56,7 +66,11 @@ describe('ShotService - Structure Tests', () => {
       expect(shotServiceInstance.createShot).toBeDefined();
       expect(typeof shotServiceInstance.createShot).toBe('function');
       // Check if method is async by checking if it returns a Promise when called with minimal args
-      const result = shotServiceInstance.createShot({} as any);
+      const result = shotServiceInstance.createShot({
+        machineId: 'test-machine-id',
+        beanBatchId: 'test-batch-id',
+        shot_type: 'normale' as const,
+      } as any);
       expect(result).toBeInstanceOf(Promise);
     });
 

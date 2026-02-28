@@ -15,7 +15,12 @@ describe('ShotService - Unit Tests', () => {
   beforeEach(() => {
     // Create mock repositories with Jest mocks
     const mockMachineRepo = {
-      findOne: jest.fn() as jest.MockedFunction<Repository<Machine>['findOne']>,
+      findOne: jest.fn().mockResolvedValue({
+        id: 'test-machine-id',
+        model: 'Test Machine',
+        firmware_version: '1.0.0',
+        created_at: new Date(),
+      }),
       find: jest.fn(),
       save: jest.fn(),
       remove: jest.fn(),
@@ -26,7 +31,12 @@ describe('ShotService - Unit Tests', () => {
     };
 
     const mockBeanRepo = {
-      findOne: jest.fn() as jest.MockedFunction<Repository<BeanBatch>['findOne']>,
+      findOne: jest.fn().mockResolvedValue({
+        id: 'test-batch-id',
+        name: 'Test Bean Batch',
+        origin: 'Test Origin',
+        created_at: new Date(),
+      }),
       find: jest.fn(),
       save: jest.fn(),
       remove: jest.fn(),
@@ -111,7 +121,11 @@ describe('ShotService - Unit Tests', () => {
     it('should validate input parameters for createShot', () => {
       expect(shotService.createShot).toBeDefined();
       // Check if method is async by checking if it returns a Promise
-      const result = shotService.createShot({} as any);
+      const result = shotService.createShot({
+        machineId: 'test-machine-id',
+        beanBatchId: 'test-batch-id',
+        shot_type: 'normale' as const,
+      } as any);
       expect(result).toBeInstanceOf(Promise);
     });
 
