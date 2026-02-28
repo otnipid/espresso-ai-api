@@ -4,7 +4,7 @@ import { Shot } from '../../../entities/Shot';
 import { BeanBatch } from '../../../entities/BeanBatch';
 import { Machine } from '../../../entities/Machine';
 import { Bean } from '../../../entities/Bean';
-import { initializeTestDataSource, getTestDataSource, createTestMachine, createTestBean, createTestBeanBatch } from '../../setup.integration';
+import { initializeTestDataSource, getTestDataSource, createTestMachine, createTestBean, createTestBeanBatch } from '../../setup.integration.main';
 
 describe('ShotService', () => {
   let shotService: ShotService;

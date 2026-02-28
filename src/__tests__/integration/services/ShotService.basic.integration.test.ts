@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import { ShotService } from '../../../services/ShotService';
-import { initializeTestDataSource, getTestDataSource, createTestMachine, createTestBean, createTestBeanBatch } from '../../setup.integration';
+import { initializeTestDataSource, getTestDataSource, createTestMachine, createTestBean, createTestBeanBatch } from '../../setup.integration.basic';
 
 describe('ShotService - Basic Tests', () => {
   let shotService: ShotService;
