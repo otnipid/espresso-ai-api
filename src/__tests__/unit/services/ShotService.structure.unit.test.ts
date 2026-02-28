@@ -24,7 +24,22 @@ describe('ShotService - Structure Tests', () => {
     beforeAll(() => {
       // Create instance with mock DataSource to avoid database issues
       const mockDataSource = {
-        getRepository: jest.fn(),
+        getRepository: jest.fn().mockReturnValue({
+          findOne: jest.fn(),
+          find: jest.fn(),
+          save: jest.fn(),
+          remove: jest.fn(),
+          create: jest.fn(),
+          update: jest.fn(),
+          delete: jest.fn(),
+          restore: jest.fn(),
+          // Add manager property for createQueryRunner
+          manager: {
+            connection: {
+              createQueryRunner: jest.fn(),
+            },
+          },
+        }),
         createQueryRunner: jest.fn(),
       } as any;
 

@@ -50,23 +50,31 @@ describe('ShotService - Unit Tests', () => {
     // Create a mock data source that returns mock repositories
     mockDataSource = {
       getRepository: jest.fn().mockImplementation(entity => {
+        const mockRepo = {
+          findOne: jest.fn(),
+          find: jest.fn(),
+          save: jest.fn(),
+          remove: jest.fn(),
+          create: jest.fn(),
+          update: jest.fn(),
+          delete: jest.fn(),
+          restore: jest.fn(),
+          // Add manager property for createQueryRunner
+          manager: {
+            connection: {
+              createQueryRunner: jest.fn(),
+            },
+          },
+        };
+        
         if (entity === Shot) {
-          return mockShotRepo;
+          return { ...mockRepo, ...mockShotRepo };
         } else if (entity === Machine) {
-          return mockMachineRepo;
+          return { ...mockRepo, ...mockMachineRepo };
         } else if (entity === BeanBatch) {
-          return mockBeanRepo;
+          return { ...mockRepo, ...mockBeanRepo };
         } else {
-          return {
-            findOne: jest.fn(),
-            find: jest.fn(),
-            save: jest.fn(),
-            remove: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-            restore: jest.fn(),
-          };
+          return mockRepo;
         }
       }),
     } as any;
