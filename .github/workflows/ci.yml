@@ -427,32 +427,6 @@ jobs:
             echo "No Artillery config found, skipping load tests..."
           fi
 
-  # Documentation Generation
-  docs:
-    name: Documentation
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Generate API documentation
-        run: |
-          if [ -f "package.json" ] && grep -q "docs:generate" package.json; then
-            npm run docs:generate
-          else
-            echo "No docs generation script found, skipping..."
-          fi
-
       - name: Generate TypeScript documentation
         run: |
           if command -v typedoc &> /dev/null; then
