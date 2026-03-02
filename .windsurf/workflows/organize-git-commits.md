@@ -13,22 +13,28 @@ Use this workflow when you have made multiple changes across different files and
 ## Steps
 
 ### Step 1: Analyze Current Changes
+
 Run `git status` to see all modified and untracked files:
+
 ```bash
 git status
 ```
 
 ### Step 2: Get Change Overview
+
 Check the scope and scale of changes:
+
 ```bash
 git diff --stat
 git diff --name-only
 ```
 
 ### Step 3: Group Changes Logically
+
 Analyze the changes and group them into logical categories:
 
 #### Common Categories:
+
 - **Infrastructure/Setup**: Config files, build tools, test setup
 - **Dependencies**: Package.json, lock files, new libraries
 - **Core Features**: Main application logic, services, controllers
@@ -39,13 +45,16 @@ Analyze the changes and group them into logical categories:
 - **New Features**: New functionality
 
 ### Step 4: Create Commit Plan
+
 For each logical group, create a commit with:
+
 - **Semantic type**: `feat`, `fix`, `refactor`, `docs`, `chore`, `style`, `perf`, `test`
 - **Clear description**: What was changed and why
 - **Atomic scope**: One logical change per commit
 - **Debug-friendly**: Easy to revert if issues arise
 
 #### Commit Message Format:
+
 ```
 <type>: <clear, concise description>
 
@@ -57,20 +66,26 @@ For each logical group, create a commit with:
 ```
 
 ### Step 5: Execute Commits Sequentially
+
 Execute commits one at a time, allowing review between each:
+
 ```bash
 git add <files-for-this-commit>
 git commit -m "<commit-message>"
 ```
 
 ### Step 6: Verify Each Commit
+
 After each commit, verify:
+
 - Tests still pass: `npm test`
 - Application builds: `npm run build`
 - No obvious issues introduced
 
 ### Step 7: Push When Complete
+
 When all commits are created and verified:
+
 ```bash
 git push origin <branch-name>
 ```
@@ -78,6 +93,7 @@ git push origin <branch-name>
 ## Examples
 
 ### Example 1: Test Infrastructure Setup
+
 ```bash
 # Files: jest.config.js, package.json, babel.config.js
 git add jest.config.js package.json babel.config.js
@@ -90,6 +106,7 @@ git commit -m "feat: implement Jest testing infrastructure
 ```
 
 ### Example 2: Bug Fix
+
 ```bash
 # Files: src/services/UserService.ts, src/__tests__/unit/UserService.test.ts
 git add src/services/UserService.ts src/__tests__/unit/UserService.test.ts
@@ -102,6 +119,7 @@ git commit -m "fix: resolve user authentication validation error
 ```
 
 ### Example 3: Refactoring
+
 ```bash
 # Files: src/controllers/*.ts (cleanup)
 git add src/controllers/user.controller.ts src/controllers/auth.controller.ts
@@ -116,6 +134,7 @@ git commit -m "refactor: clean up controller imports and dependencies
 ## Best Practices
 
 ### ✅ Do:
+
 - Make commits atomic and focused
 - Use semantic commit types
 - Write clear, descriptive messages
@@ -124,6 +143,7 @@ git commit -m "refactor: clean up controller imports and dependencies
 - Consider revertability
 
 ### ❌ Don't:
+
 - Mix unrelated changes in one commit
 - Use vague commit messages
 - Commit broken code
@@ -134,6 +154,7 @@ git commit -m "refactor: clean up controller imports and dependencies
 ## Debugging Tips
 
 If issues arise after a commit:
+
 1. `git log --oneline -5` - See recent commits
 2. `git revert <commit-hash>` - Revert problematic commit
 3. `git diff <commit-hash>~1 <commit-hash>` - See what changed
@@ -142,6 +163,7 @@ If issues arise after a commit:
 ## Integration with Version Bumping
 
 This workflow works well with semantic versioning:
+
 - **feat**: Minor version (1.x.0)
 - **fix**: Patch version (1.x.1)
 - **refactor**: Patch version (1.x.1)
@@ -154,6 +176,7 @@ This workflow works well with semantic versioning:
 ## Automation
 
 This workflow can be automated with scripts that:
+
 - Analyze git status and suggest groupings
 - Generate commit messages based on file patterns
 - Run tests between commits
