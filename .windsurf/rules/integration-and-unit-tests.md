@@ -267,15 +267,6 @@ it('should create shot successfully', async () => {
 
 **Problem**: When editing test files with repeated patterns, ambiguous string matching causes edits to fail or apply to wrong locations.
 
-**❌ WRONG - Ambiguous string matching:**
-
-```typescript
-// This appears 4 times in the file - causes ambiguity
-edit('restore: jest.fn(),', 'restore: jest.fn(),\n  findAndCount: jest.fn()');
-
-// This also appears multiple times
-edit('delete: jest.fn(),\n  restore: jest.fn(),', '...');
-```
 
 **✅ CORRECT - Use unique context:**
 
