@@ -264,12 +264,12 @@ describe('ShotService - Structure Tests', () => {
       // Check that the method exists and is a function
       expect(typeof method).toBe('function');
 
-      // Check the method signature by looking for key parts
+      // Check method signature by looking for key parts
       const methodString = method.toString();
       expect(methodString).toContain('getShots');
       expect(methodString).toContain('options');
       expect(methodString).toContain('__awaiter'); // TypeScript compiled async
-      expect(methodString).toContain('= {}'); // Default parameter
+      expect(methodString).toMatch(/options\s*=\s*\{\}/)); // More robust pattern matching for CI
     });
 
     it('updateShot should accept id and update data parameters', () => {
@@ -294,7 +294,7 @@ describe('ShotService - Structure Tests', () => {
       expect(methodString).toContain('getShotStatistics');
       expect(methodString).toContain('options');
       expect(methodString).toContain('__awaiter'); // TypeScript compiled async
-      expect(methodString).toContain('= {}'); // Default parameter
+      expect(methodString).toMatch(/options\s*=\s*\{\}/)); // More robust pattern matching for CI
     });
   });
 
