@@ -9,6 +9,7 @@ This workflow triggers the GitHub Actions CI workflow on the current branch to t
 ## When to Use This Workflow
 
 Use this workflow when you want to:
+
 - Test changes in the CI environment
 - Verify that fixes work with coverage instrumentation
 - Validate that pre-push hook changes prevent CI failures
@@ -45,11 +46,13 @@ gh api --method POST repos/otnipid/espresso-ml-api/actions/workflows/236572881/d
 ### Step 3: Monitor CI Execution
 
 Monitor the workflow execution at:
+
 ```
 https://github.com/otnipid/espresso-ml-api/actions
 ```
 
 Look for the new workflow run with:
+
 - **Event**: `workflow_dispatch`
 - **Branch**: Your current branch
 - **Status**: Should show as running, then pass/fail
@@ -57,6 +60,7 @@ Look for the new workflow run with:
 ### Step 4: Analyze Results
 
 If CI fails:
+
 1. **Check the specific failure** - Look at job logs
 2. **Compare with local results** - Run pre-push hook locally
 3. **Identify environment differences** - Coverage instrumentation, Node version, etc.
@@ -161,6 +165,7 @@ git push -u origin <branch-name>
 ## Integration with Other Workflows
 
 This workflow works well with:
+
 - `/run-unit-tests-and-fix` - Fix tests before triggering CI
 - `/organize-git-commits` - Clean up commits before CI
 - `/github-actions-debug` - Debug CI failures when they occur
