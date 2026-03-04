@@ -801,3 +801,97 @@ npm run test:coverage
 # Run all tests in watch mode
 npm run test:watch
 ```
+
+---
+
+## 🚨 **CRITICAL: Jest Matcher Syntax Rules**
+
+### **Rule: Verify Jest Matcher Syntax Before Committing**
+
+**Problem**: Incorrect Jest matcher syntax causes test failures and requires manual fixes.
+
+**Common Syntax Errors:**
+
+#### **❌ WRONG - Extra Closing Parenthesis**
+```typescript
+// ❌ WRONG - Extra closing parenthesis
+expect(methodString).toMatch(/options\s*=\s*\{\}/)); // ← Extra )
+
+// ❌ WRONG - Missing closing parenthesis  
+expect(methodString).toMatch(/options\s*=\s*\{\}/; // ← Missing )
+
+// ❌ WRONG - Mixed string/regex syntax
+expect(methodString).toMatch('/options\s*=\s*\{\}/'); // ← String instead of regex
+```
+
+#### **✅ CORRECT - Proper Jest Matcher Syntax**
+```typescript
+// ✅ CORRECT - Regex literal (no quotes, no extra parens)
+expect(methodString).toMatch(/options\s*=\s*\{\}/);
+
+// ✅ CORRECT - String literal
+expect(methodString).toContain('options = {}');
+
+// ✅ CORRECT - Multiple matchers (each properly closed)
+expect(methodString).toContain('options');
+expect(methodString).toContain('__awaiter');
+expect(methodString).toMatch(/options\s*=\s*\{\}/);
+```
+
+### **Jest Matcher Syntax Checklist**
+
+#### **Before Committing Test Changes:**
+
+```bash
+# ✅ CHECKLIST: Verify these syntax patterns:
+- [ ] All expect() calls have proper closing parenthesis: expect(...).matcher(...)
+- [ ] Regex literals use /pattern/ syntax, not '/pattern/' string
+- [ ] String matchers use 'string' or "string", not '/string/'
+- [ ] No extra closing parentheses: ) not ))
+- [ ] No missing closing parentheses: ) not ;
+- [ ] Proper semicolon at end of line: ...);
+```
+
+#### **Common Jest Matcher Patterns:**
+
+```typescript
+// ✅ String matchers
+expect(text).toContain('substring');
+expect(text).toEqual('exact string');
+
+// ✅ Regex matchers  
+expect(text).toMatch(/pattern/);
+expect(text).toMatch(/pattern\s*with\s*spaces/);
+
+// ✅ Number matchers
+expect(number).toBeGreaterThan(5);
+expect(number).toBeLessThanOrEqual(10);
+
+// ✅ Boolean matchers
+expect(boolean).toBe(true);
+expect(boolean).toBeFalsy();
+```
+
+### **Debugging Syntax Errors:**
+
+When tests fail with syntax errors:
+
+1. **Check the exact error message** - Usually points to line/column
+2. **Count opening/closing parentheses** - Must match
+3. **Verify regex vs string syntax** - No quotes around regex literals
+4. **Run single test file** - Isolate the syntax error
+5. **Use IDE syntax highlighting** - Catches obvious issues
+
+### **Prevention Strategy:**
+
+```bash
+# Before committing test changes:
+npm run test:unit -- --testPathPatterns="specific-test-file.ts"
+
+# If syntax errors appear:
+# 1. Fix the syntax error
+# 2. Re-run the single test
+# 3. Only commit when syntax is clean
+```
+
+This prevents syntax errors from reaching CI and requiring manual fixes.
