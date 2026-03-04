@@ -22,7 +22,7 @@ jobs:
     
     services:
       postgres:
-        image: ghcr.io/otnipid/espresso-ml-postgres:latest
+        image: ghcr.io/otnipid/espresso-ml-postgres:develop
         env:
           POSTGRES_USER: ${{ secrets.DB_USERNAME }}
           POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
@@ -620,6 +620,7 @@ jobs:
           echo "QUALITY_STATUS=$overall_status" >> $GITHUB_ENV
 
       - name: Notify quality gate results
+        if: env.QUALITY_STATUS == 'FAIL' && secrets.NOTIFICATION_EMAIL != ''
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com
