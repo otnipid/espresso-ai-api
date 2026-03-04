@@ -41,7 +41,6 @@ module.exports = {
       testMatch: ['<rootDir>/src/__tests__/integration/services/ShotService.basic.integration.test.ts'],
       setupFiles: ['<rootDir>/src/__tests__/env-setup.ts'],
       setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.integration.basic.ts'],
-      runInBand: true, // Run tests sequentially to avoid database conflicts
     },
     {
       displayName: 'integration-main',
@@ -50,7 +49,6 @@ module.exports = {
       testMatch: ['<rootDir>/src/__tests__/integration/services/ShotService.integration.test.ts'],
       setupFiles: ['<rootDir>/src/__tests__/env-setup.ts'],
       setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.integration.main.ts'],
-      runInBand: true, // Run tests sequentially to avoid database conflicts
     },
   ],
 };
