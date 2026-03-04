@@ -269,7 +269,7 @@ describe('ShotService - Structure Tests', () => {
       expect(methodString).toContain('getShots');
       expect(methodString).toContain('options');
       expect(methodString).toContain('__awaiter'); // TypeScript compiled async
-      expect(methodString).toMatch(/options\s*=\s*\{\}/)); // More robust pattern matching for CI
+      expect(methodString).toMatch(/options\s*=\s*\{\}/); // Robust pattern matching for spaces
     });
 
     it('getShotStatistics should accept optional filter parameters', () => {
@@ -283,7 +283,7 @@ describe('ShotService - Structure Tests', () => {
       expect(methodString).toContain('getShotStatistics');
       expect(methodString).toContain('options');
       expect(methodString).toContain('__awaiter'); // TypeScript compiled async
-      expect(methodString).toMatch(/options\s*=\s*\{\}/)); // More robust pattern matching for CI
+      expect(methodString).toMatch(/options\s*=\s*\{\}/); // Robust pattern matching for spaces
     });
 
     it('updateShot should accept id and update data parameters', () => {
