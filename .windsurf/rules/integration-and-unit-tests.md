@@ -826,7 +826,7 @@ npm run test:watch
 // ❌ WRONG - Extra closing parenthesis
 expect(methodString).toMatch(/options\s*=\s*\{\}/)); // ← Extra )
 
-// ❌ WRONG - Missing closing parenthesis  
+// ❌ WRONG - Missing closing parenthesis
 expect(methodString).toMatch(/options\s*=\s*\{\}/; // ← Missing )
 
 // ❌ WRONG - Mixed string/regex syntax
@@ -869,7 +869,7 @@ expect(methodString).toMatch(/options\s*=\s*\{\}/);
 expect(text).toContain('substring');
 expect(text).toEqual('exact string');
 
-// ✅ Regex matchers  
+// ✅ Regex matchers
 expect(text).toMatch(/pattern/);
 expect(text).toMatch(/pattern\s*with\s*spaces/);
 
