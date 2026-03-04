@@ -4,7 +4,13 @@ import { Shot } from '../../../entities/Shot';
 import { BeanBatch } from '../../../entities/BeanBatch';
 import { Machine } from '../../../entities/Machine';
 import { Bean } from '../../../entities/Bean';
-import { initializeTestDataSource, getTestDataSource, createTestMachine, createTestBean, createTestBeanBatch } from '../../setup.integration.main';
+import {
+  initializeTestDataSource,
+  getTestDataSource,
+  createTestMachine,
+  createTestBean,
+  createTestBeanBatch,
+} from '../../setup.integration.main';
 
 describe('ShotService', () => {
   let shotService: ShotService;
@@ -97,28 +103,28 @@ describe('ShotService', () => {
 
       // Verify preparation data
       expect(result.preparation?.grind_setting).toBe(15);
-      expect(result.preparation?.dose_grams).toBe("18.00");
+      expect(result.preparation?.dose_grams).toBe('18.00');
       expect(result.preparation?.basket_type).toBe('double');
 
       // Verify extraction data
-      expect(result.extraction?.dose_grams).toBe("18.00");
-      expect(result.extraction?.yield_grams).toBe("36.00");
+      expect(result.extraction?.dose_grams).toBe('18.00');
+      expect(result.extraction?.yield_grams).toBe('36.00');
       expect(result.extraction?.extraction_time_seconds).toBe(25);
 
       // Verify environment data
-      expect(result.environment?.ambient_temp_c).toBe("22.5");
-      expect(result.environment?.humidity_percent).toBe("60.0");
+      expect(result.environment?.ambient_temp_c).toBe('22.5');
+      expect(result.environment?.humidity_percent).toBe('60.0');
       expect(result.environment?.water_source).toBe('filtered');
       expect(result.environment?.estimated_water_hardness_ppm).toBe(150);
       expect(result.environment?.machine_warmup_minutes).toBe(15);
       expect(result.environment?.shots_since_clean).toBe(5);
 
       // Verify feedback data
-      expect(result.feedback?.overall_score).toBe("8.5");
-      expect(result.feedback?.acidity).toBe("7.0");
-      expect(result.feedback?.sweetness).toBe("8.0");
-      expect(result.feedback?.bitterness).toBe("3.0");
-      expect(result.feedback?.body).toBe("7.5");
+      expect(result.feedback?.overall_score).toBe('8.5');
+      expect(result.feedback?.acidity).toBe('7.0');
+      expect(result.feedback?.sweetness).toBe('8.0');
+      expect(result.feedback?.bitterness).toBe('3.0');
+      expect(result.feedback?.body).toBe('7.5');
       expect(result.feedback?.extraction_assessment).toBe('Balanced extraction');
       expect(result.feedback?.notes).toBe('Good balance');
     });
@@ -347,8 +353,8 @@ describe('ShotService', () => {
 
       expect(result.preparation).toBeDefined();
       expect(result.preparation?.grind_setting).toBe(20);
-      expect(result.preparation?.dose_grams).toBe("20.00");
-      expect(result.extraction?.yield_grams).toBe("40.00");
+      expect(result.preparation?.dose_grams).toBe('20.00');
+      expect(result.extraction?.yield_grams).toBe('40.00');
       expect(result.extraction?.extraction_time_seconds).toBe(30);
     });
 
@@ -367,17 +373,17 @@ describe('ShotService', () => {
       const result = await shotService.updateShot(createdShot.id, updateData);
 
       expect(result.environment).toBeDefined();
-      expect(result.environment?.ambient_temp_c).toBe("25.0");
+      expect(result.environment?.ambient_temp_c).toBe('25.0');
       expect(result.feedback).toBeDefined();
-      expect(result.feedback?.overall_score).toBe("9.0");
+      expect(result.feedback?.overall_score).toBe('9.0');
     });
 
     it('should throw error when updating non-existent shot', async () => {
       const updateData = { success: false };
 
-      await expect(shotService.updateShot('550e8400-e29b-41d4-a716-446655440011', updateData)).rejects.toThrow(
-        'Shot with ID 550e8400-e29b-41d4-a716-446655440011 not found'
-      );
+      await expect(
+        shotService.updateShot('550e8400-e29b-41d4-a716-446655440011', updateData)
+      ).rejects.toThrow('Shot with ID 550e8400-e29b-41d4-a716-446655440011 not found');
     });
   });
 

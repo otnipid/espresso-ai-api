@@ -1,6 +1,12 @@
 import { DataSource } from 'typeorm';
 import { ShotService } from '../../../services/ShotService';
-import { initializeTestDataSource, getTestDataSource, createTestMachine, createTestBean, createTestBeanBatch } from '../../setup.integration.basic';
+import {
+  initializeTestDataSource,
+  getTestDataSource,
+  createTestMachine,
+  createTestBean,
+  createTestBeanBatch,
+} from '../../setup.integration.basic';
 
 describe('ShotService - Basic Tests', () => {
   let shotService: ShotService;
@@ -266,9 +272,9 @@ describe('ShotService - Basic Tests', () => {
     });
 
     it('should throw error when updating non-existent shot', async () => {
-      await expect(shotService.updateShot('550e8400-e29b-41d4-a716-446655440003', {})).rejects.toThrow(
-        'Shot with ID 550e8400-e29b-41d4-a716-446655440003 not found'
-      );
+      await expect(
+        shotService.updateShot('550e8400-e29b-41d4-a716-446655440003', {})
+      ).rejects.toThrow('Shot with ID 550e8400-e29b-41d4-a716-446655440003 not found');
     });
 
     it('should return false when soft deleting non-existent shot', async () => {

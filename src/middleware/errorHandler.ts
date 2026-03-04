@@ -54,12 +54,7 @@ export class DatabaseError extends Error {
  * Global error handling middleware
  * Catches all errors and formats them appropriately
  */
-export const errorHandler = (
-  error: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const errorHandler = (error: Error, req: Request, res: Response, next: NextFunction) => {
   // Log the error for debugging
   console.error('Error occurred:', {
     message: error.message,
@@ -128,7 +123,7 @@ function handleZodError(error: ZodError, res: Response) {
     field: err.path.join('.'),
     message: err.message,
     code: err.code,
-    ...(err as any).received && { received: (err as any).received },
+    ...((err as any).received && { received: (err as any).received }),
   }));
 
   res.status(400).json({
@@ -180,7 +175,7 @@ function handleBusinessRuleError(error: BusinessRuleError, res: Response) {
 function handleDatabaseError(error: DatabaseError, res: Response) {
   // Don't expose internal database errors in production
   const isDevelopment = process.env.NODE_ENV === 'development';
-  
+
   res.status(error.statusCode).json({
     error: 'Database Error',
     message: isDevelopment ? error.message : 'An internal database error occurred',
@@ -194,14 +189,14 @@ function handleDatabaseError(error: DatabaseError, res: Response) {
  */
 function handleDefaultError(error: Error, res: Response) {
   const isDevelopment = process.env.NODE_ENV === 'development';
-  
+
   res.status(500).json({
     error: 'Internal Server Error',
     message: isDevelopment ? error.message : 'An unexpected error occurred',
     code: 'INTERNAL_ERROR',
-    ...(isDevelopment && { 
+    ...(isDevelopment && {
       stack: error.stack,
-      details: error.name 
+      details: error.name,
     }),
   });
 }
@@ -283,7 +278,12 @@ export const timeoutHandler = (req: Request, res: Response) => {
 /**
  * Health check endpoint error handler
  */
-export const healthCheckErrorHandler = (error: Error, req: Request, res: Response, next: NextFunction) => {
+export const healthCheckErrorHandler = (
+  error: Error,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   if (req.url === '/health' || req.url === '/healthz') {
     return res.status(503).json({
       status: 'unhealthy',
@@ -315,11 +315,12 @@ export const logError = (error: Error, context?: string) => {
  */
 export const performanceMonitor = (req: Request, res: Response, next: NextFunction) => {
   const start = Date.now();
-  
+
   res.on('finish', () => {
     const duration = Date.now() - start;
-    
-    if (duration > 1000) { // Log slow requests (> 1s)
+
+    if (duration > 1000) {
+      // Log slow requests (> 1s)
       console.warn('Slow request detected:', {
         method: req.method,
         url: req.url,
@@ -328,6 +329,6 @@ export const performanceMonitor = (req: Request, res: Response, next: NextFuncti
       });
     }
   });
-  
+
   next();
 };

@@ -4,7 +4,7 @@
    c. psql -h localhost -p 5432 -U postgres -d espresso_ml
 2. Load test data into database
 3. Run integration tests: `npm run test:integration:coverage`
-4. For each failing test, do the following. Remember to address one failed test at a time. 
+4. For each failing test, do the following. Remember to address one failed test at a time.
    a. Identify the root cause
    b. If root cause if from database, then suggest a fix for the database repo and stop running tests
    c. Fix the issue

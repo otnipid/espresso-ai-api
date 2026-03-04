@@ -1,8 +1,21 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError, z } from 'zod';
-import { validate, validateMachineExists, validateBeanBatchExists } from '../../../middleware/validation/shotValidation';
-import { CreateShotSchema, UpdateShotSchema, ShotQuerySchema } from '../../../middleware/validation/schemas';
-import { ValidationError, BusinessRuleError, NotFoundError, errorHandler } from '../../../middleware/errorHandler';
+import {
+  validate,
+  validateMachineExists,
+  validateBeanBatchExists,
+} from '../../../middleware/validation/shotValidation';
+import {
+  CreateShotSchema,
+  UpdateShotSchema,
+  ShotQuerySchema,
+} from '../../../middleware/validation/schemas';
+import {
+  ValidationError,
+  BusinessRuleError,
+  NotFoundError,
+  errorHandler,
+} from '../../../middleware/errorHandler';
 
 // Unmock validation modules for this test file
 jest.unmock('../../../middleware/validation/shotValidation');
@@ -10,12 +23,13 @@ jest.unmock('../../../middleware/validation/schemas');
 jest.unmock('../../../middleware/errorHandler');
 
 // Mock Express request/response
-const mockRequest = (body: any = {}, query: any = {}, params: any = {}) => ({
-  body,
-  query,
-  params,
-  validated: {},
-} as Request);
+const mockRequest = (body: any = {}, query: any = {}, params: any = {}) =>
+  ({
+    body,
+    query,
+    params,
+    validated: {},
+  }) as Request;
 
 const mockResponse = () => {
   const res: any = {};
@@ -176,12 +190,15 @@ describe('Validation Middleware - Basic Tests', () => {
 
   describe('Query Parameter Validation', () => {
     it('should validate pagination parameters', async () => {
-      const req = mockRequest({}, {
-        page: '1',
-        limit: '10',
-        sortBy: 'pulled_at',
-        sortOrder: 'ASC',
-      });
+      const req = mockRequest(
+        {},
+        {
+          page: '1',
+          limit: '10',
+          sortBy: 'pulled_at',
+          sortOrder: 'ASC',
+        }
+      );
       const res = mockResponse();
       const next = mockNext;
 
@@ -212,8 +229,16 @@ describe('Validation Middleware - Basic Tests', () => {
 
       // Use the real validate function with a schema that has defaults
       const DefaultValuesSchema = z.object({
-        page: z.string().transform(Number).pipe(z.number().min(1)).default(() => 1),
-        limit: z.string().transform(Number).pipe(z.number().min(1).max(100)).default(() => 20),
+        page: z
+          .string()
+          .transform(Number)
+          .pipe(z.number().min(1))
+          .default(() => 1),
+        limit: z
+          .string()
+          .transform(Number)
+          .pipe(z.number().min(1).max(100))
+          .default(() => 20),
         sortBy: z.enum(['pulled_at', 'machineId', 'shot_type']).default('pulled_at'),
         sortOrder: z.enum(['ASC', 'DESC']).default('DESC'),
       });
@@ -231,10 +256,13 @@ describe('Validation Middleware - Basic Tests', () => {
     });
 
     it('should validate date ranges', async () => {
-      const req = mockRequest({}, {
-        dateFrom: '2024-01-01T00:00:00Z',
-        dateTo: '2024-12-31T23:59:59Z',
-      });
+      const req = mockRequest(
+        {},
+        {
+          dateFrom: '2024-01-01T00:00:00Z',
+          dateTo: '2024-12-31T23:59:59Z',
+        }
+      );
       const res = mockResponse();
       const next = mockNext;
 
@@ -259,23 +287,28 @@ describe('Validation Middleware - Basic Tests', () => {
     });
 
     it('should reject invalid date ranges', async () => {
-      const req = mockRequest({}, {
-        dateFrom: '2024-12-31T00:00:00Z',
-        dateTo: '2024-01-01T00:00:00Z', // Before dateFrom
-      });
+      const req = mockRequest(
+        {},
+        {
+          dateFrom: '2024-12-31T00:00:00Z',
+          dateTo: '2024-01-01T00:00:00Z', // Before dateFrom
+        }
+      );
       const res = mockResponse();
       const next = mockNext;
 
       // Use the real validate function with a date range schema that has custom validation
-      const DateRangeSchema = z.object({
-        format: z.enum(['json', 'csv']).default('json'),
-        includeRelated: z.boolean().default(true),
-        dateFrom: z.string().datetime(),
-        dateTo: z.string().datetime(),
-      }).refine((data) => new Date(data.dateFrom) <= new Date(data.dateTo), {
-        message: 'dateFrom must be before dateTo',
-        path: ['dateTo'],
-      });
+      const DateRangeSchema = z
+        .object({
+          format: z.enum(['json', 'csv']).default('json'),
+          includeRelated: z.boolean().default(true),
+          dateFrom: z.string().datetime(),
+          dateTo: z.string().datetime(),
+        })
+        .refine(data => new Date(data.dateFrom) <= new Date(data.dateTo), {
+          message: 'dateFrom must be before dateTo',
+          path: ['dateTo'],
+        });
 
       await validate(DateRangeSchema, 'query')(req, res, next);
 
@@ -296,238 +329,252 @@ describe('Validation Middleware - Basic Tests', () => {
       );
     });
 
-  describe('Business Rule Validation', () => {
-    it('should validate dose consistency', async () => {
-      const req = mockRequest({
-        machineId: '550e8400-e29b-41d4-a716-446655440000',
-        beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
-        shot_type: 'normale',
-        preparation: {
-          dose_grams: 18.0,
-        },
-        extraction: {
-          dose_grams: 25.0, // Too different from preparation dose
-        },
-      });
-      const res = mockResponse();
-      const next = mockNext;
+    describe('Business Rule Validation', () => {
+      it('should validate dose consistency', async () => {
+        const req = mockRequest({
+          machineId: '550e8400-e29b-41d4-a716-446655440000',
+          beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
+          shot_type: 'normale',
+          preparation: {
+            dose_grams: 18.0,
+          },
+          extraction: {
+            dose_grams: 25.0, // Too different from preparation dose
+          },
+        });
+        const res = mockResponse();
+        const next = mockNext;
 
-      // Use the real validate function with a business rule schema
-      const DoseConsistencySchema = z.object({
-        machineId: z.string().uuid(),
-        beanBatchId: z.string().uuid(),
-        shot_type: z.enum(['normale', 'ristretto', 'lungo']),
-        preparation: z.object({
-          dose_grams: z.number(),
-        }),
-        extraction: z.object({
-          dose_grams: z.number(),
-        }),
-      }).refine((data) => Math.abs(data.preparation.dose_grams - data.extraction.dose_grams) <= 0.5, {
-        message: 'Must be consistent within 0.5g',
-        path: ['extraction.dose_grams'],
-      });
-
-      await validate(DoseConsistencySchema, 'body')(req, res, next);
-
-      expect(next).not.toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: 'Validation failed',
-          message: 'Invalid input data',
-          details: expect.arrayContaining([
-            expect.objectContaining({
-              code: 'custom',
-              field: 'extraction.dose_grams',
-              message: expect.stringContaining('consistent within 0.5g'),
+        // Use the real validate function with a business rule schema
+        const DoseConsistencySchema = z
+          .object({
+            machineId: z.string().uuid(),
+            beanBatchId: z.string().uuid(),
+            shot_type: z.enum(['normale', 'ristretto', 'lungo']),
+            preparation: z.object({
+              dose_grams: z.number(),
             }),
-          ]),
-        })
-      );
-    });
+            extraction: z.object({
+              dose_grams: z.number(),
+            }),
+          })
+          .refine(
+            data => Math.abs(data.preparation.dose_grams - data.extraction.dose_grams) <= 0.5,
+            {
+              message: 'Must be consistent within 0.5g',
+              path: ['extraction.dose_grams'],
+            }
+          );
 
-    it('should validate extraction ratios', async () => {
-      const req = mockRequest({
-        machineId: '550e8400-e29b-41d4-a716-446655440000',
-        beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
-        shot_type: 'normale',
-        extraction: {
-          dose_grams: 18.0,
-          yield_grams: 100.0, // Too high ratio (5.5x)
-        },
-      });
-      const res = mockResponse();
-      const next = mockNext;
+        await validate(DoseConsistencySchema, 'body')(req, res, next);
 
-      // Use the real validate function with a business rule schema
-      const ExtractionRatioSchema = z.object({
-        machineId: z.string().uuid(),
-        beanBatchId: z.string().uuid(),
-        shot_type: z.enum(['normale', 'ristretto', 'lungo']),
-        extraction: z.object({
-          dose_grams: z.number(),
-          yield_grams: z.number(),
-        }),
-      }).refine((data) => {
-        const ratio = data.extraction.yield_grams / data.extraction.dose_grams;
-        return ratio >= 0.5 && ratio <= 3.0;
-      }, {
-        message: 'Must be between 0.5x and 3x',
-        path: ['extraction.yield_grams'],
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            error: 'Validation failed',
+            message: 'Invalid input data',
+            details: expect.arrayContaining([
+              expect.objectContaining({
+                code: 'custom',
+                field: 'extraction.dose_grams',
+                message: expect.stringContaining('consistent within 0.5g'),
+              }),
+            ]),
+          })
+        );
       });
 
-      await validate(ExtractionRatioSchema, 'body')(req, res, next);
+      it('should validate extraction ratios', async () => {
+        const req = mockRequest({
+          machineId: '550e8400-e29b-41d4-a716-446655440000',
+          beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
+          shot_type: 'normale',
+          extraction: {
+            dose_grams: 18.0,
+            yield_grams: 100.0, // Too high ratio (5.5x)
+          },
+        });
+        const res = mockResponse();
+        const next = mockNext;
 
-      expect(next).not.toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: 'Validation failed',
-          message: 'Invalid input data',
-          details: expect.arrayContaining([
-            expect.objectContaining({
-              code: 'custom',
-              field: 'extraction.yield_grams',
+        // Use the real validate function with a business rule schema
+        const ExtractionRatioSchema = z
+          .object({
+            machineId: z.string().uuid(),
+            beanBatchId: z.string().uuid(),
+            shot_type: z.enum(['normale', 'ristretto', 'lungo']),
+            extraction: z.object({
+              dose_grams: z.number(),
+              yield_grams: z.number(),
+            }),
+          })
+          .refine(
+            data => {
+              const ratio = data.extraction.yield_grams / data.extraction.dose_grams;
+              return ratio >= 0.5 && ratio <= 3.0;
+            },
+            {
               message: 'Must be between 0.5x and 3x',
-            }),
-          ]),
-        })
-      );
-    });
-  });
+              path: ['extraction.yield_grams'],
+            }
+          );
 
-  describe('Error Handling', () => {
-    it('should format validation errors correctly', async () => {
-      const req = mockRequest({
-        machineId: 'invalid-uuid',
-        shot_type: 'invalid-type',
-      });
-      const res = mockResponse();
-      const next = mockNext;
+        await validate(ExtractionRatioSchema, 'body')(req, res, next);
 
-      // Use the real validate function with a schema that will fail validation
-      const ErrorFormattingSchema = z.object({
-        machineId: z.string().uuid(),
-        shot_type: z.enum(['normale', 'ristretto', 'lungo']),
-      });
-
-      await validate(ErrorFormattingSchema, 'body')(req, res, next);
-
-      expect(next).not.toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: 'Validation failed',
-          message: 'Invalid input data',
-          details: expect.arrayContaining([
-            expect.objectContaining({
-              field: expect.any(String),
-              message: expect.any(String),
-              code: expect.any(String),
-            }),
-          ]),
-        })
-      );
-    });
-
-    it('should handle missing required fields', async () => {
-      const req = mockRequest({});
-      const res = mockResponse();
-      const next = mockNext;
-
-      // Use the real validate function with a schema that has required fields
-      const RequiredFieldsSchema = z.object({
-        machineId: z.string().uuid(),
-        beanBatchId: z.string().uuid(),
-        shot_type: z.enum(['normale', 'ristretto', 'lungo']),
-      });
-
-      await validate(RequiredFieldsSchema, 'body')(req, res, next);
-
-      expect(next).not.toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: 'Validation failed',
-          message: 'Invalid input data',
-          details: expect.arrayContaining([
-            expect.objectContaining({
-              field: 'machineId',
-            }),
-            expect.objectContaining({
-              field: 'beanBatchId',
-            }),
-            expect.objectContaining({
-              field: 'shot_type',
-            }),
-          ]),
-        })
-      );
-    });
-  });
-
-  describe('Update Validation', () => {
-    it('should allow partial updates', async () => {
-      const req = mockRequest({
-        success: false,
-        notes: 'Updated notes',
-      });
-      const res = mockResponse();
-      const next = mockNext;
-
-      // Use the real validate function with a partial update schema
-      const PartialUpdateSchema = z.object({
-        success: z.boolean().optional(),
-        notes: z.string().optional(),
-        rating: z.number().min(1).max(5).optional(),
-      }).partial();
-
-      await validate(PartialUpdateSchema, 'body')(req, res, next);
-
-      expect(next).toHaveBeenCalled();
-      expect(res.status).not.toHaveBeenCalled();
-      expect(req.validated?.body).toEqual({
-        success: false,
-        notes: 'Updated notes',
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            error: 'Validation failed',
+            message: 'Invalid input data',
+            details: expect.arrayContaining([
+              expect.objectContaining({
+                code: 'custom',
+                field: 'extraction.yield_grams',
+                message: 'Must be between 0.5x and 3x',
+              }),
+            ]),
+          })
+        );
       });
     });
 
-    it('should validate update data types', async () => {
-      const req = mockRequest({
-        success: 'not-boolean',
-        shot_type: 'invalid-type',
+    describe('Error Handling', () => {
+      it('should format validation errors correctly', async () => {
+        const req = mockRequest({
+          machineId: 'invalid-uuid',
+          shot_type: 'invalid-type',
+        });
+        const res = mockResponse();
+        const next = mockNext;
+
+        // Use the real validate function with a schema that will fail validation
+        const ErrorFormattingSchema = z.object({
+          machineId: z.string().uuid(),
+          shot_type: z.enum(['normale', 'ristretto', 'lungo']),
+        });
+
+        await validate(ErrorFormattingSchema, 'body')(req, res, next);
+
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            error: 'Validation failed',
+            message: 'Invalid input data',
+            details: expect.arrayContaining([
+              expect.objectContaining({
+                field: expect.any(String),
+                message: expect.any(String),
+                code: expect.any(String),
+              }),
+            ]),
+          })
+        );
       });
-      const res = mockResponse();
-      const next = mockNext;
 
-      // Use the real validate function with a schema that will fail type validation
-      const UpdateDataTypesSchema = z.object({
-        success: z.boolean().optional(),
-        shot_type: z.enum(['normale', 'ristretto', 'lungo']).optional(),
-        rating: z.number().min(1).max(5).optional(),
-      }).partial();
+      it('should handle missing required fields', async () => {
+        const req = mockRequest({});
+        const res = mockResponse();
+        const next = mockNext;
 
-      await validate(UpdateDataTypesSchema, 'body')(req, res, next);
+        // Use the real validate function with a schema that has required fields
+        const RequiredFieldsSchema = z.object({
+          machineId: z.string().uuid(),
+          beanBatchId: z.string().uuid(),
+          shot_type: z.enum(['normale', 'ristretto', 'lungo']),
+        });
 
-      expect(next).not.toHaveBeenCalled();
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          error: 'Validation failed',
-          message: 'Invalid input data',
-          details: expect.arrayContaining([
-            expect.objectContaining({
-              field: 'success',
-            }),
-            expect.objectContaining({
-              field: 'shot_type',
-            }),
-          ]),
-        })
-      );
+        await validate(RequiredFieldsSchema, 'body')(req, res, next);
+
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            error: 'Validation failed',
+            message: 'Invalid input data',
+            details: expect.arrayContaining([
+              expect.objectContaining({
+                field: 'machineId',
+              }),
+              expect.objectContaining({
+                field: 'beanBatchId',
+              }),
+              expect.objectContaining({
+                field: 'shot_type',
+              }),
+            ]),
+          })
+        );
+      });
     });
-  });
+
+    describe('Update Validation', () => {
+      it('should allow partial updates', async () => {
+        const req = mockRequest({
+          success: false,
+          notes: 'Updated notes',
+        });
+        const res = mockResponse();
+        const next = mockNext;
+
+        // Use the real validate function with a partial update schema
+        const PartialUpdateSchema = z
+          .object({
+            success: z.boolean().optional(),
+            notes: z.string().optional(),
+            rating: z.number().min(1).max(5).optional(),
+          })
+          .partial();
+
+        await validate(PartialUpdateSchema, 'body')(req, res, next);
+
+        expect(next).toHaveBeenCalled();
+        expect(res.status).not.toHaveBeenCalled();
+        expect(req.validated?.body).toEqual({
+          success: false,
+          notes: 'Updated notes',
+        });
+      });
+
+      it('should validate update data types', async () => {
+        const req = mockRequest({
+          success: 'not-boolean',
+          shot_type: 'invalid-type',
+        });
+        const res = mockResponse();
+        const next = mockNext;
+
+        // Use the real validate function with a schema that will fail type validation
+        const UpdateDataTypesSchema = z
+          .object({
+            success: z.boolean().optional(),
+            shot_type: z.enum(['normale', 'ristretto', 'lungo']).optional(),
+            rating: z.number().min(1).max(5).optional(),
+          })
+          .partial();
+
+        await validate(UpdateDataTypesSchema, 'body')(req, res, next);
+
+        expect(next).not.toHaveBeenCalled();
+        expect(res.status).toHaveBeenCalledWith(400);
+        expect(res.json).toHaveBeenCalledWith(
+          expect.objectContaining({
+            error: 'Validation failed',
+            message: 'Invalid input data',
+            details: expect.arrayContaining([
+              expect.objectContaining({
+                field: 'success',
+              }),
+              expect.objectContaining({
+                field: 'shot_type',
+              }),
+            ]),
+          })
+        );
+      });
+    });
   });
 });
 
@@ -679,10 +726,12 @@ describe('Error Handler Middleware - Basic Tests', () => {
 
     // Mock the errorHandler to simulate actual behavior
     const mockErrorHandler = jest.fn().mockImplementation((error, req, res, next) => {
-      if (!(error instanceof ValidationError) && 
-          !(error instanceof NotFoundError) && 
-          !(error instanceof BusinessRuleError) && 
-          !(error instanceof ZodError)) {
+      if (
+        !(error instanceof ValidationError) &&
+        !(error instanceof NotFoundError) &&
+        !(error instanceof BusinessRuleError) &&
+        !(error instanceof ZodError)
+      ) {
         res.status(500).json({
           error: 'Internal Server Error',
           message: 'An unexpected error occurred',

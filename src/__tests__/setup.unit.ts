@@ -11,10 +11,10 @@ jest.mock('../data-source', () => ({
   },
 }));
 
-// Create mock error handler 
+// Create mock error handler
 const mockErrorHandler = jest.fn();
 
-// Mock error classes 
+// Mock error classes
 class MockValidationError extends Error {
   constructor(message: string, details?: any) {
     super(message);
@@ -45,12 +45,7 @@ jest.mock('../middleware/errorHandler', () => ({
 }));
 
 // Export mocks for test files to use
-export {
-  mockErrorHandler,
-  MockValidationError,
-  MockNotFoundError,
-  MockBusinessRuleError,
-};
+export { mockErrorHandler, MockValidationError, MockNotFoundError, MockBusinessRuleError };
 
 // Global test utilities
 (globalThis as any).createMockDataSource = () => ({

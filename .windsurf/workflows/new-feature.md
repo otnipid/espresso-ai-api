@@ -1,6 +1,7 @@
 ---
 auto_execution_mode: 2
 ---
+
 1. Review suggested feature
 2. Review docs/vision.md for alignment
 3. Review architecture defined in docs/vision.md

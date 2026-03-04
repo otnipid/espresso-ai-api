@@ -11,76 +11,84 @@ import { Bean } from '../entities/Bean';
 // Test database setup - tries Kubernetes PostgreSQL first, then local PostgreSQL, falls back to SQLite
 let testDataSource: DataSource;
 
-const createCustomPostgresDataSource = () => new DataSource({
-  type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  username: process.env.DB_USERNAME || 'postgres_user',
-  password: process.env.DB_PASSWORD || 'postgres_password',
-  database: process.env.DB_NAME || 'espresso_ml_test',
-  entities: [
-    Shot,
-    ShotPreparation,
-    ShotExtraction,
-    ShotEnvironment,
-    ShotFeedback,
-    Machine,
-    Bean,
-    BeanBatch,
-  ],
-  synchronize: false, // Schemas are pre-loaded!
-  logging: false,
-  dropSchema: false, // Keep pre-loaded schema
-  ssl: false,
-});
+const createCustomPostgresDataSource = () =>
+  new DataSource({
+    type: 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432'),
+    username: process.env.DB_USERNAME || 'postgres_user',
+    password: process.env.DB_PASSWORD || 'postgres_password',
+    database: process.env.DB_NAME || 'espresso_ml_test',
+    entities: [
+      Shot,
+      ShotPreparation,
+      ShotExtraction,
+      ShotEnvironment,
+      ShotFeedback,
+      Machine,
+      Bean,
+      BeanBatch,
+    ],
+    synchronize: false, // Schemas are pre-loaded!
+    logging: false,
+    dropSchema: false, // Keep pre-loaded schema
+    ssl: false,
+  });
 
-const createLocalPostgresDataSource = () => new DataSource({
-  type: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  username: process.env.DB_USERNAME || 'postgres',
-  password: process.env.DB_PASSWORD || 'password',
-  database: process.env.DB_NAME || 'espresso_ml_test',
-  entities: [
-    Shot,
-    ShotPreparation,
-    ShotExtraction,
-    ShotEnvironment,
-    ShotFeedback,
-    Machine,
-    Bean,
-    BeanBatch,
-  ],
-  synchronize: true,
-  logging: false,
-  dropSchema: true,
-});
+const createLocalPostgresDataSource = () =>
+  new DataSource({
+    type: 'postgres',
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432'),
+    username: process.env.DB_USERNAME || 'postgres',
+    password: process.env.DB_PASSWORD || 'password',
+    database: process.env.DB_NAME || 'espresso_ml_test',
+    entities: [
+      Shot,
+      ShotPreparation,
+      ShotExtraction,
+      ShotEnvironment,
+      ShotFeedback,
+      Machine,
+      Bean,
+      BeanBatch,
+    ],
+    synchronize: true,
+    logging: false,
+    dropSchema: true,
+  });
 
-const createSQLiteDataSource = () => new DataSource({
-  type: 'sqlite',
-  database: ':memory:',
-  entities: [
-    Shot,
-    ShotPreparation,
-    ShotExtraction,
-    ShotEnvironment,
-    ShotFeedback,
-    Machine,
-    Bean,
-    BeanBatch,
-  ],
-  synchronize: true,
-  logging: false,
-});
+const createSQLiteDataSource = () =>
+  new DataSource({
+    type: 'sqlite',
+    database: ':memory:',
+    entities: [
+      Shot,
+      ShotPreparation,
+      ShotExtraction,
+      ShotEnvironment,
+      ShotFeedback,
+      Machine,
+      Bean,
+      BeanBatch,
+    ],
+    synchronize: true,
+    logging: false,
+  });
 
 // Clean test data but preserve schema
 const cleanTestData = async () => {
   const tables = [
-    'shots', 'shot_preparation', 'shot_extraction', 
-    'shot_environment', 'shot_feedback', 
-    'bean_batches', 'machines', 'beans'
+    'shots',
+    'shot_preparation',
+    'shot_extraction',
+    'shot_environment',
+    'shot_feedback',
+    'bean_batches',
+    'machines',
+    'beans',
   ];
-  
+
   for (const table of tables) {
     try {
       await testDataSource.query(`TRUNCATE TABLE ${table} RESTART IDENTITY CASCADE`);
@@ -113,13 +121,13 @@ export const initializeTestDataSource = async (): Promise<DataSource> => {
       console.log('💻 Local development environment detected');
       testDataSource = createCustomPostgresDataSource();
     }
-    
+
     await testDataSource.initialize();
     console.log(`✅ Database connected successfully (postgres)`);
-    
+
     // Clean test data but preserve schema
     await cleanTestData();
-    
+
     return testDataSource;
   } catch (error) {
     console.error('❌ Database connection failed:', error);

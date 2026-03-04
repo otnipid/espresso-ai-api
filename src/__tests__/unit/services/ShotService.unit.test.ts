@@ -15,7 +15,17 @@ describe('ShotService - Unit Tests', () => {
   beforeEach(() => {
     // Create mock repositories with Jest mocks
     const mockMachineRepo = {
-      findOne: jest.fn() as jest.MockedFunction<Repository<Machine>['findOne']>,
+      findOne: jest.fn().mockImplementation(options => {
+        if (options.where.id === '550e8400-e29b-41d4-a716-446655440000') {
+          return Promise.resolve({
+            id: '550e8400-e29b-41d4-a716-446655440000',
+            model: 'Test Machine',
+            firmware_version: '1.0.0',
+            created_at: new Date(),
+          });
+        }
+        return Promise.resolve(null);
+      }),
       find: jest.fn(),
       save: jest.fn(),
       remove: jest.fn(),
@@ -26,7 +36,17 @@ describe('ShotService - Unit Tests', () => {
     };
 
     const mockBeanRepo = {
-      findOne: jest.fn() as jest.MockedFunction<Repository<BeanBatch>['findOne']>,
+      findOne: jest.fn().mockImplementation(options => {
+        if (options.where.id === '550e8400-e29b-41d4-a716-446655440001') {
+          return Promise.resolve({
+            id: '550e8400-e29b-41d4-a716-446655440001',
+            name: 'Test Bean Batch',
+            origin: 'Test Origin',
+            created_at: new Date(),
+          });
+        }
+        return Promise.resolve(null);
+      }),
       find: jest.fn(),
       save: jest.fn(),
       remove: jest.fn(),
@@ -37,7 +57,23 @@ describe('ShotService - Unit Tests', () => {
     };
 
     const mockShotRepo = {
-      findOne: jest.fn() as jest.MockedFunction<Repository<Shot>['findOne']>,
+      findOne: jest.fn().mockImplementation(options => {
+        if (options.where.id === '550e8400-e29b-41d4-a716-4466554402') {
+          return Promise.resolve({
+            id: '550e8400-e29b-41d4-a716-4466554402',
+            shot_type: 'normale',
+            created_at: new Date(),
+          });
+        }
+        if (options.where.id === '550e8400-e29b-41d4-a716-4466554403') {
+          return Promise.resolve({
+            id: '550e8400-e29b-41d4-a716-4466554403',
+            shot_type: 'normale',
+            created_at: new Date(),
+          });
+        }
+        return Promise.resolve(null);
+      }) as jest.MockedFunction<Repository<Shot>['findOne']>,
       find: jest.fn(),
       save: jest.fn(),
       remove: jest.fn(),
@@ -45,28 +81,53 @@ describe('ShotService - Unit Tests', () => {
       update: jest.fn(),
       delete: jest.fn(),
       restore: jest.fn(),
+      // Add missing methods that ShotService uses
+      findAndCount: jest.fn().mockResolvedValue([[], 0]),
+      softDelete: jest.fn().mockResolvedValue({ affected: 1 }),
+      count: jest.fn().mockResolvedValue(0),
     };
 
     // Create a mock data source that returns mock repositories
     mockDataSource = {
-      getRepository: jest.fn().mockImplementation((entity) => {
+      getRepository: jest.fn().mockImplementation(entity => {
+        const mockRepo = {
+          findOne: jest.fn(),
+          find: jest.fn(),
+          save: jest.fn(),
+          remove: jest.fn(),
+          create: jest.fn(),
+          update: jest.fn(),
+          delete: jest.fn(),
+          restore: jest.fn(),
+          // Add manager property for createQueryRunner
+          manager: {
+            connection: {
+              createQueryRunner: jest.fn().mockReturnValue({
+                connect: jest.fn().mockResolvedValue(undefined),
+                startTransaction: jest.fn().mockResolvedValue(undefined),
+                commitTransaction: jest.fn().mockResolvedValue(undefined),
+                rollbackTransaction: jest.fn().mockResolvedValue(undefined),
+                release: jest.fn().mockResolvedValue(undefined),
+                manager: {
+                  save: jest.fn().mockResolvedValue({
+                    id: '550e8400-e29b-41d4-a716-4466554402',
+                    shot_type: 'normale',
+                    created_at: new Date(),
+                  }),
+                },
+              }),
+            },
+          },
+        };
+
         if (entity === Shot) {
-          return mockShotRepo;
+          return { ...mockRepo, ...mockShotRepo };
         } else if (entity === Machine) {
-          return mockMachineRepo;
+          return { ...mockRepo, ...mockMachineRepo };
         } else if (entity === BeanBatch) {
-          return mockBeanRepo;
+          return { ...mockRepo, ...mockBeanRepo };
         } else {
-          return {
-            findOne: jest.fn(),
-            find: jest.fn(),
-            save: jest.fn(),
-            remove: jest.fn(),
-            create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-            restore: jest.fn(),
-          };
+          return mockRepo;
         }
       }),
     } as any;
@@ -96,22 +157,34 @@ describe('ShotService - Unit Tests', () => {
   describe('Method Validation', () => {
     it('should validate input parameters for createShot', () => {
       expect(shotService.createShot).toBeDefined();
-      expect(shotService.createShot.constructor.name).toBe('AsyncFunction');
+      // Check if method is async by checking if it returns a Promise
+      const result = shotService.createShot({
+        machineId: '550e8400-e29b-41d4-a716-446655440000',
+        beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
+        shot_type: 'normale' as const,
+      } as any);
+      expect(result).toBeInstanceOf(Promise);
     });
 
     it('should validate input parameters for getShotById', () => {
       expect(shotService.getShotById).toBeDefined();
-      expect(shotService.getShotById.constructor.name).toBe('AsyncFunction');
+      // Check if method is async by checking if it returns a Promise
+      const result = shotService.getShotById('550e8400-e29b-41d4-a716-4466554403');
+      expect(result).toBeInstanceOf(Promise);
     });
 
     it('should validate input parameters for getShots', () => {
       expect(shotService.getShots).toBeDefined();
-      expect(shotService.getShots.constructor.name).toBe('AsyncFunction');
+      // Check if method is async by checking if it returns a Promise
+      const result = shotService.getShots();
+      expect(result).toBeInstanceOf(Promise);
     });
 
     it('should validate input parameters for updateShot', () => {
       expect(shotService.updateShot).toBeDefined();
-      expect(shotService.updateShot.constructor.name).toBe('AsyncFunction');
+      // Check if method is async by checking if it returns a Promise
+      const result = shotService.updateShot('550e8400-e29b-41d4-a716-4466554403', {} as any);
+      expect(result).toBeInstanceOf(Promise);
     });
   });
 
@@ -161,7 +234,7 @@ describe('ShotService - Unit Tests', () => {
 
       // Create test-specific dataSource that returns our mocks
       const testDataSource = {
-        getRepository: jest.fn().mockImplementation((entity) => {
+        getRepository: jest.fn().mockImplementation(entity => {
           if (entity === Machine) return mockMachineRepo;
           if (entity === Shot) return mockShotRepo;
           return {
@@ -180,18 +253,20 @@ describe('ShotService - Unit Tests', () => {
       // Create ShotService with mocked repositories
       const testShotService = new ShotService(testDataSource);
 
-      await expect(testShotService.updateShot('non-existent-id', invalidUpdateData)).rejects.toThrow();
+      await expect(
+        testShotService.updateShot('non-existent-id', invalidUpdateData)
+      ).rejects.toThrow();
     });
   });
 
   describe('Repository Access', () => {
     it('should have access to all required repositories', () => {
       expect(mockDataSource.getRepository).toBeDefined();
-      
+
       const machineRepo = mockDataSource.getRepository('Machine');
       const beanRepo = mockDataSource.getRepository('Bean');
       const shotRepo = mockDataSource.getRepository('Shot');
-      
+
       expect(machineRepo).toBeDefined();
       expect(beanRepo).toBeDefined();
       expect(shotRepo).toBeDefined();
@@ -250,8 +325,8 @@ describe('ShotService - Unit Tests', () => {
   describe('Type Safety', () => {
     it('should maintain TypeScript types for interfaces', () => {
       const testShotData = {
-        machineId: 'test-id',
-        beanBatchId: 'test-batch-id',
+        machineId: '550e8400-e29b-41d4-a716-446655440000',
+        beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
         shot_type: 'normale' as const,
         success: true,
       };
@@ -262,8 +337,8 @@ describe('ShotService - Unit Tests', () => {
 
     it('should handle optional fields correctly', () => {
       const minimalShotData = {
-        machineId: 'test-id',
-        beanBatchId: 'test-batch-id',
+        machineId: '550e8400-e29b-41d4-a716-446655440000',
+        beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
         shot_type: 'normale' as const,
       };
 
