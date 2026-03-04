@@ -55,15 +55,15 @@ fi
 
 print_status "success" "Build completed successfully"
 
-# 3. Run unit tests (mimics CI unit test job)
-print_status "info" "Running unit tests..."
+# 3. Run unit tests (mimics CI unit test job with coverage)
+print_status "info" "Running unit tests with coverage instrumentation..."
 
-if ! npm run test:unit; then
-    print_status "error" "Unit tests failed!"
+if ! npm run test:unit:coverage; then
+    print_status "error" "Unit tests with coverage failed!"
     exit 1
 fi
 
-print_status "success" "All unit tests passed"
+print_status "success" "All unit tests with coverage passed"
 
 # 4. Check TypeScript compilation
 print_status "info" "Checking TypeScript compilation..."
@@ -81,7 +81,7 @@ echo ""
 echo "💡 This pre-push hook mimics the CI workflow:"
 echo "   - Code Quality (Prettier formatting)"
 echo "   - Build verification"
-echo "   - Unit Tests"
+echo "   - Unit Tests with coverage instrumentation"
 echo "   - TypeScript compilation"
 echo ""
 echo "If any of these checks fail, the CI will also fail."
