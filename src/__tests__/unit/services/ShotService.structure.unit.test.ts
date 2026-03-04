@@ -272,28 +272,25 @@ describe('ShotService - Structure Tests', () => {
       expect(methodString).toMatch(/options\s*=\s*\{\}/)); // More robust pattern matching for CI
     });
 
-    // TEMPORARILY DISABLED: Fix scope issues before re-enabling
-    // it('getShotStatistics should accept optional filter parameters', () => {
-    //   const method = shotServiceInstance.getShotStatistics;
-    //   
-    //   // Check that the method exists and is a function
-    //   expect(typeof method).toBe('function');
-    //   
-    //   // Check method signature by looking for key parts
-    //   const methodString = method.toString();
-    //   expect(methodString).toContain('getShotStatistics');
-    //   expect(methodString).toContain('options');
-    //   expect(methodString).toContain('__awaiter'); // TypeScript compiled async
-    //   expect(methodString).toMatch(/options\s*=\s*\{\}/)); // More robust pattern matching for CI
-    // });
+    it('getShotStatistics should accept optional filter parameters', () => {
+      const method = shotServiceInstance.getShotStatistics;
+      
+      // Check that the method exists and is a function
+      expect(typeof method).toBe('function');
+      
+      // Check method signature by looking for key parts
+      const methodString = method.toString();
+      expect(methodString).toContain('getShotStatistics');
+      expect(methodString).toContain('options');
+      expect(methodString).toContain('__awaiter'); // TypeScript compiled async
+      expect(methodString).toMatch(/options\s*=\s*\{\}/)); // More robust pattern matching for CI
+    });
 
-    // TEMPORARILY DISABLED: Fix scope issues before re-enabling
     it('updateShot should accept id and update data parameters', () => {
       const method = shotServiceInstance.updateShot;
       expect(method.length).toBe(2); // Should accept two parameters (id, updateData)
     });
 
-    // TEMPORARILY DISABLED: Fix scope issues before re-enabling
     it('delete methods should accept id parameter', () => {
       expect(shotServiceInstance.softDeleteShot.length).toBe(1);
       expect(shotServiceInstance.hardDeleteShot.length).toBe(1);
