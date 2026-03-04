@@ -266,6 +266,15 @@ it('should create shot successfully', async () => {
 ### **Rule: Use Unique Context for Targeted Edits**
 
 **Problem**: When editing test files with repeated patterns, ambiguous string matching causes edits to fail or apply to wrong locations.
+**❌ WRONG - Ambiguous string matching:**
+
+```typescript
+// This appears 4 times in the file - causes ambiguity
+edit('restore: jest.fn(),', 'restore: jest.fn(),\n  findAndCount: jest.fn()');
+
+// This also appears multiple times
+edit('delete: jest.fn(),\n  restore: jest.fn(),', '...');
+```
 
 **✅ CORRECT - Use unique context:**
 
@@ -817,7 +826,7 @@ npm run test:watch
 // ❌ WRONG - Extra closing parenthesis
 expect(methodString).toMatch(/options\s*=\s*\{\}/)); // ← Extra )
 
-// ❌ WRONG - Missing closing parenthesis
+// ❌ WRONG - Missing closing parenthesis  
 expect(methodString).toMatch(/options\s*=\s*\{\}/; // ← Missing )
 
 // ❌ WRONG - Mixed string/regex syntax
@@ -860,7 +869,7 @@ expect(methodString).toMatch(/options\s*=\s*\{\}/);
 expect(text).toContain('substring');
 expect(text).toEqual('exact string');
 
-// ✅ Regex matchers
+// ✅ Regex matchers  
 expect(text).toMatch(/pattern/);
 expect(text).toMatch(/pattern\s*with\s*spaces/);
 
