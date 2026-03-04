@@ -274,10 +274,10 @@ describe('ShotService - Structure Tests', () => {
 
     it('getShotStatistics should accept optional filter parameters', () => {
       const method = shotServiceInstance.getShotStatistics;
-      
+
       // Check that the method exists and is a function
       expect(typeof method).toBe('function');
-      
+
       // Check method signature by looking for key parts
       const methodString = method.toString();
       expect(methodString).toContain('getShotStatistics');

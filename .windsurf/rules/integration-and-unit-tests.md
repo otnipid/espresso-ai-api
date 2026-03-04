@@ -267,7 +267,6 @@ it('should create shot successfully', async () => {
 
 **Problem**: When editing test files with repeated patterns, ambiguous string matching causes edits to fail or apply to wrong locations.
 
-
 **✅ CORRECT - Use unique context:**
 
 ```typescript
@@ -813,11 +812,12 @@ npm run test:watch
 **Common Syntax Errors:**
 
 #### **❌ WRONG - Extra Closing Parenthesis**
+
 ```typescript
 // ❌ WRONG - Extra closing parenthesis
 expect(methodString).toMatch(/options\s*=\s*\{\}/)); // ← Extra )
 
-// ❌ WRONG - Missing closing parenthesis  
+// ❌ WRONG - Missing closing parenthesis
 expect(methodString).toMatch(/options\s*=\s*\{\}/; // ← Missing )
 
 // ❌ WRONG - Mixed string/regex syntax
@@ -825,6 +825,7 @@ expect(methodString).toMatch('/options\s*=\s*\{\}/'); // ← String instead of r
 ```
 
 #### **✅ CORRECT - Proper Jest Matcher Syntax**
+
 ```typescript
 // ✅ CORRECT - Regex literal (no quotes, no extra parens)
 expect(methodString).toMatch(/options\s*=\s*\{\}/);
@@ -859,7 +860,7 @@ expect(methodString).toMatch(/options\s*=\s*\{\}/);
 expect(text).toContain('substring');
 expect(text).toEqual('exact string');
 
-// ✅ Regex matchers  
+// ✅ Regex matchers
 expect(text).toMatch(/pattern/);
 expect(text).toMatch(/pattern\s*with\s*spaces/);
 
