@@ -90,6 +90,86 @@ machineId: '550e8400-e29b-41d4-a716-446655440000' // Valid UUID
 - Bean Batch IDs: `550e8400-e29b-41d4-a716-446655440001`
 - Shot IDs: `550e8400-e29b-41d4-a716-446655440002`
 
+### **🚨 Critical Rule: Improve Branch Coverage by Testing Error Handling**
+
+**Problem**: High branch coverage requires testing all conditional branches, especially try/catch blocks and error handling paths that are often missed.
+
+**Solution**: Systematically identify and test uncovered error handling branches.
+
+```bash
+# 1. Check coverage to find uncovered lines
+npm run test:unit:coverage | grep -A 2 -B 2 "filename.ts"
+
+# 2. Examine uncovered lines in source code
+# Look for patterns like:
+try {
+  // success path (usually covered)
+} catch (error) {
+  console.error('Error message:', error);  // ← Often uncovered
+  response.status(500).json({ message: 'Error message' });
+}
+
+if (condition) {
+  // branch 1 (usually covered)
+} else {
+  // branch 2 (often uncovered)
+}
+```
+
+**Branch Coverage Testing Pattern:**
+
+```typescript
+// ✅ GOOD - Test error handling branches
+describe('controller method', () => {
+  it('should handle database errors', async () => {
+    // Arrange
+    const error = new Error('Database connection failed');
+    mockRepository.findOne.mockRejectedValue(error);
+    
+    // Act
+    await controller.method(mockRequest, mockResponse);
+    
+    // Assert - Test error response
+    expect(mockResponse.status).toHaveBeenCalledWith(500);
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      message: 'Error fetching resource'
+    });
+  });
+
+  it('should handle conditional null branch', async () => {
+    // Arrange
+    mockRequest.body = { field: null }; // Test null assignment
+    const existingEntity = { id: '1', field: 'existing-value' };
+    mockRepository.findOne.mockResolvedValue(existingEntity);
+    
+    // Act
+    await controller.update(mockRequest, mockResponse);
+    
+    // Assert - Verify null was assigned
+    expect(mockRepository.save).toHaveBeenCalledWith({
+      ...existingEntity,
+      field: null
+    });
+  });
+});
+```
+
+**Common Uncovered Branch Types:**
+- **Database errors** in catch blocks (`mockRejectedValue`)
+- **Validation failures** (missing required fields, invalid formats)
+- **Conditional assignments** (parseInt conversions, null assignments)
+- **Business rule violations** (ratio validations, date ranges)
+- **Entity existence checks** (not found scenarios)
+
+**Branch Coverage Checklist:**
+- [ ] Test all try/catch blocks with `mockRejectedValue`
+- [ ] Test conditional branches with both true/false inputs
+- [ ] Test parseInt conversions with invalid inputs
+- [ ] Test null/undefined assignments explicitly
+- [ ] Test business rule validations with boundary values
+- [ ] Test "not found" scenarios with `mockResolvedValue(null)`
+- [ ] Verify error response format and status codes
+
 ### **Rule: Complete Entity Coverage in Mocks**
 
 **Problem**: Missing entity mocks cause cascading failures.
@@ -415,6 +495,8 @@ console.log('📊 ASSERTION RESULTS:', {
 | **Unexpected async behavior** | Add await logging and check Promise states |
 | **Type errors** | Log actual vs expected types and error messages |
 | **Test setup issues** | Log beforeEach/afterEach execution order |
+| **Undefined functions** | Check setup files for module mocks |
+| **Module import issues** | Verify exports vs imports and mock configurations |
 
 ### **Universal Debugging Template**
 
@@ -442,6 +524,47 @@ describe('Service/Controller/Entity Tests', () => {
     console.log('🔍 ASSERTION START');
     expect(result.property).toBe(expectedValue);
     console.log('✅ TEST COMPLETE');
+  });
+});
+```
+
+## 🚨 Debugging Mock and Import Issues
+
+### **Problem**: Functions that should exist are `undefined` in tests.
+
+**Root Cause**: Module is being mocked in setup files, preventing access to real implementation.
+
+**Debug Strategy**:
+```typescript
+// 1. Check what's actually imported
+import * as module from './target-module';
+console.log('Available exports:', Object.keys(module));
+console.log('Function type:', typeof module.targetFunction);
+
+// 2. Check setup files for mocks
+// In setup.unit.ts:
+jest.mock('./target-module', () => ({
+  targetFunction: jest.fn(), // This causes undefined exports
+}));
+
+// 3. Unmock for behavior testing
+jest.unmock('./target-module');
+import { targetFunction } from './target-module';
+```
+
+### **Problem**: Mocked implementations don't test actual behavior.
+
+**Solution**: Use `jest.unmock()` when the unit under test is already being mocked in the setup file to access real implementation for behavior testing.
+
+```typescript
+// ✅ GOOD - Test actual behavior
+describe('Real Implementation Tests', () => {
+  beforeEach(() => {
+    jest.unmock('../middleware/errorHandler');
+  });
+  
+  it('should handle real errors', () => {
+    // Tests actual implementation behavior
   });
 });
 ```
@@ -548,6 +671,96 @@ const runMiddleware = async (middleware: any[], req: Request, res: Response, nex
     }
   }
 };
+```
+
+## 🔍 Middleware-Specific Debugging Examples
+
+### **Mock Detection in Middleware Testing**
+
+When middleware functions are `undefined`, check for module mocks:
+
+```typescript
+// ❌ PROBLEM - Middleware function undefined
+import { performanceMonitor } from '../middleware/errorHandler';
+console.log(typeof performanceMonitor); // undefined
+
+// ✅ SOLUTION - Check setup files for mocks
+// In setup.unit.ts:
+jest.mock('../middleware/errorHandler', () => ({
+  performanceMonitor: jest.fn(), // This causes undefined exports
+}));
+
+// ✅ SOLUTION - Unmock for behavior testing
+jest.unmock('../middleware/errorHandler');
+import { performanceMonitor } from '../middleware/errorHandler';
+```
+
+### **Behavior Testing for Error Handler Middleware**
+
+```typescript
+// ✅ GOOD - Test actual error handling behavior
+describe('errorHandler', () => {
+  beforeEach(() => {
+    jest.unmock('../middleware/errorHandler'); // Access real implementation
+  });
+
+  it('should handle Zod validation errors', () => {
+    const zodError = new ZodError([/* ... */]);
+    
+    errorHandler(zodError, mockRequest, mockResponse, mockNext);
+    
+    // Test behavior: response status and content
+    expect(mockResponse.status).toHaveBeenCalledWith(400);
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      error: 'Validation Error',
+      message: 'Invalid input data provided',
+      code: 'VALIDATION_FAILED'
+    });
+  });
+});
+```
+
+### **Debug Logging for Middleware Execution**
+
+```typescript
+// ✅ GOOD - Middleware execution tracing
+describe('performanceMonitor', () => {
+  it('should monitor request performance', () => {
+    console.log('🧪 TEST START: performance monitor');
+    console.log('📋 TEST DATA:', { request: mockRequest });
+    
+    performanceMonitor(mockRequest, mockResponse, mockNext);
+    
+    console.log('🔧 MOCK CALLS:', {
+      nextCalls: mockNext.mock.calls,
+      responseOnCalls: mockResponse.on.mock.calls
+    });
+    
+    // Assert behavior: next() called, event listener attached
+    expect(mockNext).toHaveBeenCalled();
+    expect(mockResponse.on).toHaveBeenCalledWith('finish', expect.any(Function));
+  });
+});
+```
+
+### **Testing Middleware Chain Behavior**
+
+```typescript
+// ✅ GOOD - Test middleware chain outcomes
+describe('validateCreateShot middleware chain', () => {
+  it('should stop chain on validation failure', async () => {
+    const invalidData = { /* invalid shot data */ };
+    
+    await runMiddleware(validateCreateShot, mockRequest, mockResponse, mockNext);
+    
+    // Test behavior: validation error response
+    expect(mockResponse.status).toHaveBeenCalledWith(400);
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      error: 'Validation Error',
+      message: expect.stringContaining('Invalid input')
+    });
+  });
+});
 ```
 
 ### **Why Index-Based Loop?**
