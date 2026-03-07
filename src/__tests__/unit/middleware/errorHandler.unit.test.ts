@@ -81,13 +81,11 @@ describe('Error Handler Middleware', () => {
     });
 
     it('should handle ValidationError', async () => {
-      console.log('🧪 TEST START: should handle ValidationError');
       
       // Arrange: Create validation error
       const error = new ValidationError('Custom validation failed', { field: 'email' });
 
       // Act: Call error handler
-      console.log('⚡ ACTION START: Calling errorHandler');
       await errorHandler(
         error,
         mockRequest as Request,
@@ -96,7 +94,6 @@ describe('Error Handler Middleware', () => {
       );
 
       // Assert: Test behavior, not implementation
-      console.log('🔍 ASSERTION START');
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({
         error: 'Validation Error',
@@ -105,17 +102,14 @@ describe('Error Handler Middleware', () => {
         details: { field: 'email' }
       });
       
-      console.log('✅ TEST COMPLETE');
     });
 
     it('should handle NotFoundError', async () => {
-      console.log('🧪 TEST START: should handle NotFoundError');
       
       // Arrange: Create not found error
       const error = new NotFoundError('Resource not found');
 
       // Act: Call error handler
-      console.log('⚡ ACTION START: Calling errorHandler');
       errorHandler(
         error,
         mockRequest as Request,
@@ -124,26 +118,21 @@ describe('Error Handler Middleware', () => {
       );
 
       // Assert: Test behavior, not implementation
-      console.log('🔍 ASSERTION START');
       expect(mockResponse.status).toHaveBeenCalledWith(404);
       expect(mockResponse.json).toHaveBeenCalledWith({
         error: 'Not Found',
         message: 'Resource not found',
         code: 'RESOURCE_NOT_FOUND'
       });
-      
-      console.log('✅ TEST COMPLETE');
     });
 
     it('should handle JWT errors', async () => {
-      console.log('🧪 TEST START: should handle JWT errors');
       
       // Arrange: Create JWT error
       const error = new Error('Invalid token');
       error.name = 'JsonWebTokenError';
 
       // Act: Call error handler
-      console.log('⚡ ACTION START: Calling errorHandler');
       errorHandler(
         error,
         mockRequest as Request,
@@ -152,25 +141,20 @@ describe('Error Handler Middleware', () => {
       );
 
       // Assert: Test behavior, not implementation
-      console.log('🔍 ASSERTION START');
       expect(mockResponse.status).toHaveBeenCalledWith(401);
       expect(mockResponse.json).toHaveBeenCalledWith({
         error: 'Authentication Error',
         message: 'Invalid token provided',
         code: 'INVALID_TOKEN'
       });
-      
-      console.log('✅ TEST COMPLETE');
     });
 
     it('should handle default errors', async () => {
-      console.log('🧪 TEST START: should handle default errors');
       
       // Arrange: Create generic error
       const error = new Error('Something went wrong');
 
       // Act: Call error handler
-      console.log('⚡ ACTION START: Calling errorHandler');
       errorHandler(
         error,
         mockRequest as Request,
@@ -185,51 +169,41 @@ describe('Error Handler Middleware', () => {
         message: 'An unexpected error occurred',
         code: 'INTERNAL_ERROR'
       });
-      
-      console.log('✅ TEST COMPLETE');
     });
   });
 
   describe('notFoundHandler', () => {
     it('should handle 404 not found errors', async () => {
-      console.log('🧪 TEST START: should handle 404 not found errors');
       
       // Act: Call not found handler
-      console.log('⚡ ACTION START: Calling notFoundHandler');
       await notFoundHandler(
         mockRequest as Request,
         mockResponse as Response
       );
 
       // Assert: Test behavior, not implementation
-      console.log('🔍 ASSERTION START');
       expect(mockResponse.status).toHaveBeenCalledWith(404);
       expect(mockResponse.json).toHaveBeenCalledWith({
         error: 'Not Found',
         message: 'Route GET /api/test not found',
         code: 'ROUTE_NOT_FOUND'
       });
-      
-      console.log('✅ TEST COMPLETE');
     });
   });
 
   describe('rateLimitHandler', () => {
     it('should handle rate limit errors', async () => {
-      console.log('🧪 TEST START: should handle rate limit errors');
       
       // Arrange: Set retry-after header
       (mockResponse as any).get = jest.fn().mockReturnValue('120');
 
       // Act: Call rate limit handler
-      console.log('⚡ ACTION START: Calling rateLimitHandler');
       await rateLimitHandler(
         mockRequest as Request,
         mockResponse as Response
       );
 
       // Assert: Test behavior, not implementation
-      console.log('🔍 ASSERTION START');
       expect(mockResponse.status).toHaveBeenCalledWith(429);
       expect(mockResponse.json).toHaveBeenCalledWith({
         error: 'Too Many Requests',
@@ -238,59 +212,49 @@ describe('Error Handler Middleware', () => {
         retryAfter: '120'
       });
       
-      console.log('✅ TEST COMPLETE');
+      
     });
   });
 
   describe('asyncHandler', () => {
     it('should wrap async functions and handle errors', async () => {
-      console.log('🧪 TEST START: should wrap async functions and handle errors');
       
       // Arrange: Create failing async function
       const asyncFn = jest.fn().mockRejectedValue(new Error('Async error'));
       const wrappedFn = asyncHandler(asyncFn);
 
       // Act: Call wrapped function
-      console.log('⚡ ACTION START: Calling wrappedFn');
       await wrappedFn(mockRequest as Request, mockResponse as Response, mockNext);
 
       // Assert: Test behavior, not implementation
-      console.log('🔍 ASSERTION START');
       expect(mockNext).toHaveBeenCalledWith(new Error('Async error'));
       
-      console.log('✅ TEST COMPLETE');
     });
 
     it('should pass through successful async functions', async () => {
-      console.log('🧪 TEST START: should pass through successful async functions');
       
       // Arrange: Create successful async function
       const asyncFn = jest.fn().mockResolvedValue('success');
       const wrappedFn = asyncHandler(asyncFn);
 
       // Act: Call wrapped function
-      console.log('⚡ ACTION START: Calling wrappedFn');
       await wrappedFn(mockRequest as Request, mockResponse as Response, mockNext);
 
       // Assert: Test behavior, not implementation
-      console.log('🔍 ASSERTION START');
       expect(asyncFn).toHaveBeenCalledWith(mockRequest, mockResponse, mockNext);
       expect(mockNext).not.toHaveBeenCalled();
       
-      console.log('✅ TEST COMPLETE');
     });
   });
 
   describe('logError', () => {
     it('should log errors with context', () => {
-      console.log('🧪 TEST START: should log errors with context');
       
       // Arrange: Create error and spy on console
       const error = new Error('Test error');
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
       // Act: Log error
-      console.log('⚡ ACTION START: Calling logError');
       logError(error, 'test-context');
 
       // Assert: Test behavior, not implementation
@@ -301,18 +265,15 @@ describe('Error Handler Middleware', () => {
       
       // Cleanup
       consoleSpy.mockRestore();
-      console.log('✅ TEST COMPLETE');
     });
 
     it('should log errors without context', () => {
-      console.log('🧪 TEST START: should log errors without context');
       
       // Arrange: Create error and spy on console
       const error = new Error('Test error');
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
       // Act: Log error
-      console.log('⚡ ACTION START: Calling logError');
       logError(error);
 
       // Assert: Test behavior, not implementation
@@ -323,13 +284,11 @@ describe('Error Handler Middleware', () => {
       
       // Cleanup
       consoleSpy.mockRestore();
-      console.log('✅ TEST COMPLETE');
     });
   });
 
   describe('performanceMonitor', () => {
     it('should monitor request performance', async () => {
-      console.log('🧪 TEST START: should monitor request performance');
       
       // Arrange: Mock console.warn and setup response with finish event
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
@@ -347,8 +306,8 @@ describe('Error Handler Middleware', () => {
       } as any;
 
       // Act: Call performance monitor
-      console.log('⚡ ACTION START: Calling performanceMonitor');
-      console.log('📋 TEST DATA:', { request: mockRequest, response: mockRes });
+      
+      
       
       performanceMonitor(
         mockRequest as Request,
@@ -366,17 +325,17 @@ describe('Error Handler Middleware', () => {
       });
 
       // Assert: Test behavior, not implementation
-      console.log('🔍 ASSERTION START');
+      
       expect(mockNext).toHaveBeenCalled();
       expect(mockRes.on).toHaveBeenCalledWith('finish', expect.any(Function));
       
       // Cleanup
       consoleSpy.mockRestore();
-      console.log('✅ TEST COMPLETE');
+      
     });
 
     it('should log slow requests (> 1s)', async () => {
-      console.log('🧪 TEST START: should log slow requests');
+      
       
       // Arrange: Mock console.warn
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
@@ -413,13 +372,13 @@ describe('Error Handler Middleware', () => {
       
       // Cleanup
       consoleSpy.mockRestore();
-      console.log('✅ TEST PASSED: should log slow requests');
+      
     });
   });
 
   describe('DatabaseError', () => {
     it('should create DatabaseError with correct properties', () => {
-      console.log('🧪 TEST START: should create DatabaseError with correct properties');
+      
       
       // Arrange
       const originalError = new Error('Connection failed');
@@ -432,11 +391,11 @@ describe('Error Handler Middleware', () => {
       expect(error.name).toBe('DatabaseError');
       expect(error.statusCode).toBe(500);
       expect(error.originalError).toBe(originalError);
-      console.log('✅ TEST PASSED: should create DatabaseError with correct properties');
+      
     });
 
     it('should create DatabaseError without original error', () => {
-      console.log('🧪 TEST START: should create DatabaseError without original error');
+      
       
       // Act
       const error = new DatabaseError('Simple database error');
@@ -446,13 +405,13 @@ describe('Error Handler Middleware', () => {
       expect(error.name).toBe('DatabaseError');
       expect(error.statusCode).toBe(500);
       expect(error.originalError).toBeUndefined();
-      console.log('✅ TEST PASSED: should create DatabaseError without original error');
+      
     });
   });
 
   describe('BusinessRuleError', () => {
     it('should create BusinessRuleError with correct properties', () => {
-      console.log('🧪 TEST START: should create BusinessRuleError with correct properties');
+      
       
       // Arrange
       const details = { field: 'shot_type', value: 'invalid' };
@@ -465,13 +424,13 @@ describe('Error Handler Middleware', () => {
       expect(error.name).toBe('BusinessRuleError');
       expect(error.statusCode).toBe(422);
       expect(error.details).toBe(details);
-      console.log('✅ TEST PASSED: should create BusinessRuleError with correct properties');
+      
     });
   });
 
   describe('validationErrorHandler', () => {
     it('should handle ValidationError instances', () => {
-      console.log('🧪 TEST START: should handle ValidationError instances');
+      
       
       // Arrange
       const validationError = new ValidationError('Invalid data');
@@ -489,11 +448,11 @@ describe('Error Handler Middleware', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalled();
       expect(mockNext).not.toHaveBeenCalled();
-      console.log('✅ TEST PASSED: should handle ValidationError instances');
+      
     });
 
     it('should pass non-ValidationError to next middleware', () => {
-      console.log('🧪 TEST START: should pass non-ValidationError to next middleware');
+      
       
       // Arrange
       const regularError = new Error('Regular error');
@@ -511,13 +470,13 @@ describe('Error Handler Middleware', () => {
       expect(mockResponse.status).not.toHaveBeenCalled();
       expect(mockResponse.json).not.toHaveBeenCalled();
       expect(mockNext).toHaveBeenCalledWith(regularError);
-      console.log('✅ TEST PASSED: should pass non-ValidationError to next middleware');
+      
     });
   });
 
   describe('errorHandler', () => {
     it('should handle BusinessRuleError instances', () => {
-      console.log('🧪 TEST START: should handle BusinessRuleError instances');
+      
       
       // Arrange
       const details = { field: 'shot_type', value: 'invalid' };
@@ -541,11 +500,11 @@ describe('Error Handler Middleware', () => {
         details: details,
       });
       expect(mockNext).not.toHaveBeenCalled();
-      console.log('✅ TEST PASSED: should handle BusinessRuleError instances');
+      
     });
 
     it('should handle DatabaseError instances', () => {
-      console.log('🧪 TEST START: should handle DatabaseError instances');
+      
       
       // Arrange
       const originalNodeEnv = process.env.NODE_ENV;
@@ -573,11 +532,11 @@ describe('Error Handler Middleware', () => {
       
       // Cleanup
       process.env.NODE_ENV = originalNodeEnv;
-      console.log('✅ TEST PASSED: should handle DatabaseError instances');
+      
     });
 
     it('should handle QueryFailedError instances', () => {
-      console.log('🧪 TEST START: should handle QueryFailedError instances');
+      
       
       // Arrange
       const originalNodeEnv = process.env.NODE_ENV;
@@ -607,11 +566,11 @@ describe('Error Handler Middleware', () => {
       
       // Cleanup
       process.env.NODE_ENV = originalNodeEnv;
-      console.log('✅ TEST PASSED: should handle QueryFailedError instances');
+      
     });
 
     it('should handle TokenExpiredError instances', () => {
-      console.log('🧪 TEST START: should handle TokenExpiredError instances');
+      
       
       // Arrange
       const tokenExpiredError = new Error('Token expired');
@@ -634,7 +593,7 @@ describe('Error Handler Middleware', () => {
         code: 'TOKEN_EXPIRED',
       });
       expect(mockNext).not.toHaveBeenCalled();
-      console.log('✅ TEST PASSED: should handle TokenExpiredError instances');
+      
     });
   });
 
