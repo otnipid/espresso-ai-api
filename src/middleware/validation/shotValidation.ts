@@ -123,10 +123,7 @@ export const validateBeanBatchExists = async (req: Request, res: Response, next:
     }
 
     const beanBatchRepository = AppDataSource.getRepository(BeanBatch);
-    const beanBatch = await beanBatchRepository.findOne({
-      where: { id: beanBatchId },
-      relations: ['bean'],
-    });
+    const beanBatch = await beanBatchRepository.findOne({ where: { id: beanBatchId } });
 
     if (!beanBatch) {
       return res.status(404).json({

@@ -38,6 +38,29 @@ export class BusinessRuleError extends Error {
   }
 }
 
+/**
+ * Performance monitoring for slow requests
+ */
+export const performanceMonitor = (req: Request, res: Response, next: NextFunction) => {
+  const start = Date.now();
+
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+
+    if (duration > 1000) {
+      // Log slow requests (> 1s)
+      console.warn('Slow request detected:', {
+        method: req.method,
+        url: req.url,
+        duration: `${duration}ms`,
+        statusCode: res.statusCode,
+      });
+    }
+  });
+
+  next();
+};
+
 export class DatabaseError extends Error {
   public statusCode: number;
   public originalError: any;
@@ -295,6 +318,13 @@ export const healthCheckErrorHandler = (
 };
 
 /**
+ * Test function to verify exports work
+ */
+export const testExport = () => {
+  return 'test export works';
+};
+
+/**
  * Error logging utility
  */
 export const logError = (error: Error, context?: string) => {
@@ -308,27 +338,4 @@ export const logError = (error: Error, context?: string) => {
   };
 
   console.error(JSON.stringify(logData, null, 2));
-};
-
-/**
- * Performance monitoring for slow requests
- */
-export const performanceMonitor = (req: Request, res: Response, next: NextFunction) => {
-  const start = Date.now();
-
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-
-    if (duration > 1000) {
-      // Log slow requests (> 1s)
-      console.warn('Slow request detected:', {
-        method: req.method,
-        url: req.url,
-        duration: `${duration}ms`,
-        statusCode: res.statusCode,
-      });
-    }
-  });
-
-  next();
 };

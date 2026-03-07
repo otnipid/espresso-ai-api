@@ -10,7 +10,7 @@ export class MachineController {
       const machines = await this.machineRepository.find();
       response.json(machines);
     } catch (error) {
-      console.error('Error fetching machines:', error);
+      console.error('Error fetching machine:', error);
       response.status(500).json({ message: 'Error fetching machines' });
     }
   }
