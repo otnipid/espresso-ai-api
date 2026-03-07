@@ -196,6 +196,68 @@ describe('Validation Middleware', () => {
         })
       );
     });
+
+    it('should pass validation with consistent doses and valid extraction ratio', async () => {
+      const req = mockRequest({
+        machineId: '550e8400-e29b-41d4-a716-446655440000',
+        beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
+        shot_type: 'normale',
+        preparation: {
+          dose_grams: 18.0,
+        },
+        extraction: {
+          dose_grams: 18.3, // Within 0.5g of preparation dose
+          yield_grams: 36.0, // 2x ratio (within 0.5x-3x range)
+        },
+      });
+      const res = mockResponse();
+      const next = mockNext;
+
+      await validate(CreateShotSchema, 'body')(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
+    });
+
+    it('should pass validation when preparation and extraction doses are within tolerance', async () => {
+      const req = mockRequest({
+        machineId: '550e8400-e29b-41d4-a716-446655440000',
+        beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
+        shot_type: 'normale',
+        preparation: {
+          dose_grams: 18.0,
+        },
+        extraction: {
+          dose_grams: 18.4, // Exactly 0.4g difference (within 0.5g tolerance)
+        },
+      });
+      const res = mockResponse();
+      const next = mockNext;
+
+      await validate(CreateShotSchema, 'body')(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
+    });
+
+    it('should pass validation when extraction ratio is at boundaries', async () => {
+      const req = mockRequest({
+        machineId: '550e8400-e29b-41d4-a716-446655440000',
+        beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
+        shot_type: 'normale',
+        extraction: {
+          dose_grams: 20.0,
+          yield_grams: 10.0, // Exactly 0.5x ratio (lower boundary)
+        },
+      });
+      const res = mockResponse();
+      const next = mockNext;
+
+      await validate(CreateShotSchema, 'body')(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
+    });
   });
 
   describe('Update validation', () => {
@@ -213,6 +275,59 @@ describe('Validation Middleware', () => {
       expect(req.validated?.body).toBeDefined();
       expect((req.validated?.body as any)?.success).toBe(false);
       expect((req.validated?.body as any)?.notes).toBe('Updated notes');
+    });
+
+    it('should pass update validation with consistent doses and valid extraction ratio', async () => {
+      const req = mockRequest({
+        preparation: {
+          dose_grams: 18.0,
+        },
+        extraction: {
+          dose_grams: 18.3, // Within 0.5g of preparation dose
+          yield_grams: 36.0, // 2x ratio (within 0.5x-3x range)
+        },
+      });
+      const res = mockResponse();
+      const next = mockNext;
+
+      await validate(UpdateShotSchema, 'body')(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
+    });
+
+    it('should pass update validation when preparation and extraction doses are within tolerance', async () => {
+      const req = mockRequest({
+        preparation: {
+          dose_grams: 18.0,
+        },
+        extraction: {
+          dose_grams: 18.4, // Exactly 0.4g difference (within 0.5g tolerance)
+        },
+      });
+      const res = mockResponse();
+      const next = mockNext;
+
+      await validate(UpdateShotSchema, 'body')(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
+    });
+
+    it('should pass update validation when extraction ratio is at boundaries', async () => {
+      const req = mockRequest({
+        extraction: {
+          dose_grams: 20.0,
+          yield_grams: 10.0, // Exactly 0.5x ratio (lower boundary)
+        },
+      });
+      const res = mockResponse();
+      const next = mockNext;
+
+      await validate(UpdateShotSchema, 'body')(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(res.status).not.toHaveBeenCalled();
     });
 
     it('should validate optional fields in updates', async () => {

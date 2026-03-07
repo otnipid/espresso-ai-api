@@ -11,10 +11,13 @@ jest.unmock('../../../services/ShotService');
 describe('ShotService - Unit Tests', () => {
   let shotService: ShotService;
   let mockDataSource: jest.Mocked<DataSource>;
+  let mockMachineRepo: any;
+  let mockBeanBatchRepo: any;
+  let mockShotRepo: any;
 
   beforeEach(() => {
     // Create mock repositories with Jest mocks
-    const mockMachineRepo = {
+    mockMachineRepo = {
       findOne: jest.fn().mockImplementation(options => {
         if (options.where.id === '550e8400-e29b-41d4-a716-446655440000') {
           return Promise.resolve({
@@ -35,7 +38,7 @@ describe('ShotService - Unit Tests', () => {
       restore: jest.fn(),
     };
 
-    const mockBeanRepo = {
+    mockBeanBatchRepo = {
       findOne: jest.fn().mockImplementation(options => {
         if (options.where.id === '550e8400-e29b-41d4-a716-446655440001') {
           return Promise.resolve({
@@ -56,11 +59,28 @@ describe('ShotService - Unit Tests', () => {
       restore: jest.fn(),
     };
 
-    const mockShotRepo = {
+    // Mock query runner for transaction operations
+    const mockQueryRunner = {
+      connect: jest.fn().mockResolvedValue(undefined),
+      startTransaction: jest.fn().mockResolvedValue(undefined),
+      commitTransaction: jest.fn().mockResolvedValue(undefined),
+      rollbackTransaction: jest.fn().mockResolvedValue(undefined),
+      release: jest.fn().mockResolvedValue(undefined),
+      manager: {
+        save: jest.fn().mockResolvedValue({
+          id: '550e8400-e29b-41d4-a716-446655402',
+          shot_type: 'normale',
+          created_at: new Date(),
+        }),
+        delete: jest.fn().mockResolvedValue({ affected: 1 }),
+      },
+    };
+
+    mockShotRepo = {
       findOne: jest.fn().mockImplementation(options => {
-        if (options.where.id === '550e8400-e29b-41d4-a716-4466554402') {
+        if (options.where.id === '550e8400-e29b-41d4-a716-446655402') {
           return Promise.resolve({
-            id: '550e8400-e29b-41d4-a716-4466554402',
+            id: '550e8400-e29b-41d4-a716-446655402',
             shot_type: 'normale',
             created_at: new Date(),
           });
@@ -68,12 +88,12 @@ describe('ShotService - Unit Tests', () => {
         if (options.where.id === '550e8400-e29b-41d4-a716-4466554403') {
           return Promise.resolve({
             id: '550e8400-e29b-41d4-a716-4466554403',
-            shot_type: 'normale',
+            shot_type: 'ristretto',
             created_at: new Date(),
           });
         }
         return Promise.resolve(null);
-      }) as jest.MockedFunction<Repository<Shot>['findOne']>,
+      }),
       find: jest.fn(),
       save: jest.fn(),
       remove: jest.fn(),
@@ -81,55 +101,44 @@ describe('ShotService - Unit Tests', () => {
       update: jest.fn(),
       delete: jest.fn(),
       restore: jest.fn(),
-      // Add missing methods that ShotService uses
       findAndCount: jest.fn().mockResolvedValue([[], 0]),
       softDelete: jest.fn().mockResolvedValue({ affected: 1 }),
       count: jest.fn().mockResolvedValue(0),
+      manager: {
+        connection: {
+          createQueryRunner: jest.fn().mockReturnValue(mockQueryRunner),
+        },
+      },
     };
 
     // Create a mock data source that returns mock repositories
     mockDataSource = {
-      getRepository: jest.fn().mockImplementation(entity => {
-        const mockRepo = {
-          findOne: jest.fn(),
-          find: jest.fn(),
-          save: jest.fn(),
-          remove: jest.fn(),
-          create: jest.fn(),
-          update: jest.fn(),
-          delete: jest.fn(),
-          restore: jest.fn(),
-          // Add manager property for createQueryRunner
-          manager: {
-            connection: {
-              createQueryRunner: jest.fn().mockReturnValue({
-                connect: jest.fn().mockResolvedValue(undefined),
-                startTransaction: jest.fn().mockResolvedValue(undefined),
-                commitTransaction: jest.fn().mockResolvedValue(undefined),
-                rollbackTransaction: jest.fn().mockResolvedValue(undefined),
-                release: jest.fn().mockResolvedValue(undefined),
-                manager: {
-                  save: jest.fn().mockResolvedValue({
-                    id: '550e8400-e29b-41d4-a716-4466554402',
-                    shot_type: 'normale',
-                    created_at: new Date(),
-                  }),
-                },
-              }),
-            },
-          },
-        };
-
-        if (entity === Shot) {
-          return { ...mockRepo, ...mockShotRepo };
-        } else if (entity === Machine) {
-          return { ...mockRepo, ...mockMachineRepo };
-        } else if (entity === BeanBatch) {
-          return { ...mockRepo, ...mockBeanRepo };
+      getRepository: jest.fn().mockImplementation((entity: any) => {
+        if (entity.name === 'Shot') {
+          return mockShotRepo;
+        } else if (entity.name === 'Machine') {
+          return mockMachineRepo;
+        } else if (entity.name === 'BeanBatch') {
+          return mockBeanBatchRepo;
         } else {
-          return mockRepo;
+          return {
+            findOne: jest.fn(),
+            find: jest.fn(),
+            save: jest.fn(),
+            remove: jest.fn(),
+            create: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+            restore: jest.fn(),
+            findAndCount: jest.fn().mockResolvedValue([[], 0]),
+            softDelete: jest.fn().mockResolvedValue({ affected: 1 }),
+            count: jest.fn().mockResolvedValue(0),
+          };
         }
       }),
+      manager: {
+        query: jest.fn(),
+      },
     } as any;
 
     // Create a ShotService instance
@@ -319,6 +328,247 @@ describe('ShotService - Unit Tests', () => {
         const method = shotService.getShots;
         expect(method).toBeDefined();
       }).not.toThrow();
+    });
+  });
+
+  describe('Business Logic Tests', () => {
+    it('should successfully create a shot with valid data', async () => {
+      // Arrange
+      const validShotData = {
+        machineId: '550e8400-e29b-41d4-a716-446655440000',
+        beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
+        shot_type: 'normale' as const,
+        success: true,
+        notes: 'Test shot',
+      };
+
+      mockMachineRepo.findOne.mockResolvedValue({
+        id: validShotData.machineId,
+        model: 'Test Machine',
+      });
+      mockBeanBatchRepo.findOne.mockResolvedValue({
+        id: validShotData.beanBatchId,
+        name: 'Test Bean Batch',
+      });
+      const mockShot = { id: '550e8400-e29b-41d4-a716-446655402', ...validShotData };
+      mockShotRepo.create.mockReturnValue(mockShot);
+      mockShotRepo.save.mockResolvedValue(mockShot);
+
+      // Act
+      const result = await shotService.createShot(validShotData);
+
+      // Assert
+      expect(result).toBeDefined();
+      expect(result.id).toBe('550e8400-e29b-41d4-a716-446655402');
+      expect(mockMachineRepo.findOne).toHaveBeenCalledWith({
+        where: { id: validShotData.machineId }
+      });
+      expect(mockBeanBatchRepo.findOne).toHaveBeenCalledWith({
+        where: { id: validShotData.beanBatchId }
+      });
+      expect(mockShotRepo.create).toHaveBeenCalled();
+    });
+
+    it('should successfully create a shot with all related entities', async () => {
+      // Arrange
+      const validShotData = {
+        machineId: '550e8400-e29b-41d4-a716-446655440000',
+        beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
+        shot_type: 'normale' as const,
+        success: true,
+        notes: 'Test shot with all entities',
+        preparation: {
+          dose_grams: 18.0,
+          grind_setting: 15,
+        },
+        extraction: {
+          dose_grams: 18.2,
+          yield_grams: 36.0,
+          extraction_time_seconds: 25,
+        },
+        environment: {
+          temperature_celsius: 22.5,
+          humidity_percent: 65.0,
+        },
+        feedback: {
+          rating: 8,
+          notes: 'Great shot!',
+        },
+      };
+
+      mockMachineRepo.findOne.mockResolvedValue({
+        id: validShotData.machineId,
+        model: 'Test Machine',
+      });
+      mockBeanBatchRepo.findOne.mockResolvedValue({
+        id: validShotData.beanBatchId,
+        name: 'Test Bean Batch',
+      });
+      const mockShot = { id: '550e8400-e29b-41d4-a716-446655403', ...validShotData };
+      mockShotRepo.create.mockReturnValue(mockShot);
+      mockShotRepo.save.mockResolvedValue(mockShot);
+
+      // Mock query runner to handle transaction
+      const mockQueryRunner = {
+        connect: jest.fn().mockResolvedValue(undefined),
+        startTransaction: jest.fn().mockResolvedValue(undefined),
+        commitTransaction: jest.fn().mockResolvedValue(undefined),
+        rollbackTransaction: jest.fn().mockResolvedValue(undefined),
+        release: jest.fn().mockResolvedValue(undefined),
+        manager: { 
+          save: jest.fn().mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655403' })
+        },
+      };
+
+      mockShotRepo.manager.connection.createQueryRunner.mockReturnValue(mockQueryRunner);
+
+      // Mock findOne for the getShotById call at the end of createShot
+      mockShotRepo.findOne.mockResolvedValue({
+        id: '550e8400-e29b-41d4-a716-446655403',
+        machine: { id: '550e8400-e29b-41d4-a716-446655440000' },
+        beanBatch: { id: '550e8400-e29b-41d4-a716-446655440001' },
+        preparation: validShotData.preparation,
+        extraction: validShotData.extraction,
+        environment: validShotData.environment,
+        feedback: validShotData.feedback,
+      });
+
+      // Act
+      const result = await shotService.createShot(validShotData);
+
+      // Assert
+      expect(result).toBeDefined();
+      expect(result.id).toBe('550e8400-e29b-41d4-a716-446655403');
+      expect(mockQueryRunner.manager.save).toHaveBeenCalledTimes(5); // main shot + 4 related entities
+      expect(mockQueryRunner.commitTransaction).toHaveBeenCalled();
+    });
+
+    it('should successfully get a shot by ID', async () => {
+      // Arrange
+      const shotId = '550e8400-e29b-41d4-a716-446655440002';
+      const mockShot = {
+        id: shotId,
+        success: true,
+        machine: { id: '550e8400-e29b-41d4-a716-446655440000' },
+        beanBatch: { id: '550e8400-e29b-41d4-a716-446655440001' },
+      };
+
+      mockShotRepo.findOne.mockResolvedValue(mockShot);
+
+      // Act
+      const result = await shotService.getShotById(shotId);
+
+      // Assert
+      expect(result).toBeDefined();
+      expect(result.id).toBe(shotId);
+      expect(mockShotRepo.findOne).toHaveBeenCalledWith({
+        where: { id: shotId },
+        relations: ['machine', 'beanBatch', 'preparation', 'extraction', 'environment', 'feedback']
+      });
+    });
+
+    it('should successfully get shots with filters', async () => {
+      // Arrange
+      const mockShots = [
+        { id: 'shot1', success: true },
+        { id: 'shot2', success: false }
+      ];
+      const mockResult = {
+        shots: mockShots,
+        total: 2,
+        page: 1,
+        limit: 10,
+        totalPages: 1
+      };
+
+      mockShotRepo.findAndCount.mockResolvedValue([mockShots, 2]);
+
+      // Act
+      const result = await shotService.getShots({
+        machineId: '550e8400-e29b-41d4-a716-446655440000',
+        page: 1,
+        limit: 10
+      });
+
+      // Assert
+      expect(result).toEqual(mockResult);
+      expect(mockShotRepo.findAndCount).toHaveBeenCalled();
+    });
+
+    it('should successfully update a shot', async () => {
+      // Arrange
+      const shotId = '550e8400-e29b-41d4-a716-446655440002';
+      const updateData = { success: false, notes: 'Updated notes' };
+      const existingShot = {
+        id: shotId,
+        success: true,
+        notes: 'Original notes'
+      };
+      const updatedShot = {
+        ...existingShot,
+        ...updateData
+      };
+
+      mockShotRepo.findOne.mockResolvedValue(existingShot);
+      mockShotRepo.save.mockResolvedValue(updatedShot);
+
+      // Act
+      const result = await shotService.updateShot(shotId, updateData);
+
+      // Assert
+      expect(result).toBeDefined();
+      expect(result.success).toBe(false);
+      expect(result.notes).toBe('Updated notes');
+      // updateShot calls findOne twice: once through getShotById (with relations) and once directly
+      expect(mockShotRepo.findOne).toHaveBeenCalledTimes(2);
+    });
+
+    it('should successfully soft delete a shot', async () => {
+      // Arrange
+      const shotId = '550e8400-e29b-41d4-a716-446655440002';
+      mockShotRepo.softDelete.mockResolvedValue({ affected: 1 });
+
+      // Act
+      const result = await shotService.softDeleteShot(shotId);
+
+      // Assert
+      expect(result).toBe(true);
+      expect(mockShotRepo.softDelete).toHaveBeenCalledWith(shotId);
+    });
+
+    it('should return false when soft deleting non-existent shot', async () => {
+      // Arrange
+      const shotId = 'non-existent-id';
+      mockShotRepo.softDelete.mockResolvedValue({ affected: 0 });
+
+      // Act
+      const result = await shotService.softDeleteShot(shotId);
+
+      // Assert
+      expect(result).toBe(false);
+      expect(mockShotRepo.softDelete).toHaveBeenCalledWith(shotId);
+    });
+
+    it('should successfully get shot statistics', async () => {
+      // Arrange
+      const mockStats = {
+        totalShots: 100,
+        successfulShots: 80,
+        failedShots: 20,
+        averageExtractionTime: 25.5
+      };
+
+      mockShotRepo.count.mockResolvedValue(100);
+      mockShotRepo.count.mockResolvedValue(80); // This will be called multiple times
+
+      // Act
+      const result = await shotService.getShotStatistics({
+        machineId: '550e8400-e29b-41d4-a716-446655440000'
+      });
+
+      // Assert
+      expect(result).toBeDefined();
+      expect(mockShotRepo.count).toHaveBeenCalled();
     });
   });
 
