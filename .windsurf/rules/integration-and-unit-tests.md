@@ -2,368 +2,122 @@
 trigger: always_on
 ---
 
+# Unit Tests & Integration Tests Guide
+
+## 📋 Quick Reference
+
+| Test Type | When to Use | File Pattern | Key Characteristics |
+|-----------|-------------|--------------|-------------------|
+| **Unit** | Test business logic in isolation | `*.unit.test.ts` | Mocked dependencies, fast, no DB |
+| **Integration** | Test component interactions | `*.integration.test.ts` | Real DB, external dependencies |
+
+---
+
 # Unit Tests
 
-- A unit test should test individual functions/classes in isolation with all external dependencies mocked
-- ANY test that mocks database dependencies MUST be classified as a unit test
-- A unit test MUST
-  - mock all external dependencies
-  - test single responsibility
-  - be deterministic and fast
-- Unit tests CANNOT mock the unit under test (e.g. cannot mock ShotService when testing ShotService)
+## Core Principles
 
-**File Naming Convention:**
+- **Isolation**: Test individual functions/classes with all external dependencies mocked
+- **Speed**: Deterministic and fast execution
+- **Focus**: Test single responsibility, not implementation details
+- **No Mocking Unit Under Test**: Cannot mock ShotService when testing ShotService
 
-- `*.unit.test.ts` in `src/__tests__/unit/` directory
+## 🚨 Critical Rules
 
-**Criteria:**
+### **Rule: Read Each File for Unit Under Test Before Writing Tests**
 
-- Uses mocked `DataSource` or repositories
-- Tests business logic in isolation
-- No actual database operations
-- Fast execution, no external dependencies
-- Tests validation, calculations, transformations
+**Problem**: Writing tests without understanding actual dependencies leads to incorrect mocks.
 
-## 🚨 Unit Test Data Rules
+**Solution**: Always analyze the target file first.
+
+```bash
+# Before writing tests, map dependencies:
+grep -r "getRepository\|findOne\|find" src/services/YourService.ts
+```
+
+### **🚨 Critical Rule: Test Behavior, Not Implementation**
+
+**Problem**: Verifying mock calls tightly couples tests to implementation.
+
+**Solution**: Test externally visible behavior/outcomes.
+
+```typescript
+// ✅ GOOD - Test behavior
+it('should create machine successfully', async () => {
+  const result = await machineService.create(validData);
+  expect(result.id).toBeDefined();
+  expect(result.model).toBe(validData.model);
+});
+
+// ❌ BAD - Test implementation
+it('should call repository.save', async () => {
+  await machineService.create(validData);
+  expect(mockRepository.save).toHaveBeenCalledWith(data);
+});
+```
+
+**When Implementation Testing IS Acceptable:**
+- Void methods where side effect is the observable behavior
+- External system coordination (logging, notifications)
+- Security-critical parameter validation
+
+### **Rule: Test What Users Care About**
+
+Test the **API response** and **database interactions**, not internal implementation flow:
+
+```typescript
+// Test: response (what users see)
+expect(mockResponse.status).toHaveBeenCalledWith(404);
+
+// Test: validation was attempted (what actually happened)
+expect(mockBeanBatchRepo.findOne).toHaveBeenCalledWith({
+  where: { id: '550e8400-e29b-41d4-a716-446655440001' }
+});
+```
 
 ### **Rule: Use Valid UUID Format for Test Data**
 
-**Problem**: Tests using invalid UUID formats (like 'test-machine-id') cause database validation errors when services expect proper UUIDs.
-
-**❌ WRONG - Invalid UUID format:**
-
 ```typescript
-const result = shotService.createShot({
-  machineId: 'test-machine-id', // ❌ Invalid UUID format
-  beanBatchId: 'test-batch-id', // ❌ Invalid UUID format
-  shot_type: 'normale' as const,
-} as any);
+// ❌ WRONG
+machineId: 'test-machine-id' // Invalid UUID
+
+// ✅ CORRECT
+machineId: '550e8400-e29b-41d4-a716-446655440000' // Valid UUID
 ```
 
-**✅ CORRECT - Valid UUID format:**
-
-```typescript
-const result = shotService.createShot({
-  machineId: '550e8400-e29b-41d4-a716-446655440000', // ✅ Valid UUID
-  beanBatchId: '550e8400-e29b-41d4-a716-446655440001', // ✅ Valid UUID
-  shot_type: 'normale' as const,
-} as any);
-```
-
-**Mock Repository Setup:**
-
-```typescript
-const mockMachineRepo = {
-  findOne: jest.fn().mockResolvedValue({
-    id: '550e8400-e29b-41d4-a716-446655440000', // ✅ Valid UUID
-    model: 'Test Machine',
-    firmware_version: '1.0.0',
-    created_at: new Date(),
-  }),
-  // ... other methods
-};
-```
-
-**Common UUID Patterns for Tests:**
-
+**Common Test UUIDs:**
 - Machine IDs: `550e8400-e29b-41d4-a716-446655440000`
 - Bean Batch IDs: `550e8400-e29b-41d4-a716-446655440001`
 - Shot IDs: `550e8400-e29b-41d4-a716-446655440002`
-- User IDs: `550e8400-e29b-41d4-a716-446655440003`
 
-## 🚨 Complete Entity Coverage in Unit Test Mocks
+### **Rule: Complete Entity Coverage in Mocks**
 
-### **Rule: Mock All Entities the Service Depends On**
-
-**Problem**: Unit tests fail when only some entities are mocked, causing cascading failures as the service tries to access unmocked dependencies.
-
-**❌ WRONG - Incomplete mocking (only mocks Machine):**
+**Problem**: Missing entity mocks cause cascading failures.
 
 ```typescript
-getRepository: jest.fn().mockImplementation(entity => {
-  if (entity === Machine) {
-    return {
-      /* Machine mock */
-    };
-  }
-  // ❌ Missing BeanBatch mock - causes test failure
-  return {
-    /* default mock */
-  };
-});
-```
-
-**✅ CORRECT - Complete entity coverage:**
-
-```typescript
-getRepository: jest.fn().mockImplementation(entity => {
-  if (entity === Machine) {
-    return createMockMachineRepo();
-  }
-  if (entity === BeanBatch) {
-    return createMockBeanBatchRepo();
-  }
-  if (entity === Shot) {
-    return createMockShotRepo();
-  }
-  // ✅ All required entities are covered
-  return createMockDefaultRepo();
-});
-```
-
-### **Dependency Mapping Process**
-
-#### **Step 1: Identify All Dependencies**
-
-```bash
-# Before writing tests, map all dependencies:
-grep -r "getRepository\|findOne\|find" src/services/YourService.ts
-
-# Or analyze the service constructor and methods
-class ShotService {
-  constructor(
-    private shotRepository: Repository<Shot>,        // ✅ Mock needed
-    private machineRepository: Repository<Machine>,    // ✅ Mock needed
-    private beanBatchRepository: Repository<BeanBatch>, // ✅ Mock needed
-  ) {}
-}
-```
-
-#### **Step 2: Create Complete Mock Setup**
-
-```typescript
-// ✅ COMPLETE MOCKING PATTERN
+// ✅ COMPLETE MOCKING
 const createMockDataSource = () => ({
   getRepository: jest.fn().mockImplementation(entity => {
-    // ✅ Entity-specific mocks with complete method coverage
-    if (entity === Machine) {
-      return {
-        findOne: jest.fn().mockImplementation(options => {
-          if (options.where.id === TEST_DATA.MACHINE_ID) {
-            return Promise.resolve({
-              id: TEST_DATA.MACHINE_ID,
-              model: 'Test Machine',
-              firmware_version: '1.0.0',
-              created_at: new Date(),
-            });
-          }
-          return Promise.resolve(null);
-        }),
-        find: jest.fn(),
-        save: jest.fn(),
-        remove: jest.fn(),
-        create: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-        restore: jest.fn(),
-        // ✅ Don't forget queryRunner for transaction methods
-        manager: {
-          connection: {
-            createQueryRunner: jest.fn().mockReturnValue({
-              connect: jest.fn().mockResolvedValue(undefined),
-              startTransaction: jest.fn().mockResolvedValue(undefined),
-              commitTransaction: jest.fn().mockResolvedValue(undefined),
-              rollbackTransaction: jest.fn().mockResolvedValue(undefined),
-              release: jest.fn().mockResolvedValue(undefined),
-            }),
-          },
-        },
-      };
-    }
-
-    // ✅ Repeat for all other entities
+    if (entity === Machine) return createMockMachineRepo();
     if (entity === BeanBatch) return createMockBeanBatchRepo();
     if (entity === Shot) return createMockShotRepo();
-
-    // ✅ Default fallback for unknown entities
     return createMockDefaultRepo();
   }),
 });
 ```
 
-#### **Step 3: Use Consistent Test Data**
+**Mock Coverage Checklist:**
+- [ ] All repository entities mocked
+- [ ] Complete method coverage (findOne, save, remove, create, update, delete, restore)
+- [ ] QueryRunner support for transactions
+- [ ] Valid UUID format for all IDs
+- [ ] Default fallback for unknown entities
 
+## 🛠️ Mock Setup Patterns
+
+### **Complete Repository Mock**
 ```typescript
-// ✅ CONSISTENT TEST DATA CONSTANTS
-const TEST_DATA = {
-  MACHINE_ID: '550e8400-e29b-41d4-a716-446655440000',
-  BEAN_BATCH_ID: '550e8400-e29b-41d4-a716-446655440001',
-  SHOT_ID: '550e8400-e29b-41d4-a716-446655440002',
-};
-
-// ✅ Ensure test data matches mock responses
-const result = service.createShot({
-  machineId: TEST_DATA.MACHINE_ID, // ✅ Matches mock
-  beanBatchId: TEST_DATA.BEAN_BATCH_ID, // ✅ Matches mock
-  shot_type: 'normale' as const,
-});
-```
-
-### **Mock Coverage Checklist**
-
-#### **For Each Service Unit Test:**
-
-- [ ] **All Repository Entities**: Every entity in constructor is mocked
-- [ ] **Complete Method Coverage**: All repository methods (findOne, save, remove, etc.)
-- [ ] **QueryRunner Support**: All transaction methods (connect, startTransaction, etc.)
-- [ ] **Valid UUID Format**: All IDs use proper UUID format
-- [ ] **Data Consistency**: Test data matches mock responses
-- [ ] **Default Fallback**: Handle unknown entities gracefully
-
-#### **Common Missing Mocks:**
-
-```typescript
-// ❌ FORGOTTEN - Transaction support
-manager: {
-  connection: {
-    createQueryRunner: jest.fn(), // ❌ Returns undefined
-  },
-},
-
-// ❌ FORGOTTEN - Complete method set
-findOne: jest.fn(),
-// ❌ Missing: save, remove, create, update, delete, restore
-
-// ❌ FORGOTTEN - Entity coverage
-if (entity === Machine) return mockMachineRepo;
-// ❌ Missing: BeanBatch, Shot, other entities
-```
-
-### **Incremental Testing Strategy**
-
-#### **Test One Dependency at a Time:**
-
-```typescript
-// ✅ Test machine validation first
-it('should validate machine exists', async () => {
-  const mockMachineRepo = createMockMachineRepo();
-  // Only test machine lookup logic
-});
-
-// ✅ Then test bean batch validation
-it('should validate bean batch exists', async () => {
-  const mockBeanBatchRepo = createMockBeanBatchRepo();
-  // Only test bean batch lookup logic
-});
-
-// ✅ Finally test complete flow
-it('should create shot successfully', async () => {
-  const mockDataSource = createMockDataSource();
-  // Test complete flow with all mocks
-});
-```
-
-### **Benefits of Complete Coverage:**
-
-1. **Prevents Cascading Failures**: One missing mock won't cause multiple test failures
-2. **Improves Debugging**: Clear separation of concerns in test failures
-3. **Ensures Comprehensive Testing**: All service paths are properly tested
-4. **Maintainability**: Easy to identify and fix missing dependencies
-5. **Consistency**: Standardized pattern across all unit tests
-
-## 🚨 Critical Unit Test Edit Strategies
-
-### **Rule: Use Unique Context for Targeted Edits**
-
-**Problem**: When editing test files with repeated patterns, ambiguous string matching causes edits to fail or apply to wrong locations.
-**❌ WRONG - Ambiguous string matching:**
-
-```typescript
-// This appears 4 times in the file - causes ambiguity
-edit('restore: jest.fn(),', 'restore: jest.fn(),\n  findAndCount: jest.fn()');
-
-// This also appears multiple times
-edit('delete: jest.fn(),\n  restore: jest.fn(),', '...');
-```
-
-**✅ CORRECT - Use unique context:**
-
-```typescript
-// ✅ Target unique identifier that only appears once
-edit('if (entity === Shot) {\n  return {\n    findOne: jest.fn()...', 'complete Shot mock');
-
-// ✅ Use broader range with unique context
-edit(
-  "if (entity === Shot) {\n  return {\n    findOne: jest.fn().mockImplementation(options => {\n      if (options.where.id === '550e8400-e29b-41d4-a716-4466554402') {\n        return Promise.resolve({\n          id: '550e8400-e29b-41d4-a716-4466554402',\n          shot_type: 'normale',\n          created_at: new Date(),\n        });\n      }\n      return Promise.resolve(null);\n    }) as jest.MockedFunction<Repository<Shot>['findOne']>,\n    find: jest.fn(),\n    save: jest.fn(),\n    remove: jest.fn(),\n    create: jest.fn(),\n    update: jest.fn(),\n    delete: jest.fn(),\n    restore: jest.fn(),",
-  'enhanced Shot mock with missing methods'
-);
-```
-
-### **Rule: Import Required Types Before Using Them**
-
-**Problem**: Adding type annotations without importing required types causes TypeScript compilation errors.
-
-**❌ WRONG - Missing import:**
-
-```typescript
-// This will fail: Cannot find name 'Repository'
-}) as jest.MockedFunction<Repository<Shot>['findOne']>,
-```
-
-**✅ CORRECT - Import first:**
-
-```typescript
-import { Repository } from 'typeorm'; // ✅ Add this import
-
-// Now this works
-}) as jest.MockedFunction<Repository<Shot>['findOne']>,
-```
-
-### **Rule: Analyze Consecutive Failures Before Retrying**
-
-**Problem**: Repeating the same failed approach without analysis leads to multiple consecutive failures.
-
-**✅ CORRECT - Failure Analysis Process:**
-
-#### **Step 1: Document Each Failure**
-
-```typescript
-// Failure 1: "restore: jest.fn()," appears 4 times - ambiguous
-// Failure 2: Same ambiguous approach repeated
-// Failure 3: "delete: jest.fn(),\n  restore: jest.fn()," still appears 4 times
-```
-
-#### **Step 2: Identify Root Cause**
-
-```typescript
-// Root cause: String patterns appear multiple times in file
-// Solution: Find truly unique context like "if (entity === Shot)"
-```
-
-#### **Step 3: Verify Uniqueness Before Editing**
-
-```bash
-# Verify the target string is unique
-grep -n "if (entity === Shot)" src/__tests__/unit/services/ShotService.structure.unit.test.ts
-# Should return exactly 1 match
-```
-
-#### **Step 4: Use Broader Context Range**
-
-```typescript
-// ✅ Target the entire entity block for uniqueness
-edit('if (entity === Shot) {\n  return {\n    findOne: jest.fn()...', 'complete replacement');
-```
-
-### **Rule: Complete Method Coverage for Repository Mocks**
-
-**Problem**: Missing repository methods cause "is not a function" errors when services call them.
-
-**❌ WRONG - Incomplete method coverage:**
-
-```typescript
-const mockShotRepo = {
-  findOne: jest.fn(),
-  find: jest.fn(),
-  save: jest.fn(),
-  // ❌ Missing: findAndCount, softDelete, count, etc.
-};
-```
-
-**✅ CORRECT - Complete method coverage:**
-
-```typescript
-const mockShotRepo = {
+const mockMachineRepo = {
   findOne: jest.fn(),
   find: jest.fn(),
   save: jest.fn(),
@@ -372,211 +126,106 @@ const mockShotRepo = {
   update: jest.fn(),
   delete: jest.fn(),
   restore: jest.fn(),
-  // ✅ Add all methods the service uses
   findAndCount: jest.fn().mockResolvedValue([[], 0]),
   softDelete: jest.fn().mockResolvedValue({ affected: 1 }),
   count: jest.fn().mockResolvedValue(0),
+  manager: {
+    connection: {
+      createQueryRunner: jest.fn().mockReturnValue({
+        connect: jest.fn().mockResolvedValue(undefined),
+        startTransaction: jest.fn().mockResolvedValue(undefined),
+        commitTransaction: jest.fn().mockResolvedValue(undefined),
+        rollbackTransaction: jest.fn().mockResolvedValue(undefined),
+        release: jest.fn().mockResolvedValue(undefined),
+      }),
+    },
+    save: jest.fn(),
+    delete: jest.fn(),
+  },
 };
 ```
 
-### **Rule: QueryRunner Manager Method Coverage**
-
-**Problem**: Services call `queryRunner.manager.save()` and `queryRunner.manager.delete()` but mocks only have `save`.
-
-**❌ WRONG - Missing delete method:**
-
+### **Test Data Constants**
 ```typescript
-manager: {
-  save: jest.fn().mockResolvedValue({ /* ... */ }),
-  // ❌ Missing delete method
-}
+const TEST_DATA = {
+  MACHINE_ID: '550e8400-e29b-41d4-a716-446655440000',
+  BEAN_BATCH_ID: '550e8400-e29b-41d4-a716-446655440001',
+  SHOT_ID: '550e8400-e29b-41d4-a716-446655440002',
+};
 ```
 
-**✅ CORRECT - Complete manager methods:**
+## 🔧 Edit Strategies
 
+### **Rule: Use Unique Context for Edits**
 ```typescript
-manager: {
-  save: jest.fn().mockResolvedValue({
-    id: '550e8400-e29b-41d4-a716-4466554402',
-    shot_type: 'normale',
-    created_at: new Date(),
-  }),
-  delete: jest.fn().mockResolvedValue({ affected: 1 }), // ✅ Add delete
-}
+// ❌ WRONG - Ambiguous patterns
+edit('restore: jest.fn(),', 'restore: jest.fn(),\n  findAndCount: jest.fn()');
+
+// ✅ CORRECT - Unique context
+edit('if (entity === Shot) {\n  return {\n    findOne: jest.fn()...', 'complete replacement');
+```
+
+### **Rule: Import Required Types**
+```typescript
+import { Repository } from 'typeorm'; // ✅ Required for type annotations
 ```
 
 ### **Edit Strategy Checklist**
+- [ ] Search for target string to verify uniqueness
+- [ ] Check import dependencies
+- [ ] Analyze previous failures
+- [ ] Use broader context for uniqueness
+- [ ] Test compilation after changes
 
-#### **Before Editing:**
-
-- [ ] **Search for Target String**: Verify uniqueness with `grep`
-- [ ] **Check Import Dependencies**: Ensure all types are imported
-- [ ] **Analyze Previous Failures**: Document what went wrong
-- [ ] **Identify Unique Context**: Find patterns that appear only once
-
-#### **During Editing:**
-
-- [ ] **Use Broader Context**: Target larger unique blocks
-- [ ] **Include Unique Identifiers**: Use entity names, specific IDs, etc.
-- [ ] **Verify Method Coverage**: Check all required methods are present
-- [ ] **Add Missing Imports**: Include TypeORM types as needed
-
-#### **After Editing:**
-
-- [ ] **Test Compilation**: Run `npm run build` to check for TypeScript errors
-- [ ] **Run Targeted Tests**: Test specific file with `--testPathPatterns`
-- [ ] **Verify No Regressions**: Ensure other tests still pass
-
-**Usage:**
-
-```bash
-# Run unit tests only
-npm run test:unit
-
-# Run unit tests with coverage
-npm run test:unit:coverage
-
-# Run unit tests in watch mode
-npm run test:unit:watch
-```
+---
 
 # Integration Tests
 
-- An integration test should test how multiple components work together with real external dependencies
-- Any test that requires a database connection MUST be classified as an integration test
-- An integration test MUST
-  - use real database setup
-  - test component interactions
-  - verify database constraints
+## Core Principles
 
-**File Naming Convention:**
+- **Real Dependencies**: Use actual database and external services
+- **Component Interaction**: Test how multiple components work together
+- **Database Constraints**: Verify real database behavior
+- **Sequential Execution**: Avoid race conditions
 
-- `*.integration.test.ts` in `src/__tests__/integration/` directory
+## 🚨 Critical Rules
 
-**Criteria:**
+### **Rule: Prevent Shared Database State**
 
-- Uses `testDataSource` or any real `DataSource`
-- Creates/modifies/deletes actual database records
-- Tests database transactions
-- Tests repository/service layer with real database
-- Tests database constraints and relationships
-- Uses TypeORM entities with real persistence
+**Problem**: Multiple test files sharing database cause conflicts.
 
-**Usage:**
-
-```bash
-# Run integration tests only
-npm run test:integration
-
-# Run integration tests with coverage
-npm run test:integration:coverage
-
-# Run integration tests in watch mode
-npm run test:integration:watch
-```
-
-# Critical Integration Test Rules
-
-## 🚨 Test Isolation & Data Synchronization
-
-### **Rule: Prevent Shared Database State Between Test Files**
-
-**Problem**: Multiple integration test files sharing the same database cause data conflicts and test failures.
-
-**❌ WRONG - Multiple test files with shared initialization:**
+**Solution**: Single schema initialization with data cleanup.
 
 ```typescript
-// File 1: ShotService.basic.integration.test.ts
-beforeAll(async () => {
-  await initializeTestDataSource(); // Creates schema + data
-});
+// ✅ CORRECT - Single initialization
+let testDataSource: DataSource;
+let isInitialized = false;
 
-// File 2: ShotService.integration.test.ts
-beforeAll(async () => {
-  await initializeTestDataSource(); // Tries to create schema again!
-});
-```
-
-**✅ CORRECT - Shared initialization with proper isolation:**
-
-```typescript
-// setup.integration.ts
 export const initializeTestDataSource = async (): Promise<DataSource> => {
-  try {
-    // If already initialized, just clean the data
-    if (testDataSource && testDataSource.isInitialized) {
-      console.log('🔄 Database already initialized, cleaning data...');
-      await cleanTestData();
-      return testDataSource;
-    }
-
-    // Initialize only once
-    console.log('🔌 Initializing test database connection...');
-    testDataSource = createCustomPostgresDataSource();
-    await testDataSource.initialize();
+  if (testDataSource && testDataSource.isInitialized) {
     await cleanTestData();
     return testDataSource;
-  } catch (error) {
-    console.error('❌ Database connection failed:', error);
-    throw error;
   }
+  // Initialize only once
+  testDataSource = createCustomPostgresDataSource();
+  await testDataSource.initialize();
+  await cleanTestData();
+  return testDataSource;
 };
-
-// Global setup - runs once per test suite
-beforeAll(async () => {
-  if (!isInitialized) {
-    await initializeTestDataSource();
-    isInitialized = true;
-  }
-});
-
-// Clean data between tests - NOT schema recreation
-beforeEach(async () => {
-  if (isInitialized && testDataSource && testDataSource.isInitialized) {
-    try {
-      await cleanTestData(); // Only clean data, don't recreate schema
-    } catch (cleanupError) {
-      console.warn('⚠️  Database cleanup failed:', cleanupError);
-    }
-  }
-});
 ```
 
 ### **Rule: Use Data Cleanup, Not Schema Recreation**
 
-**Problem**: Using `testDataSource.synchronize(true)` in `beforeEach` causes PostgreSQL type conflicts.
+**Problem**: `synchronize(true)` in `beforeEach` causes PostgreSQL conflicts.
 
-**❌ WRONG - Schema recreation in beforeEach:**
-
-```typescript
-beforeEach(async () => {
-  // This causes PostgreSQL type conflicts!
-  await testDataSource.synchronize(true);
-});
-```
-
-**✅ CORRECT - Data cleanup only:**
+**Solution**: Use `TRUNCATE TABLE` for data cleanup.
 
 ```typescript
 const cleanTestData = async () => {
-  const tables = [
-    'shots',
-    'shot_preparation',
-    'shot_extraction',
-    'shot_environment',
-    'shot_feedback',
-    'bean_batches',
-    'machines',
-    'bean',
-  ];
-
+  const tables = ['shots', 'shot_preparation', 'shot_extraction', 'shot_environment', 'shot_feedback', 'bean_batches', 'machines', 'bean'];
+  
   for (const table of tables) {
-    try {
-      await testDataSource.query(`TRUNCATE TABLE ${table} RESTART IDENTITY CASCADE`);
-      console.log(`🧹 Cleaned table: ${table}`);
-    } catch (error) {
-      console.warn(`⚠️  Could not clean table ${table}:`, error);
-    }
+    await testDataSource.query(`TRUNCATE TABLE ${table} RESTART IDENTITY CASCADE`);
   }
 };
 
@@ -585,11 +234,7 @@ beforeEach(async () => {
 });
 ```
 
-### **Rule: Sequential Test Execution for Database Tests**
-
-**Problem**: Parallel database tests cause race conditions and deadlocks.
-
-**✅ CORRECT Jest Configuration:**
+### **Rule: Sequential Test Execution**
 
 ```javascript
 // jest.config.js
@@ -599,309 +244,444 @@ projects: [
     preset: 'ts-jest',
     testEnvironment: 'node',
     testMatch: ['<rootDir>/src/__tests__/integration/**/*.test.ts'],
-    setupFiles: ['<rootDir>/src/__tests__/env-setup.ts'],
-    setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.integration.ts'],
-    runInBand: true, // ✅ Run tests sequentially to avoid database conflicts
+    runInBand: true, // ✅ Sequential execution
   },
 ],
 ```
 
-### **Rule: One Database Schema per Test Session**
+### **Rule: Separate Jest Projects for Multiple Files**
 
-**Problem**: Multiple schema initializations cause PostgreSQL type conflicts.
+**Problem**: Multiple integration test files sharing setup cause conflicts.
 
-**✅ CORRECT - Single initialization pattern:**
-
-```typescript
-// setup.integration.ts
-let testDataSource: DataSource;
-let isInitialized = false;
-
-export const initializeTestDataSource = async (): Promise<DataSource> => {
-  // Initialize only once per test session
-  if (testDataSource && testDataSource.isInitialized) {
-    await cleanTestData();
-    return testDataSource;
-  }
-
-  // Create schema only once
-  testDataSource = createCustomPostgresDataSource();
-  await testDataSource.initialize();
-  await cleanTestData();
-  return testDataSource;
-};
-```
-
-### **Rule: Separate Jest Projects for Multiple Integration Test Files**
-
-**Problem**: Multiple integration test files sharing the same setup file cause database conflicts and test isolation issues.
-
-**❌ WRONG - Single project for all integration tests:**
+**Solution**: Separate projects with isolated databases.
 
 ```javascript
-// jest.config.js
-projects: [
-  {
-    displayName: 'integration',
-    preset: 'ts-jest',
-    testEnvironment: 'node',
-    testMatch: ['<rootDir>/src/__tests__/integration/**/*.test.ts'], // ❌ All files share setup
-    setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.integration.ts'],
-    runInBand: true,
-  },
-],
-```
-
-**✅ CORRECT - Separate projects with isolated setups:**
-
-```javascript
-// jest.config.js
 projects: [
   {
     displayName: 'integration-basic',
-    preset: 'ts-jest',
-    testEnvironment: 'node',
     testMatch: ['<rootDir>/src/__tests__/integration/services/ShotService.basic.integration.test.ts'],
-    setupFiles: ['<rootDir>/src/__tests__/env-setup.ts'],
-    setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.integration.basic.ts'], // ✅ Separate setup
+    setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.integration.basic.ts'],
     runInBand: true,
   },
   {
     displayName: 'integration-main',
-    preset: 'ts-jest',
-    testEnvironment: 'node',
     testMatch: ['<rootDir>/src/__tests__/integration/services/ShotService.integration.test.ts'],
-    setupFiles: ['<rootDir>/src/__tests__/env-setup.ts'],
-    setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.integration.main.ts'], // ✅ Separate setup
+    setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.integration.main.ts'],
     runInBand: true,
   },
 ],
 ```
 
-**✅ CORRECT - Separate setup files with different databases:**
+## 🐛 Common Pitfalls & Solutions
 
-```typescript
-// setup.integration.basic.ts
-const createCustomPostgresDataSource = () =>
-  new DataSource({
-    type: 'postgres',
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5433'),
-    username: process.env.DB_USERNAME || 'postgres_user',
-    password: process.env.DB_PASSWORD || 'postgres_password',
-    database: process.env.DB_NAME || 'espresso_ml_test_basic', // ✅ Different database
-    entities: [
-      /* ... */
-    ],
-    synchronize: true,
-    logging: false,
-    dropSchema: true,
-    ssl: false,
-  });
-
-// setup.integration.main.ts
-const createCustomPostgresDataSource = () =>
-  new DataSource({
-    type: 'postgres',
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5433'),
-    username: process.env.DB_USERNAME || 'postgres_user',
-    password: process.env.DB_PASSWORD || 'postgres_password',
-    database: process.env.DB_NAME || 'espresso_ml_test_main', // ✅ Different database
-    entities: [
-      /* ... */
-    ],
-    synchronize: true,
-    logging: false,
-    dropSchema: true,
-    ssl: false,
-  });
-```
-
-**✅ CORRECT - Update test file imports:**
-
-```typescript
-// ShotService.basic.integration.test.ts
-import {
-  initializeTestDataSource,
-  getTestDataSource,
-  createTestMachine,
-  createTestBean,
-  createTestBeanBatch,
-} from '../../setup.integration.basic'; // ✅ Import from basic setup
-
-// ShotService.integration.test.ts
-import {
-  initializeTestDataSource,
-  getTestDataSource,
-  createTestMachine,
-  createTestBean,
-  createTestBeanBatch,
-} from '../../setup.integration.main'; // ✅ Import from main setup
-```
-
-## 🐛 Common Integration Test Pitfalls
-
-### **1. PostgreSQL Type Conflicts**
-
-```bash
-# Error: duplicate key value violates unique constraint "pg_type_typname_nsp_index"
-```
-
-**Solution**: Initialize schema once, clean data between tests.
-
-### **2. Test Data Leaking Between Tests**
-
-```bash
-# Expected length: 2, Received length: 4
-```
-
-**Solution**: Use `TRUNCATE TABLE` with `CASCADE` in `beforeEach`.
-
-### **3. Database Connection Pool Exhaustion**
-
-```bash
-# Error: too many connections
-```
-
-**Solution**: Use `runInBand: true` and proper cleanup in `afterAll`.
-
-### **4. Concurrent Schema Creation**
-
-```bash
-# Error: relation "bean" does not exist
-```
-
-**Solution**: Shared initialization with proper state checking.
-
-### **5. Multiple Integration Test Files Conflicts**
-
-```bash
-# Expected length: 2, Received length: 0
-# Test Suites: 1 failed, 1 passed, 2 total
-```
-
-**Solution**: Create separate Jest projects with isolated setup files and databases.
+| Issue | Cause | Solution |
+|-------|--------|----------|
+| **PostgreSQL Type Conflicts** | Multiple schema creation | Initialize once, cleanup data |
+| **Test Data Leaking** | Insufficient cleanup | Use `TRUNCATE TABLE` with `CASCADE` |
+| **Connection Pool Exhaustion** | Parallel tests | Use `runInBand: true` |
+| **Schema Creation Conflicts** | Concurrent initialization | Shared initialization with state checking |
+| **Multiple File Conflicts** | Shared setup files | Separate Jest projects |
 
 ## 📋 Integration Test Checklist
 
-- [ ] **Single Schema Initialization**: Schema created once per test session
-- [ ] **Data Cleanup Between Tests**: Use `TRUNCATE` not `DROP/CREATE`
-- [ ] **Sequential Execution**: `runInBand: true` in Jest config
-- [ ] **Proper Table Names**: Verify exact table names in cleanup
-- [ ] **Connection Management**: Proper `afterAll` cleanup
-- [ ] **Error Handling**: Graceful handling of cleanup failures
-- [ ] **Environment Variables**: Proper `NODE_ENV=test` setup
-- [ ] **Separate Jest Projects**: Each integration test file in its own project
-- [ ] **Isolated Setup Files**: Separate setup files for each test project
-- [ ] **Different Database Names**: Use unique database names per project
-- [ ] **Correct Import Paths**: Update test files to import from correct setup
-
-# All Tests
-
-```bash
-# Run all tests (unit + integration)
-npm run test
-
-# Run all tests with coverage
-npm run test:coverage
-
-# Run all tests in watch mode
-npm run test:watch
-```
+- [ ] Single schema initialization per session
+- [ ] Data cleanup between tests (TRUNCATE, not DROP/CREATE)
+- [ ] Sequential execution (`runInBand: true`)
+- [ ] Proper table names in cleanup
+- [ ] Connection management in `afterAll`
+- [ ] Error handling for cleanup failures
+- [ ] Separate Jest projects for multiple files
+- [ ] Isolated setup files per project
+- [ ] Different database names per project
+- [ ] Correct import paths for setup files
 
 ---
 
-## 🚨 **CRITICAL: Jest Matcher Syntax Rules**
+# Jest Matcher Syntax Rules
 
-### **Rule: Verify Jest Matcher Syntax Before Committing**
+## 🚨 Critical Syntax Rules
 
-**Problem**: Incorrect Jest matcher syntax causes test failures and requires manual fixes.
-
-**Common Syntax Errors:**
-
-#### **❌ WRONG - Extra Closing Parenthesis**
+### **Common Syntax Errors**
 
 ```typescript
 // ❌ WRONG - Extra closing parenthesis
 expect(methodString).toMatch(/options\s*=\s*\{\}/)); // ← Extra )
 
-// ❌ WRONG - Missing closing parenthesis
+// ❌ WRONG - Missing closing parenthesis  
 expect(methodString).toMatch(/options\s*=\s*\{\}/; // ← Missing )
 
-// ❌ WRONG - Mixed string/regex syntax
-expect(methodString).toMatch('/options\s*=\s*\{\}/'); // ← String instead of regex
+// ❌ WRONG - String instead of regex
+expect(methodString).toMatch('/options\s*=\s*\{\}/'); // ← Quotes around regex
 ```
-
-#### **✅ CORRECT - Proper Jest Matcher Syntax**
 
 ```typescript
-// ✅ CORRECT - Regex literal (no quotes, no extra parens)
-expect(methodString).toMatch(/options\s*=\s*\{\}/);
-
-// ✅ CORRECT - String literal
-expect(methodString).toContain('options = {}');
-
-// ✅ CORRECT - Multiple matchers (each properly closed)
-expect(methodString).toContain('options');
-expect(methodString).toContain('__awaiter');
-expect(methodString).toMatch(/options\s*=\s*\{\}/);
+// ✅ CORRECT - Proper syntax
+expect(methodString).toMatch(/options\s*=\s*\{\}/); // Regex literal
+expect(methodString).toContain('options = {}'); // String literal
 ```
 
-### **Jest Matcher Syntax Checklist**
+### **Syntax Checklist**
 
-#### **Before Committing Test Changes:**
+Before committing test changes:
+- [ ] All `expect()` calls have proper closing parenthesis
+- [ ] Regex literals use `/pattern/`, not `'/pattern/'`
+- [ ] String matchers use `'string'` or `"string"`
+- [ ] No extra closing parentheses
+- [ ] No missing closing parentheses
+- [ ] Proper semicolon at end of line
 
-```bash
-# ✅ CHECKLIST: Verify these syntax patterns:
-- [ ] All expect() calls have proper closing parenthesis: expect(...).matcher(...)
-- [ ] Regex literals use /pattern/ syntax, not '/pattern/' string
-- [ ] String matchers use 'string' or "string", not '/string/'
-- [ ] No extra closing parentheses: ) not ))
-- [ ] No missing closing parentheses: ) not ;
-- [ ] Proper semicolon at end of line: ...);
-```
-
-#### **Common Jest Matcher Patterns:**
+### **Common Matcher Patterns**
 
 ```typescript
-// ✅ String matchers
+// String matchers
 expect(text).toContain('substring');
 expect(text).toEqual('exact string');
 
-// ✅ Regex matchers
+// Regex matchers  
 expect(text).toMatch(/pattern/);
 expect(text).toMatch(/pattern\s*with\s*spaces/);
 
-// ✅ Number matchers
+// Number matchers
 expect(number).toBeGreaterThan(5);
 expect(number).toBeLessThanOrEqual(10);
 
-// ✅ Boolean matchers
+// Boolean matchers
 expect(boolean).toBe(true);
 expect(boolean).toBeFalsy();
 ```
 
-### **Debugging Syntax Errors:**
+---
 
-When tests fail with syntax errors:
+# Usage Commands
 
-1. **Check the exact error message** - Usually points to line/column
-2. **Count opening/closing parentheses** - Must match
-3. **Verify regex vs string syntax** - No quotes around regex literals
-4. **Run single test file** - Isolate the syntax error
-5. **Use IDE syntax highlighting** - Catches obvious issues
-
-### **Prevention Strategy:**
-
+## Unit Tests
 ```bash
-# Before committing test changes:
-npm run test:unit -- --testPathPatterns="specific-test-file.ts"
-
-# If syntax errors appear:
-# 1. Fix the syntax error
-# 2. Re-run the single test
-# 3. Only commit when syntax is clean
+npm run test:unit                    # Run all unit tests
+npm run test:unit:coverage          # Run with coverage
+npm run test:unit:watch             # Watch mode
 ```
 
-This prevents syntax errors from reaching CI and requiring manual fixes.
+## Integration Tests  
+```bash
+npm run test:integration            # Run all integration tests
+npm run test:integration:coverage    # Run with coverage
+npm run test:integration:watch       # Watch mode
+```
+
+## All Tests
+```bash
+npm run test                         # Run all tests (unit + integration)
+npm run test:coverage               # Run all tests with coverage
+npm run test:watch                  # Run all tests in watch mode
+```
+---
+# General Debugging Guide
+
+## 🔍 Debugging Unit Tests
+
+### **Step-by-Step Debugging Strategy**
+
+When any unit tests fail, add debug statements to trace execution:
+
+```typescript
+// 1. Add debug to test setup
+console.log('🧪 TEST START:', test.name);
+console.log('📋 TEST DATA:', mockRequest.body);
+console.log('🔧 MOCKS SET:', {
+  machineRepo: 'machine-1',
+  beanBatchRepo: null
+});
+
+// 2. Add debug to service method calls
+console.log('🔧 SERVICE CALL:', methodName, inputData);
+
+// 3. Add debug to repository interactions
+console.log('🗄️ REPO CALL:', 'findOne', { where: { id: 'test-id' } });
+
+// 4. Add debug to assertions
+console.log('📊 ASSERTION RESULTS:', {
+  actual: actualValue,
+  expected: expectedValue
+});
+```
+
+### **Common Debugging Patterns**
+
+| Issue | Debug Strategy |
+|-------|----------------|
+| **Service method not called** | Log service method calls and input parameters |
+| **Repository not called** | Log repository setup and verify mock calls |
+| **Mock returning wrong data** | Log mock return values and verify setup |
+| **Unexpected async behavior** | Add await logging and check Promise states |
+| **Type errors** | Log actual vs expected types and error messages |
+| **Test setup issues** | Log beforeEach/afterEach execution order |
+
+### **Universal Debugging Template**
+
+```typescript
+describe('Service/Controller/Entity Tests', () => {
+  beforeEach(() => {
+    console.log('🔄 SETUP START: Resetting all mocks');
+    // Reset mocks...
+    console.log('✅ SETUP COMPLETE');
+  });
+
+  it('should handle specific scenario', async () => {
+    console.log('🧪 TEST START:', 'should handle specific scenario');
+    
+    // Arrange
+    const testData = { /* test data */ };
+    console.log('📋 TEST DATA:', testData);
+    
+    // Act
+    console.log('⚡ ACTION START: Calling method');
+    const result = await service.method(testData);
+    console.log('⚡ ACTION RESULT:', result);
+    
+    // Assert
+    console.log('🔍 ASSERTION START');
+    expect(result.property).toBe(expectedValue);
+    console.log('✅ TEST COMPLETE');
+  });
+});
+```
+
+## 🎯 General Unit Test Structure
+
+### **Test Data Setup**
+
+```typescript
+describe('Any Unit Test Suite', () => {
+  beforeEach(() => {
+    // Reset all mocks to ensure clean state
+    mockRepository.findOne.mockClear();
+    mockRepository.save.mockClear();
+    mockResponse.status.mockClear();
+    mockResponse.json.mockClear();
+    mockNext.mockClear();
+    
+    console.log('🔄 MOCKS RESET: All mocks cleared');
+  });
+
+  it('should test specific behavior', async () => {
+    
+    // Arrange: Set up test data and mocks
+    const testData = {
+      id: 'test-id',
+      property: 'test-value'
+    };
+    
+    mockRepository.findOne.mockResolvedValue(mockEntity);
+
+    // Act: Execute the method under test
+    const result = await service.method(testData);
+
+    // Assert: Test behavior, not implementation
+    expect(result).toBeDefined();
+    expect(result.property).toBe(expectedValue);
+    
+    // Verify: Check that right interactions occurred
+    expect(mockRepository.findOne).toHaveBeenCalledWith({
+      where: { id: 'test-id' }
+    });
+    
+    console.log('✅ TEST COMPLETE: All assertions passed');
+  });
+});
+```
+
+---
+
+# Middleware Testing Guide
+
+## 🎯 Express Middleware Array Pattern
+
+### **Understanding Middleware Chains**
+
+Express middleware arrays execute functions sequentially:
+```typescript
+export const validateCreateShot = [
+  validate(CreateShotSchema, 'body'),      // 1st: Schema validation
+  validateMachineExists,                   // 2nd: Database validation
+  validateBeanBatchExists,                 // 3rd: Database validation
+  validateShotBusinessRules,              // 4th: Business rules
+];
+```
+
+### **Rule: Apply General Testing Principles to Middleware**
+
+For middleware testing, apply the **general unit testing rules**:
+
+- **Test Behavior, Not Implementation** - Focus on response outcomes, not `next()` calls
+- **Test What Users Care About** - Verify API responses and database interactions
+- **Use Valid UUID Format** - Ensure proper test data format
+
+```typescript
+// ✅ CORRECT - Apply general principles to middleware
+expect(mockResponse.status).toHaveBeenCalledWith(404);
+expect(mockBeanBatchRepo.findOne).toHaveBeenCalledWith({
+  where: { id: '550e8400-e29b-41d4-a716-446655440001' }
+});
+
+// ❌ WRONG - Testing implementation details
+expect(mockNext).not.toHaveBeenCalled();
+expect(mockNext).toHaveBeenCalledTimes(2);
+```
+
+
+
+## 🛠️ Middleware Testing Helper
+
+### **runMiddleware Helper Pattern**
+
+```typescript
+const runMiddleware = async (middleware: any[], req: Request, res: Response, next: NextFunction) => {
+  // Using index-based for-loop rather than iterator to assist with any future debugging
+  for (let i = 0; i < middleware.length; i++) {
+    const fn = middleware[i];
+    await fn(req, res, next);
+    
+    // Check if an error response was sent by looking at status call history
+    if ((res.status as any).mock.calls.length > 0) {
+      // Stop if any response was sent (success or error)
+      return;
+    }
+  }
+};
+```
+
+### **Why Index-Based Loop?**
+
+- **Debugging Support**: Enables position tracking (`middleware-${i}`)
+- **Future Troubleshooting**: Easy to add logging for failing middleware
+- **Maintainability**: Clear indication of execution position
+
+## 🔍 Debugging Middleware Tests
+
+### **Step-by-Step Debugging Strategy**
+
+When middleware tests fail, add debug statements to trace execution:
+
+```typescript
+// 1. Add debug to runMiddleware
+console.log(`📍 MIDDLEWARE ${i + 1}/${middleware.length}: ${fnName}`);
+
+// 2. Add debug to individual middleware functions
+console.log('🔍 VALIDATEMACHINE: Looking for machineId:', machineId);
+
+// 3. Add debug to test setup
+console.log('🔧 MOCKS SET:', { machineRepo: 'machine-1' });
+```
+
+### **Common Debugging Patterns**
+
+| Issue | Debug Strategy |
+|-------|----------------|
+| **Wrong middleware called** | Log middleware names and execution order |
+| **Mock not being called** | Log mock setup and verify repository calls |
+| **Response not sent** | Log status calls and check middleware return paths |
+| **Unexpected next() calls** | Log each middleware's decision logic |
+
+## 🎯 Middleware Test Structure
+
+### **Test Data Setup**
+
+```typescript
+describe('validateCreateShot', () => {
+  beforeEach(() => {
+    // Reset all mocks to ensure clean state
+    mockMachineRepo.findOne.mockClear();
+    mockBeanBatchRepo.findOne.mockClear();
+    mockShotRepo.findOne.mockClear();
+    mockResponse.status.mockClear();
+    mockResponse.json.mockClear();
+    mockNext.mockClear();
+  });
+
+  it('should fail validation when bean batch not found', async () => {
+    // Arrange: Set up test data and mocks
+    mockRequest.body = {
+      machineId: '550e8400-e29b-41d4-a716-446655440000',
+      beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
+      shot_type: 'normale',
+    };
+
+    mockMachineRepo.findOne.mockResolvedValue({ id: 'machine-1' });
+    mockBeanBatchRepo.findOne.mockResolvedValue(null);
+
+    // Act: Run middleware chain
+    await runMiddleware(
+      shotValidation.validateCreateShot,
+      mockRequest as Request,
+      mockResponse as Response,
+      mockNext
+    );
+
+    // Assert: Test behavior, not implementation
+    expect(mockResponse.status).toHaveBeenCalledWith(404);
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      error: 'Validation failed',
+      message: 'Bean batch not found',
+      field: 'beanBatchId',
+    });
+    
+    // Verify the right validation was attempted
+    expect(mockBeanBatchRepo.findOne).toHaveBeenCalledWith({
+      where: { id: '550e8400-e29b-41d4-a716-446655440001' }
+    });
+  });
+});
+```
+
+## 🚨 Common Middleware Testing Pitfalls
+
+### **Issue: Mock State Contamination**
+
+**Problem**: Mocks persist between tests causing unexpected behavior.
+
+**Solution**: Comprehensive mock reset in `beforeEach`.
+
+```typescript
+beforeEach(() => {
+  mockMachineRepo.findOne.mockClear();
+  mockBeanBatchRepo.findOne.mockClear();
+  mockShotRepo.findOne.mockClear();
+  mockResponse.status.mockClear();
+  mockResponse.json.mockClear();
+  mockNext.mockClear();
+});
+```
+
+### **Issue: Wrong Test Expectations**
+
+**Problem**: Expecting `next()` not to be called when earlier middleware should call it.
+
+**Solution**: Understand middleware execution flow and test appropriate behavior.
+
+```typescript
+// Wrong: Assumes no next() calls
+expect(mockNext).not.toHaveBeenCalled();
+
+// Correct: Tests the actual response
+expect(mockResponse.status).toHaveBeenCalledWith(404);
+```
+
+### **Issue: Testing Implementation Details**
+
+**Problem**: Testing how many times `next()` was called.
+
+**Solution**: Test the final outcome and database interactions.
+
+```typescript
+// Brittle: Tests internal flow
+expect(mockNext).toHaveBeenCalledTimes(2);
+
+// Robust: Tests external behavior
+expect(mockResponse.status).toHaveBeenCalledWith(404);
+expect(mockBeanBatchRepo.findOne).toHaveBeenCalled();
+```
+
+
+---
+
+*This guide consolidates all unit and integration test rules, removing redundancies and organizing content for maximum clarity and maintainability.*
