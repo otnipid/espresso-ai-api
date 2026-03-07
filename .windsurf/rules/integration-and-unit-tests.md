@@ -6,10 +6,10 @@ trigger: always_on
 
 ## 📋 Quick Reference
 
-| Test Type | When to Use | File Pattern | Key Characteristics |
-|-----------|-------------|--------------|-------------------|
-| **Unit** | Test business logic in isolation | `*.unit.test.ts` | Mocked dependencies, fast, no DB |
-| **Integration** | Test component interactions | `*.integration.test.ts` | Real DB, external dependencies |
+| Test Type       | When to Use                      | File Pattern            | Key Characteristics              |
+| --------------- | -------------------------------- | ----------------------- | -------------------------------- |
+| **Unit**        | Test business logic in isolation | `*.unit.test.ts`        | Mocked dependencies, fast, no DB |
+| **Integration** | Test component interactions      | `*.integration.test.ts` | Real DB, external dependencies   |
 
 ---
 
@@ -57,6 +57,7 @@ it('should call repository.save', async () => {
 ```
 
 **When Implementation Testing IS Acceptable:**
+
 - Void methods where side effect is the observable behavior
 - External system coordination (logging, notifications)
 - Security-critical parameter validation
@@ -71,7 +72,7 @@ expect(mockResponse.status).toHaveBeenCalledWith(404);
 
 // Test: validation was attempted (what actually happened)
 expect(mockBeanBatchRepo.findOne).toHaveBeenCalledWith({
-  where: { id: '550e8400-e29b-41d4-a716-446655440001' }
+  where: { id: '550e8400-e29b-41d4-a716-446655440001' },
 });
 ```
 
@@ -79,13 +80,14 @@ expect(mockBeanBatchRepo.findOne).toHaveBeenCalledWith({
 
 ```typescript
 // ❌ WRONG
-machineId: 'test-machine-id' // Invalid UUID
+machineId: 'test-machine-id'; // Invalid UUID
 
 // ✅ CORRECT
-machineId: '550e8400-e29b-41d4-a716-446655440000' // Valid UUID
+machineId: '550e8400-e29b-41d4-a716-446655440000'; // Valid UUID
 ```
 
 **Common Test UUIDs:**
+
 - Machine IDs: `550e8400-e29b-41d4-a716-446655440000`
 - Bean Batch IDs: `550e8400-e29b-41d4-a716-446655440001`
 - Shot IDs: `550e8400-e29b-41d4-a716-446655440002`
@@ -125,14 +127,14 @@ describe('controller method', () => {
     // Arrange
     const error = new Error('Database connection failed');
     mockRepository.findOne.mockRejectedValue(error);
-    
+
     // Act
     await controller.method(mockRequest, mockResponse);
-    
+
     // Assert - Test error response
     expect(mockResponse.status).toHaveBeenCalledWith(500);
     expect(mockResponse.json).toHaveBeenCalledWith({
-      message: 'Error fetching resource'
+      message: 'Error fetching resource',
     });
   });
 
@@ -141,20 +143,21 @@ describe('controller method', () => {
     mockRequest.body = { field: null }; // Test null assignment
     const existingEntity = { id: '1', field: 'existing-value' };
     mockRepository.findOne.mockResolvedValue(existingEntity);
-    
+
     // Act
     await controller.update(mockRequest, mockResponse);
-    
+
     // Assert - Verify null was assigned
     expect(mockRepository.save).toHaveBeenCalledWith({
       ...existingEntity,
-      field: null
+      field: null,
     });
   });
 });
 ```
 
 **Common Uncovered Branch Types:**
+
 - **Database errors** in catch blocks (`mockRejectedValue`)
 - **Validation failures** (missing required fields, invalid formats)
 - **Conditional assignments** (parseInt conversions, null assignments)
@@ -162,6 +165,7 @@ describe('controller method', () => {
 - **Entity existence checks** (not found scenarios)
 
 **Branch Coverage Checklist:**
+
 - [ ] Test all try/catch blocks with `mockRejectedValue`
 - [ ] Test conditional branches with both true/false inputs
 - [ ] Test parseInt conversions with invalid inputs
@@ -187,6 +191,7 @@ const createMockDataSource = () => ({
 ```
 
 **Mock Coverage Checklist:**
+
 - [ ] All repository entities mocked
 - [ ] Complete method coverage (findOne, save, remove, create, update, delete, restore)
 - [ ] QueryRunner support for transactions
@@ -196,6 +201,7 @@ const createMockDataSource = () => ({
 ## 🛠️ Mock Setup Patterns
 
 ### **Complete Repository Mock**
+
 ```typescript
 const mockMachineRepo = {
   findOne: jest.fn(),
@@ -226,6 +232,7 @@ const mockMachineRepo = {
 ```
 
 ### **Test Data Constants**
+
 ```typescript
 const TEST_DATA = {
   MACHINE_ID: '550e8400-e29b-41d4-a716-446655440000',
@@ -237,6 +244,7 @@ const TEST_DATA = {
 ## 🔧 Edit Strategies
 
 ### **Rule: Use Unique Context for Edits**
+
 ```typescript
 // ❌ WRONG - Ambiguous patterns
 edit('restore: jest.fn(),', 'restore: jest.fn(),\n  findAndCount: jest.fn()');
@@ -246,11 +254,13 @@ edit('if (entity === Shot) {\n  return {\n    findOne: jest.fn()...', 'complete 
 ```
 
 ### **Rule: Import Required Types**
+
 ```typescript
 import { Repository } from 'typeorm'; // ✅ Required for type annotations
 ```
 
 ### **Edit Strategy Checklist**
+
 - [ ] Search for target string to verify uniqueness
 - [ ] Check import dependencies
 - [ ] Analyze previous failures
@@ -302,8 +312,17 @@ export const initializeTestDataSource = async (): Promise<DataSource> => {
 
 ```typescript
 const cleanTestData = async () => {
-  const tables = ['shots', 'shot_preparation', 'shot_extraction', 'shot_environment', 'shot_feedback', 'bean_batches', 'machines', 'bean'];
-  
+  const tables = [
+    'shots',
+    'shot_preparation',
+    'shot_extraction',
+    'shot_environment',
+    'shot_feedback',
+    'bean_batches',
+    'machines',
+    'bean',
+  ];
+
   for (const table of tables) {
     await testDataSource.query(`TRUNCATE TABLE ${table} RESTART IDENTITY CASCADE`);
   }
@@ -354,13 +373,13 @@ projects: [
 
 ## 🐛 Common Pitfalls & Solutions
 
-| Issue | Cause | Solution |
-|-------|--------|----------|
-| **PostgreSQL Type Conflicts** | Multiple schema creation | Initialize once, cleanup data |
-| **Test Data Leaking** | Insufficient cleanup | Use `TRUNCATE TABLE` with `CASCADE` |
-| **Connection Pool Exhaustion** | Parallel tests | Use `runInBand: true` |
-| **Schema Creation Conflicts** | Concurrent initialization | Shared initialization with state checking |
-| **Multiple File Conflicts** | Shared setup files | Separate Jest projects |
+| Issue                          | Cause                     | Solution                                  |
+| ------------------------------ | ------------------------- | ----------------------------------------- |
+| **PostgreSQL Type Conflicts**  | Multiple schema creation  | Initialize once, cleanup data             |
+| **Test Data Leaking**          | Insufficient cleanup      | Use `TRUNCATE TABLE` with `CASCADE`       |
+| **Connection Pool Exhaustion** | Parallel tests            | Use `runInBand: true`                     |
+| **Schema Creation Conflicts**  | Concurrent initialization | Shared initialization with state checking |
+| **Multiple File Conflicts**    | Shared setup files        | Separate Jest projects                    |
 
 ## 📋 Integration Test Checklist
 
@@ -387,7 +406,7 @@ projects: [
 // ❌ WRONG - Extra closing parenthesis
 expect(methodString).toMatch(/options\s*=\s*\{\}/)); // ← Extra )
 
-// ❌ WRONG - Missing closing parenthesis  
+// ❌ WRONG - Missing closing parenthesis
 expect(methodString).toMatch(/options\s*=\s*\{\}/; // ← Missing )
 
 // ❌ WRONG - String instead of regex
@@ -403,6 +422,7 @@ expect(methodString).toContain('options = {}'); // String literal
 ### **Syntax Checklist**
 
 Before committing test changes:
+
 - [ ] All `expect()` calls have proper closing parenthesis
 - [ ] Regex literals use `/pattern/`, not `'/pattern/'`
 - [ ] String matchers use `'string'` or `"string"`
@@ -417,7 +437,7 @@ Before committing test changes:
 expect(text).toContain('substring');
 expect(text).toEqual('exact string');
 
-// Regex matchers  
+// Regex matchers
 expect(text).toMatch(/pattern/);
 expect(text).toMatch(/pattern\s*with\s*spaces/);
 
@@ -435,13 +455,15 @@ expect(boolean).toBeFalsy();
 # Usage Commands
 
 ## Unit Tests
+
 ```bash
 npm run test:unit                    # Run all unit tests
 npm run test:unit:coverage          # Run with coverage
 npm run test:unit:watch             # Watch mode
 ```
 
-## Integration Tests  
+## Integration Tests
+
 ```bash
 npm run test:integration            # Run all integration tests
 npm run test:integration:coverage    # Run with coverage
@@ -449,12 +471,15 @@ npm run test:integration:watch       # Watch mode
 ```
 
 ## All Tests
+
 ```bash
 npm run test                         # Run all tests (unit + integration)
 npm run test:coverage               # Run all tests with coverage
 npm run test:watch                  # Run all tests in watch mode
 ```
+
 ---
+
 # General Debugging Guide
 
 ## 🔍 Debugging Unit Tests
@@ -469,7 +494,7 @@ console.log('🧪 TEST START:', test.name);
 console.log('📋 TEST DATA:', mockRequest.body);
 console.log('🔧 MOCKS SET:', {
   machineRepo: 'machine-1',
-  beanBatchRepo: null
+  beanBatchRepo: null,
 });
 
 // 2. Add debug to service method calls
@@ -481,22 +506,22 @@ console.log('🗄️ REPO CALL:', 'findOne', { where: { id: 'test-id' } });
 // 4. Add debug to assertions
 console.log('📊 ASSERTION RESULTS:', {
   actual: actualValue,
-  expected: expectedValue
+  expected: expectedValue,
 });
 ```
 
 ### **Common Debugging Patterns**
 
-| Issue | Debug Strategy |
-|-------|----------------|
-| **Service method not called** | Log service method calls and input parameters |
-| **Repository not called** | Log repository setup and verify mock calls |
-| **Mock returning wrong data** | Log mock return values and verify setup |
-| **Unexpected async behavior** | Add await logging and check Promise states |
-| **Type errors** | Log actual vs expected types and error messages |
-| **Test setup issues** | Log beforeEach/afterEach execution order |
-| **Undefined functions** | Check setup files for module mocks |
-| **Module import issues** | Verify exports vs imports and mock configurations |
+| Issue                         | Debug Strategy                                    |
+| ----------------------------- | ------------------------------------------------- |
+| **Service method not called** | Log service method calls and input parameters     |
+| **Repository not called**     | Log repository setup and verify mock calls        |
+| **Mock returning wrong data** | Log mock return values and verify setup           |
+| **Unexpected async behavior** | Add await logging and check Promise states        |
+| **Type errors**               | Log actual vs expected types and error messages   |
+| **Test setup issues**         | Log beforeEach/afterEach execution order          |
+| **Undefined functions**       | Check setup files for module mocks                |
+| **Module import issues**      | Verify exports vs imports and mock configurations |
 
 ### **Universal Debugging Template**
 
@@ -510,16 +535,18 @@ describe('Service/Controller/Entity Tests', () => {
 
   it('should handle specific scenario', async () => {
     console.log('🧪 TEST START:', 'should handle specific scenario');
-    
+
     // Arrange
-    const testData = { /* test data */ };
+    const testData = {
+      /* test data */
+    };
     console.log('📋 TEST DATA:', testData);
-    
+
     // Act
     console.log('⚡ ACTION START: Calling method');
     const result = await service.method(testData);
     console.log('⚡ ACTION RESULT:', result);
-    
+
     // Assert
     console.log('🔍 ASSERTION START');
     expect(result.property).toBe(expectedValue);
@@ -535,6 +562,7 @@ describe('Service/Controller/Entity Tests', () => {
 **Root Cause**: Module is being mocked in setup files, preventing access to real implementation.
 
 **Debug Strategy**:
+
 ```typescript
 // 1. Check what's actually imported
 import * as module from './target-module';
@@ -562,7 +590,7 @@ describe('Real Implementation Tests', () => {
   beforeEach(() => {
     jest.unmock('../middleware/errorHandler');
   });
-  
+
   it('should handle real errors', () => {
     // Tests actual implementation behavior
   });
@@ -582,18 +610,17 @@ describe('Any Unit Test Suite', () => {
     mockResponse.status.mockClear();
     mockResponse.json.mockClear();
     mockNext.mockClear();
-    
+
     console.log('🔄 MOCKS RESET: All mocks cleared');
   });
 
   it('should test specific behavior', async () => {
-    
     // Arrange: Set up test data and mocks
     const testData = {
       id: 'test-id',
-      property: 'test-value'
+      property: 'test-value',
     };
-    
+
     mockRepository.findOne.mockResolvedValue(mockEntity);
 
     // Act: Execute the method under test
@@ -602,12 +629,12 @@ describe('Any Unit Test Suite', () => {
     // Assert: Test behavior, not implementation
     expect(result).toBeDefined();
     expect(result.property).toBe(expectedValue);
-    
+
     // Verify: Check that right interactions occurred
     expect(mockRepository.findOne).toHaveBeenCalledWith({
-      where: { id: 'test-id' }
+      where: { id: 'test-id' },
     });
-    
+
     console.log('✅ TEST COMPLETE: All assertions passed');
   });
 });
@@ -622,12 +649,13 @@ describe('Any Unit Test Suite', () => {
 ### **Understanding Middleware Chains**
 
 Express middleware arrays execute functions sequentially:
+
 ```typescript
 export const validateCreateShot = [
-  validate(CreateShotSchema, 'body'),      // 1st: Schema validation
-  validateMachineExists,                   // 2nd: Database validation
-  validateBeanBatchExists,                 // 3rd: Database validation
-  validateShotBusinessRules,              // 4th: Business rules
+  validate(CreateShotSchema, 'body'), // 1st: Schema validation
+  validateMachineExists, // 2nd: Database validation
+  validateBeanBatchExists, // 3rd: Database validation
+  validateShotBusinessRules, // 4th: Business rules
 ];
 ```
 
@@ -643,7 +671,7 @@ For middleware testing, apply the **general unit testing rules**:
 // ✅ CORRECT - Apply general principles to middleware
 expect(mockResponse.status).toHaveBeenCalledWith(404);
 expect(mockBeanBatchRepo.findOne).toHaveBeenCalledWith({
-  where: { id: '550e8400-e29b-41d4-a716-446655440001' }
+  where: { id: '550e8400-e29b-41d4-a716-446655440001' },
 });
 
 // ❌ WRONG - Testing implementation details
@@ -651,19 +679,22 @@ expect(mockNext).not.toHaveBeenCalled();
 expect(mockNext).toHaveBeenCalledTimes(2);
 ```
 
-
-
 ## 🛠️ Middleware Testing Helper
 
 ### **runMiddleware Helper Pattern**
 
 ```typescript
-const runMiddleware = async (middleware: any[], req: Request, res: Response, next: NextFunction) => {
+const runMiddleware = async (
+  middleware: any[],
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   // Using index-based for-loop rather than iterator to assist with any future debugging
   for (let i = 0; i < middleware.length; i++) {
     const fn = middleware[i];
     await fn(req, res, next);
-    
+
     // Check if an error response was sent by looking at status call history
     if ((res.status as any).mock.calls.length > 0) {
       // Stop if any response was sent (success or error)
@@ -705,16 +736,18 @@ describe('errorHandler', () => {
   });
 
   it('should handle Zod validation errors', () => {
-    const zodError = new ZodError([/* ... */]);
-    
+    const zodError = new ZodError([
+      /* ... */
+    ]);
+
     errorHandler(zodError, mockRequest, mockResponse, mockNext);
-    
+
     // Test behavior: response status and content
     expect(mockResponse.status).toHaveBeenCalledWith(400);
     expect(mockResponse.json).toHaveBeenCalledWith({
       error: 'Validation Error',
       message: 'Invalid input data provided',
-      code: 'VALIDATION_FAILED'
+      code: 'VALIDATION_FAILED',
     });
   });
 });
@@ -728,14 +761,14 @@ describe('performanceMonitor', () => {
   it('should monitor request performance', () => {
     console.log('🧪 TEST START: performance monitor');
     console.log('📋 TEST DATA:', { request: mockRequest });
-    
+
     performanceMonitor(mockRequest, mockResponse, mockNext);
-    
+
     console.log('🔧 MOCK CALLS:', {
       nextCalls: mockNext.mock.calls,
-      responseOnCalls: mockResponse.on.mock.calls
+      responseOnCalls: mockResponse.on.mock.calls,
     });
-    
+
     // Assert behavior: next() called, event listener attached
     expect(mockNext).toHaveBeenCalled();
     expect(mockResponse.on).toHaveBeenCalledWith('finish', expect.any(Function));
@@ -749,15 +782,17 @@ describe('performanceMonitor', () => {
 // ✅ GOOD - Test middleware chain outcomes
 describe('validateCreateShot middleware chain', () => {
   it('should stop chain on validation failure', async () => {
-    const invalidData = { /* invalid shot data */ };
-    
+    const invalidData = {
+      /* invalid shot data */
+    };
+
     await runMiddleware(validateCreateShot, mockRequest, mockResponse, mockNext);
-    
+
     // Test behavior: validation error response
     expect(mockResponse.status).toHaveBeenCalledWith(400);
     expect(mockResponse.json).toHaveBeenCalledWith({
       error: 'Validation Error',
-      message: expect.stringContaining('Invalid input')
+      message: expect.stringContaining('Invalid input'),
     });
   });
 });
@@ -788,12 +823,12 @@ console.log('🔧 MOCKS SET:', { machineRepo: 'machine-1' });
 
 ### **Common Debugging Patterns**
 
-| Issue | Debug Strategy |
-|-------|----------------|
-| **Wrong middleware called** | Log middleware names and execution order |
-| **Mock not being called** | Log mock setup and verify repository calls |
-| **Response not sent** | Log status calls and check middleware return paths |
-| **Unexpected next() calls** | Log each middleware's decision logic |
+| Issue                       | Debug Strategy                                     |
+| --------------------------- | -------------------------------------------------- |
+| **Wrong middleware called** | Log middleware names and execution order           |
+| **Mock not being called**   | Log mock setup and verify repository calls         |
+| **Response not sent**       | Log status calls and check middleware return paths |
+| **Unexpected next() calls** | Log each middleware's decision logic               |
 
 ## 🎯 Middleware Test Structure
 
@@ -837,10 +872,10 @@ describe('validateCreateShot', () => {
       message: 'Bean batch not found',
       field: 'beanBatchId',
     });
-    
+
     // Verify the right validation was attempted
     expect(mockBeanBatchRepo.findOne).toHaveBeenCalledWith({
-      where: { id: '550e8400-e29b-41d4-a716-446655440001' }
+      where: { id: '550e8400-e29b-41d4-a716-446655440001' },
     });
   });
 });
@@ -894,7 +929,6 @@ expect(mockResponse.status).toHaveBeenCalledWith(404);
 expect(mockBeanBatchRepo.findOne).toHaveBeenCalled();
 ```
 
-
 ---
 
-*This guide consolidates all unit and integration test rules, removing redundancies and organizing content for maximum clarity and maintainability.*
+_This guide consolidates all unit and integration test rules, removing redundancies and organizing content for maximum clarity and maintainability._

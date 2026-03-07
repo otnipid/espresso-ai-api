@@ -21,9 +21,9 @@ describe('ShotEnvironmentController', () => {
       save: jest.fn(),
       remove: jest.fn(),
     };
-    
+
     (AppDataSource.getRepository as jest.Mock).mockReturnValue(mockRepository);
-    
+
     mockRequest = {} as Request;
     mockResponse = {
       json: jest.fn(),
@@ -40,14 +40,16 @@ describe('ShotEnvironmentController', () => {
         { id: '1', ambient_temp_c: 22.5 },
         { id: '2', ambient_temp_c: 23.0 },
       ];
-      
+
       mockRepository.find.mockResolvedValue(mockEnvironments);
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.all(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.find).toHaveBeenCalledWith();
       expect(mockResponse.json).toHaveBeenCalledWith(mockEnvironments);
     });
@@ -55,14 +57,18 @@ describe('ShotEnvironmentController', () => {
     it('should handle errors', async () => {
       const error = new Error('Database error');
       mockRepository.find.mockRejectedValue(error);
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.all(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Error fetching shot environments' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Error fetching shot environments',
+      });
     });
   });
 
@@ -71,12 +77,14 @@ describe('ShotEnvironmentController', () => {
       const mockEnvironment = { id: '1', ambient_temp_c: 22.5 };
       mockRequest.params = { id: '1' };
       mockRepository.findOne.mockResolvedValue(mockEnvironment);
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.one(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { id: '1' },
       });
@@ -86,28 +94,36 @@ describe('ShotEnvironmentController', () => {
     it('should handle shot environment not found', async () => {
       mockRequest.params = { id: '999' };
       mockRepository.findOne.mockResolvedValue(null);
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.one(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Shot environment not found' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Shot environment not found',
+      });
     });
 
     it('should handle database errors', async () => {
       const error = new Error('Database connection failed');
       mockRequest.params = { id: '1' };
       mockRepository.findOne.mockRejectedValue(error);
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.one(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Error fetching shot environment' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Error fetching shot environment',
+      });
     });
   });
 
@@ -130,16 +146,18 @@ describe('ShotEnvironmentController', () => {
         shots_since_clean: 5,
       };
       const savedEnvironment = { id: '1', ...createdEnvironment };
-      
+
       mockRequest.body = newEnvironment;
       mockRepository.create.mockReturnValue(createdEnvironment);
       mockRepository.save.mockResolvedValue(savedEnvironment);
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.save(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.create).toHaveBeenCalledWith({
         ambient_temp_c: 22.5,
         humidity_percent: 65,
@@ -150,7 +168,9 @@ describe('ShotEnvironmentController', () => {
       });
       expect(mockRepository.save).toHaveBeenCalledWith(createdEnvironment);
       expect((mockResponse.status as jest.Mock).mock.calls[0][0]).toBe(201);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith(savedEnvironment);
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith(
+        savedEnvironment
+      );
     });
 
     it('should handle null values correctly', async () => {
@@ -164,16 +184,18 @@ describe('ShotEnvironmentController', () => {
         shots_since_clean: null,
       };
       const savedEnvironment = { id: '1', ...createdEnvironment };
-      
+
       mockRequest.body = newEnvironment;
       mockRepository.create.mockReturnValue(createdEnvironment);
       mockRepository.save.mockResolvedValue(savedEnvironment);
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.save(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.create).toHaveBeenCalledWith({
         ambient_temp_c: null,
         humidity_percent: null,
@@ -201,16 +223,18 @@ describe('ShotEnvironmentController', () => {
         shots_since_clean: 8,
       };
       const savedEnvironment = { id: '1', ...createdEnvironment };
-      
+
       mockRequest.body = newEnvironment;
       mockRepository.create.mockReturnValue(createdEnvironment);
       mockRepository.save.mockResolvedValue(savedEnvironment);
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.save(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.create).toHaveBeenCalledWith({
         ambient_temp_c: 23.5,
         humidity_percent: 70,
@@ -226,14 +250,18 @@ describe('ShotEnvironmentController', () => {
       mockRequest.body = { ambient_temp_c: '22.5', humidity_percent: '65' };
       mockRepository.create.mockReturnValue({ ambient_temp_c: 22.5, humidity_percent: 65 });
       mockRepository.save.mockRejectedValue(error);
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.save(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Error creating shot' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Error creating shot',
+      });
     });
   });
 
@@ -251,17 +279,23 @@ describe('ShotEnvironmentController', () => {
         humidity_percent: 70,
         water_source: 'filtered',
       };
-      
+
       mockRequest.params = { id: '1' };
-      mockRequest.body = { ambient_temp_c: '23.0', humidity_percent: '70', water_source: 'filtered' };
+      mockRequest.body = {
+        ambient_temp_c: '23.0',
+        humidity_percent: '70',
+        water_source: 'filtered',
+      };
       mockRepository.findOne.mockResolvedValue(existingEnvironment);
       mockRepository.save.mockResolvedValue(updatedEnvironment);
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.update(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { id: '1' },
       });
@@ -273,14 +307,18 @@ describe('ShotEnvironmentController', () => {
       mockRequest.params = { id: '999' };
       mockRequest.body = { ambient_temp_c: '23.0' };
       mockRepository.findOne.mockResolvedValue(null);
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.update(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Shot environment not found' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Shot environment not found',
+      });
     });
 
     it('should handle partial updates', async () => {
@@ -291,17 +329,19 @@ describe('ShotEnvironmentController', () => {
         water_source: 'tap',
         estimated_water_hardness_ppm: 150,
       };
-      
+
       mockRequest.params = { id: '1' };
       mockRequest.body = { ambient_temp_c: '23.0' }; // Only updating one field
       mockRepository.findOne.mockResolvedValue(existingEnvironment);
       mockRepository.save.mockResolvedValue({ ...existingEnvironment, ambient_temp_c: 23.0 });
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.update(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.save).toHaveBeenCalledWith({
         ...existingEnvironment,
         ambient_temp_c: 23.0,
@@ -327,17 +367,19 @@ describe('ShotEnvironmentController', () => {
         machine_warmup_minutes: 10,
         shots_since_clean: 5,
       };
-      
+
       mockRequest.params = { id: '1' };
       mockRequest.body = { estimated_water_hardness_ppm: '200' }; // String to parseInt
       mockRepository.findOne.mockResolvedValue(existingEnvironment);
       mockRepository.save.mockResolvedValue(updatedEnvironment);
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.update(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.save).toHaveBeenCalledWith(updatedEnvironment);
       expect(mockResponse.json).toHaveBeenCalledWith(updatedEnvironment);
     });
@@ -361,17 +403,19 @@ describe('ShotEnvironmentController', () => {
         machine_warmup_minutes: 15, // Updated parseInt value
         shots_since_clean: 5,
       };
-      
+
       mockRequest.params = { id: '1' };
       mockRequest.body = { machine_warmup_minutes: '15' }; // String to parseInt
       mockRepository.findOne.mockResolvedValue(existingEnvironment);
       mockRepository.save.mockResolvedValue(updatedEnvironment);
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.update(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.save).toHaveBeenCalledWith(updatedEnvironment);
       expect(mockResponse.json).toHaveBeenCalledWith(updatedEnvironment);
     });
@@ -395,17 +439,19 @@ describe('ShotEnvironmentController', () => {
         machine_warmup_minutes: 10,
         shots_since_clean: 8, // Updated parseInt value
       };
-      
+
       mockRequest.params = { id: '1' };
       mockRequest.body = { shots_since_clean: '8' }; // String to parseInt
       mockRepository.findOne.mockResolvedValue(existingEnvironment);
       mockRepository.save.mockResolvedValue(updatedEnvironment);
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.update(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.save).toHaveBeenCalledWith(updatedEnvironment);
       expect(mockResponse.json).toHaveBeenCalledWith(updatedEnvironment);
     });
@@ -416,14 +462,18 @@ describe('ShotEnvironmentController', () => {
       mockRequest.body = { ambient_temp_c: '23.0' };
       mockRepository.findOne.mockResolvedValue({ id: '1', ambient_temp_c: 22.5 });
       mockRepository.save.mockRejectedValue(error);
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.update(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Error updating shot' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Error updating shot',
+      });
     });
   });
 
@@ -436,12 +486,14 @@ describe('ShotEnvironmentController', () => {
         humidity_percent: 65,
       });
       mockRepository.remove.mockResolvedValue({ affected: 1 });
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.remove(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { shot_id: '1' },
       });
@@ -457,14 +509,18 @@ describe('ShotEnvironmentController', () => {
     it('should handle shot environment not found on deletion', async () => {
       mockRequest.params = { id: '999' };
       mockRepository.findOne.mockResolvedValue(null);
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.remove(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Shot environment not found' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Shot environment not found',
+      });
     });
 
     it('should handle database errors during deletion', async () => {
@@ -476,14 +532,18 @@ describe('ShotEnvironmentController', () => {
         humidity_percent: 65,
       });
       mockRepository.remove.mockRejectedValue(error);
-      
-      const ShotEnvironmentController = (await import('../../../controllers/shotEnvironment.controller')).ShotEnvironmentController;
+
+      const ShotEnvironmentController = (
+        await import('../../../controllers/shotEnvironment.controller')
+      ).ShotEnvironmentController;
       const controller = new ShotEnvironmentController();
-      
+
       await controller.remove(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Error deleting shot environment' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Error deleting shot environment',
+      });
     });
   });
 });

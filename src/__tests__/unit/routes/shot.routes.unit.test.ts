@@ -18,7 +18,9 @@ jest.mock('../../../middleware/validation/shotValidation', () => ({
   validateShotId: jest.fn((req: Request, res: Response, next: NextFunction) => next()),
   validateBulkShotIds: jest.fn((req: Request, res: Response, next: NextFunction) => next()),
   validateExportOptions: jest.fn((req: Request, res: Response, next: NextFunction) => next()),
-  validate: jest.fn((schema: any, location: string) => (req: Request, res: Response, next: NextFunction) => next()),
+  validate: jest.fn(
+    (schema: any, location: string) => (req: Request, res: Response, next: NextFunction) => next()
+  ),
   BulkShotIdsSchema: {},
 }));
 
@@ -39,7 +41,7 @@ describe('Shot Routes', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     mockRequest = {
       method: 'GET',
       url: '/api/shots',
@@ -47,12 +49,12 @@ describe('Shot Routes', () => {
       query: {},
       body: {},
     };
-    
+
     mockResponse = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn(),
     };
-    
+
     mockNext = jest.fn();
   });
 
@@ -173,13 +175,13 @@ describe('Shot Routes', () => {
       const bulkHandler = async (req: any, res: any) => {
         res.status(501).json({ message: 'Bulk creation not yet implemented' });
       };
-      
+
       await bulkHandler(mockRequest, mockResponse);
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(501);
       expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Bulk creation not yet implemented'
+        message: 'Bulk creation not yet implemented',
       });
     });
   });
@@ -195,13 +197,13 @@ describe('Shot Routes', () => {
       const bulkHandler = async (req: any, res: any) => {
         res.status(501).json({ message: 'Bulk deletion not yet implemented' });
       };
-      
+
       await bulkHandler(mockRequest, mockResponse);
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(501);
       expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Bulk deletion not yet implemented'
+        message: 'Bulk deletion not yet implemented',
       });
     });
   });

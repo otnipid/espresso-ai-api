@@ -21,9 +21,9 @@ describe('ShotPreparationController', () => {
       save: jest.fn(),
       remove: jest.fn(),
     };
-    
+
     (AppDataSource.getRepository as jest.Mock).mockReturnValue(mockRepository);
-    
+
     mockRequest = {} as Request;
     mockResponse = {
       json: jest.fn(),
@@ -40,14 +40,16 @@ describe('ShotPreparationController', () => {
         { shot_id: '1', dose_grams: 18.5 },
         { shot_id: '2', dose_grams: 19.0 },
       ];
-      
+
       mockRepository.find.mockResolvedValue(mockPreparations);
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.all(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.find).toHaveBeenCalledWith();
       expect(mockResponse.json).toHaveBeenCalledWith(mockPreparations);
     });
@@ -55,14 +57,18 @@ describe('ShotPreparationController', () => {
     it('should handle errors', async () => {
       const error = new Error('Database error');
       mockRepository.find.mockRejectedValue(error);
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.all(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Error fetching shot preparations' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Error fetching shot preparations',
+      });
     });
   });
 
@@ -71,12 +77,14 @@ describe('ShotPreparationController', () => {
       const mockPreparation = { shot_id: '1', dose_grams: 18.5 };
       mockRequest.params = { id: '1' };
       mockRepository.findOne.mockResolvedValue(mockPreparation);
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.one(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { shot_id: '1' },
       });
@@ -86,28 +94,36 @@ describe('ShotPreparationController', () => {
     it('should handle shot preparation not found', async () => {
       mockRequest.params = { id: '999' };
       mockRepository.findOne.mockResolvedValue(null);
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.one(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Shot preparation not found' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Shot preparation not found',
+      });
     });
 
     it('should handle database errors', async () => {
       const error = new Error('Database connection failed');
       mockRequest.params = { id: '1' };
       mockRepository.findOne.mockRejectedValue(error);
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.one(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Error fetching shot preparation' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Error fetching shot preparation',
+      });
     });
   });
 
@@ -129,16 +145,18 @@ describe('ShotPreparationController', () => {
         tamp_pressure_category: null,
       };
       const savedPreparation = { shot_id: '1', ...createdPreparation };
-      
+
       mockRequest.body = newPreparation;
       mockRepository.create.mockReturnValue(createdPreparation);
       mockRepository.save.mockResolvedValue(savedPreparation);
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.save(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.create).toHaveBeenCalledWith({
         dose_grams: 18.5,
         grind_setting: 15.0,
@@ -150,7 +168,9 @@ describe('ShotPreparationController', () => {
       });
       expect(mockRepository.save).toHaveBeenCalledWith(createdPreparation);
       expect((mockResponse.status as jest.Mock).mock.calls[0][0]).toBe(201);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith(savedPreparation);
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith(
+        savedPreparation
+      );
     });
 
     it('should handle null values correctly', async () => {
@@ -165,16 +185,18 @@ describe('ShotPreparationController', () => {
         tamp_pressure_category: null,
       };
       const savedPreparation = { shot_id: '1', ...createdPreparation };
-      
+
       mockRequest.body = newPreparation;
       mockRepository.create.mockReturnValue(createdPreparation);
       mockRepository.save.mockResolvedValue(savedPreparation);
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.save(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.create).toHaveBeenCalledWith({
         dose_grams: null,
         grind_setting: null,
@@ -191,14 +213,18 @@ describe('ShotPreparationController', () => {
       mockRequest.body = { dose_grams: '18.5', grind_setting: '15.0' };
       mockRepository.create.mockReturnValue({ dose_grams: 18.5, grind_setting: 15.0 });
       mockRepository.save.mockRejectedValue(error);
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.save(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Error creating shot preparation' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Error creating shot preparation',
+      });
     });
   });
 
@@ -216,17 +242,19 @@ describe('ShotPreparationController', () => {
         grind_setting: 16.0,
         basket_type: 'portafilter',
       };
-      
+
       mockRequest.params = { id: '1' };
       mockRequest.body = { dose_grams: '19.0', grind_setting: '16.0', basket_type: 'portafilter' };
       mockRepository.findOne.mockResolvedValue(existingPreparation);
       mockRepository.save.mockResolvedValue(updatedPreparation);
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.update(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { shot_id: '1' },
       });
@@ -238,14 +266,18 @@ describe('ShotPreparationController', () => {
       mockRequest.params = { id: '999' };
       mockRequest.body = { dose_grams: '19.0' };
       mockRepository.findOne.mockResolvedValue(null);
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.update(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Shot preparation not found' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Shot preparation not found',
+      });
     });
 
     it('should handle partial updates', async () => {
@@ -256,17 +288,19 @@ describe('ShotPreparationController', () => {
         basket_type: 'bottomless',
         basket_size_grams: 18,
       };
-      
+
       mockRequest.params = { id: '1' };
       mockRequest.body = { dose_grams: '19.0' }; // Only updating one field
       mockRepository.findOne.mockResolvedValue(existingPreparation);
       mockRepository.save.mockResolvedValue({ ...existingPreparation, dose_grams: 19.0 });
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.update(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.save).toHaveBeenCalledWith({
         ...existingPreparation,
         dose_grams: 19.0,
@@ -294,17 +328,19 @@ describe('ShotPreparationController', () => {
         tamp_type: 'puck',
         tamp_pressure_category: 'light',
       };
-      
+
       mockRequest.params = { id: '1' };
       mockRequest.body = { basket_size_grams: '20' }; // String to parseInt
       mockRepository.findOne.mockResolvedValue(existingPreparation);
       mockRepository.save.mockResolvedValue(updatedPreparation);
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.update(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.save).toHaveBeenCalledWith(updatedPreparation);
       expect(mockResponse.json).toHaveBeenCalledWith(updatedPreparation);
     });
@@ -330,17 +366,19 @@ describe('ShotPreparationController', () => {
         tamp_type: 'puck',
         tamp_pressure_category: 'light',
       };
-      
+
       mockRequest.params = { id: '1' };
       mockRequest.body = { distribution_method: null }; // Explicit null
       mockRepository.findOne.mockResolvedValue(existingPreparation);
       mockRepository.save.mockResolvedValue(updatedPreparation);
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.update(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.save).toHaveBeenCalledWith(updatedPreparation);
       expect(mockResponse.json).toHaveBeenCalledWith(updatedPreparation);
     });
@@ -366,17 +404,19 @@ describe('ShotPreparationController', () => {
         tamp_type: null, // Set to null
         tamp_pressure_category: 'light',
       };
-      
+
       mockRequest.params = { id: '1' };
       mockRequest.body = { tamp_type: null }; // Explicit null
       mockRepository.findOne.mockResolvedValue(existingPreparation);
       mockRepository.save.mockResolvedValue(updatedPreparation);
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.update(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.save).toHaveBeenCalledWith(updatedPreparation);
       expect(mockResponse.json).toHaveBeenCalledWith(updatedPreparation);
     });
@@ -402,17 +442,19 @@ describe('ShotPreparationController', () => {
         tamp_type: 'puck',
         tamp_pressure_category: null, // Set to null
       };
-      
+
       mockRequest.params = { id: '1' };
       mockRequest.body = { tamp_pressure_category: null }; // Explicit null
       mockRepository.findOne.mockResolvedValue(existingPreparation);
       mockRepository.save.mockResolvedValue(updatedPreparation);
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.update(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.save).toHaveBeenCalledWith(updatedPreparation);
       expect(mockResponse.json).toHaveBeenCalledWith(updatedPreparation);
     });
@@ -423,14 +465,18 @@ describe('ShotPreparationController', () => {
       mockRequest.body = { dose_grams: '19.0' };
       mockRepository.findOne.mockResolvedValue({ shot_id: '1', dose_grams: 18.5 });
       mockRepository.save.mockRejectedValue(error);
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.update(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Error updating shot preparation' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Error updating shot preparation',
+      });
     });
   });
 
@@ -443,12 +489,14 @@ describe('ShotPreparationController', () => {
         grind_setting: 15.0,
       });
       mockRepository.remove.mockResolvedValue({ affected: 1 });
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.remove(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.remove).toHaveBeenCalledWith({
         shot_id: '1',
         dose_grams: 18.5,
@@ -461,14 +509,18 @@ describe('ShotPreparationController', () => {
     it('should handle shot preparation not found on deletion', async () => {
       mockRequest.params = { id: '999' };
       mockRepository.findOne.mockResolvedValue(null);
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.remove(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Shot preparation not found' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Shot preparation not found',
+      });
     });
 
     it('should handle database errors during deletion', async () => {
@@ -480,14 +532,18 @@ describe('ShotPreparationController', () => {
         grind_setting: 15.0,
       });
       mockRepository.remove.mockRejectedValue(error);
-      
-      const ShotPreparationController = (await import('../../../controllers/shotPreparation.controller')).ShotPreparationController;
+
+      const ShotPreparationController = (
+        await import('../../../controllers/shotPreparation.controller')
+      ).ShotPreparationController;
       const controller = new ShotPreparationController();
-      
+
       await controller.remove(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Error deleting shot preparation' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Error deleting shot preparation',
+      });
     });
   });
 });

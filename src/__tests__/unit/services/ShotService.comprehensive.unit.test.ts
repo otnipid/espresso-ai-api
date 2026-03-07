@@ -350,7 +350,7 @@ describe('ShotService - Comprehensive Unit Tests', () => {
     it('should return statistics for filtered shots', async () => {
       mockShotRepo.count
         .mockResolvedValueOnce(100) // totalShots
-        .mockResolvedValueOnce(85);  // successfulShots
+        .mockResolvedValueOnce(85); // successfulShots
 
       const result = await shotService.getShotStatistics({
         machineId: 'machine-1',
@@ -358,7 +358,9 @@ describe('ShotService - Comprehensive Unit Tests', () => {
       });
 
       expect(mockShotRepo.count).toHaveBeenCalledWith({ where: expect.any(Object) });
-      expect(mockShotRepo.count).toHaveBeenCalledWith({ where: expect.objectContaining({ success: true }) });
+      expect(mockShotRepo.count).toHaveBeenCalledWith({
+        where: expect.objectContaining({ success: true }),
+      });
       expect(result).toEqual({
         total: 100,
         successful: 85,

@@ -361,10 +361,10 @@ describe('ShotService - Unit Tests', () => {
       expect(result).toBeDefined();
       expect(result.id).toBe('550e8400-e29b-41d4-a716-446655402');
       expect(mockMachineRepo.findOne).toHaveBeenCalledWith({
-        where: { id: validShotData.machineId }
+        where: { id: validShotData.machineId },
       });
       expect(mockBeanBatchRepo.findOne).toHaveBeenCalledWith({
-        where: { id: validShotData.beanBatchId }
+        where: { id: validShotData.beanBatchId },
       });
       expect(mockShotRepo.create).toHaveBeenCalled();
     });
@@ -415,8 +415,8 @@ describe('ShotService - Unit Tests', () => {
         commitTransaction: jest.fn().mockResolvedValue(undefined),
         rollbackTransaction: jest.fn().mockResolvedValue(undefined),
         release: jest.fn().mockResolvedValue(undefined),
-        manager: { 
-          save: jest.fn().mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655403' })
+        manager: {
+          save: jest.fn().mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655403' }),
         },
       };
 
@@ -463,7 +463,7 @@ describe('ShotService - Unit Tests', () => {
       expect(result.id).toBe(shotId);
       expect(mockShotRepo.findOne).toHaveBeenCalledWith({
         where: { id: shotId },
-        relations: ['machine', 'beanBatch', 'preparation', 'extraction', 'environment', 'feedback']
+        relations: ['machine', 'beanBatch', 'preparation', 'extraction', 'environment', 'feedback'],
       });
     });
 
@@ -471,14 +471,14 @@ describe('ShotService - Unit Tests', () => {
       // Arrange
       const mockShots = [
         { id: 'shot1', success: true },
-        { id: 'shot2', success: false }
+        { id: 'shot2', success: false },
       ];
       const mockResult = {
         shots: mockShots,
         total: 2,
         page: 1,
         limit: 10,
-        totalPages: 1
+        totalPages: 1,
       };
 
       mockShotRepo.findAndCount.mockResolvedValue([mockShots, 2]);
@@ -487,7 +487,7 @@ describe('ShotService - Unit Tests', () => {
       const result = await shotService.getShots({
         machineId: '550e8400-e29b-41d4-a716-446655440000',
         page: 1,
-        limit: 10
+        limit: 10,
       });
 
       // Assert
@@ -502,11 +502,11 @@ describe('ShotService - Unit Tests', () => {
       const existingShot = {
         id: shotId,
         success: true,
-        notes: 'Original notes'
+        notes: 'Original notes',
       };
       const updatedShot = {
         ...existingShot,
-        ...updateData
+        ...updateData,
       };
 
       mockShotRepo.findOne.mockResolvedValue(existingShot);
@@ -555,7 +555,7 @@ describe('ShotService - Unit Tests', () => {
         totalShots: 100,
         successfulShots: 80,
         failedShots: 20,
-        averageExtractionTime: 25.5
+        averageExtractionTime: 25.5,
       };
 
       mockShotRepo.count.mockResolvedValue(100);
@@ -563,7 +563,7 @@ describe('ShotService - Unit Tests', () => {
 
       // Act
       const result = await shotService.getShotStatistics({
-        machineId: '550e8400-e29b-41d4-a716-446655440000'
+        machineId: '550e8400-e29b-41d4-a716-446655440000',
       });
 
       // Assert

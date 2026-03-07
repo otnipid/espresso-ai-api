@@ -49,7 +49,12 @@ describe('Shot Validation Middleware', () => {
   });
 
   // Helper function to run middleware arrays
-  const runMiddleware = async (middleware: any[], req: Request, res: Response, next: NextFunction) => {
+  const runMiddleware = async (
+    middleware: any[],
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
     // Using index-based for-loop rather than iterator to assist with any future debugging
     for (let i = 0; i < middleware.length; i++) {
       const fn = middleware[i];
@@ -169,10 +174,10 @@ describe('Shot Validation Middleware', () => {
         message: 'Machine not found',
         field: 'machineId',
       });
-      
+
       // Verify machine validation was attempted
       expect(mockMachineRepo.findOne).toHaveBeenCalledWith({
-        where: { id: '550e8400-e29b-41d4-a716-446655440000' }
+        where: { id: '550e8400-e29b-41d4-a716-446655440000' },
       });
     });
 
@@ -200,10 +205,10 @@ describe('Shot Validation Middleware', () => {
         message: 'Bean batch not found',
         field: 'beanBatchId',
       });
-      
+
       // Verify bean batch validation was attempted
       expect(mockBeanBatchRepo.findOne).toHaveBeenCalledWith({
-        where: { id: '550e8400-e29b-41d4-a716-446655440001' }
+        where: { id: '550e8400-e29b-41d4-a716-446655440001' },
       });
     });
 
@@ -443,13 +448,20 @@ describe('Shot Validation Middleware', () => {
   describe('validateBulkShotIds', () => {
     it('should pass validation with valid shot IDs array', async () => {
       mockRequest.body = {
-        ids: ['550e8400-e29b-41d4-a716-446655440000', '550e8400-e29b-41d4-a716-446655440001', '550e8400-e29b-41d4-a716-446655440002'],
+        ids: [
+          '550e8400-e29b-41d4-a716-446655440000',
+          '550e8400-e29b-41d4-a716-446655440001',
+          '550e8400-e29b-41d4-a716-446655440002',
+        ],
       };
 
       mockShotRepo.findOne.mockImplementation((options: any) => {
-        if (options.where.id === '550e8400-e29b-41d4-a716-446655440000') return Promise.resolve({ id: 'shot-1' });
-        if (options.where.id === '550e8400-e29b-41d4-a716-446655440001') return Promise.resolve({ id: 'shot-2' });
-        if (options.where.id === '550e8400-e29b-41d4-a716-446655440002') return Promise.resolve({ id: 'shot-3' });
+        if (options.where.id === '550e8400-e29b-41d4-a716-446655440000')
+          return Promise.resolve({ id: 'shot-1' });
+        if (options.where.id === '550e8400-e29b-41d4-a716-446655440001')
+          return Promise.resolve({ id: 'shot-2' });
+        if (options.where.id === '550e8400-e29b-41d4-a716-446655440002')
+          return Promise.resolve({ id: 'shot-3' });
         return Promise.resolve(null);
       });
 
@@ -515,8 +527,10 @@ describe('Shot Validation Middleware', () => {
       };
 
       mockShotRepo.findOne.mockImplementation((options: any) => {
-        if (options.where.id === '550e8400-e29b-41d4-a716-446655440000') return Promise.resolve({ id: 'shot-1' });
-        if (options.where.id === '550e8400-e29b-41d4-a716-446655440001') return Promise.resolve(null);
+        if (options.where.id === '550e8400-e29b-41d4-a716-446655440000')
+          return Promise.resolve({ id: 'shot-1' });
+        if (options.where.id === '550e8400-e29b-41d4-a716-446655440001')
+          return Promise.resolve(null);
         return Promise.resolve(null);
       });
 
@@ -764,7 +778,7 @@ describe('Shot Validation Middleware', () => {
     it('should handle future date', async () => {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 1);
-      
+
       mockRequest.body = {
         pulled_at: futureDate.toISOString(),
       };
@@ -789,7 +803,7 @@ describe('Shot Validation Middleware', () => {
     it('should handle date too old', async () => {
       const oldDate = new Date();
       oldDate.setFullYear(oldDate.getFullYear() - 2); // 2 years ago
-      
+
       mockRequest.body = {
         pulled_at: oldDate.toISOString(),
       };
@@ -813,11 +827,11 @@ describe('Shot Validation Middleware', () => {
 
     it('should handle database errors', async () => {
       mockRequest.body = {};
-      
+
       // Mock an error during validation
       const originalConsole = console.error;
       console.error = jest.fn();
-      
+
       await shotValidation.validateShotBusinessRules(
         mockRequest as Request,
         mockResponse as Response,

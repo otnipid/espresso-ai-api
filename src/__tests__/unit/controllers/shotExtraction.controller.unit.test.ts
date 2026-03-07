@@ -21,9 +21,9 @@ describe('ShotExtractionController', () => {
       save: jest.fn(),
       remove: jest.fn(),
     };
-    
+
     (AppDataSource.getRepository as jest.Mock).mockReturnValue(mockRepository);
-    
+
     mockRequest = {} as Request;
     mockResponse = {
       json: jest.fn(),
@@ -40,14 +40,16 @@ describe('ShotExtractionController', () => {
         { id: '1', yield_grams: 36.0 },
         { id: '2', yield_grams: 38.5 },
       ];
-      
+
       mockRepository.find.mockResolvedValue(mockExtractions);
-      
-      const ShotExtractionController = (await import('../../../controllers/shotExtraction.controller')).ShotExtractionController;
+
+      const ShotExtractionController = (
+        await import('../../../controllers/shotExtraction.controller')
+      ).ShotExtractionController;
       const controller = new ShotExtractionController();
-      
+
       await controller.all(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.find).toHaveBeenCalledWith();
       expect(mockResponse.json).toHaveBeenCalledWith(mockExtractions);
     });
@@ -55,14 +57,18 @@ describe('ShotExtractionController', () => {
     it('should handle errors', async () => {
       const error = new Error('Database error');
       mockRepository.find.mockRejectedValue(error);
-      
-      const ShotExtractionController = (await import('../../../controllers/shotExtraction.controller')).ShotExtractionController;
+
+      const ShotExtractionController = (
+        await import('../../../controllers/shotExtraction.controller')
+      ).ShotExtractionController;
       const controller = new ShotExtractionController();
-      
+
       await controller.all(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Error fetching shot extractions' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Error fetching shot extractions',
+      });
     });
   });
 
@@ -71,12 +77,14 @@ describe('ShotExtractionController', () => {
       const mockExtraction = { id: '1', yield_grams: 36.0 };
       mockRequest.params = { id: '1' };
       mockRepository.findOne.mockResolvedValue(mockExtraction);
-      
-      const ShotExtractionController = (await import('../../../controllers/shotExtraction.controller')).ShotExtractionController;
+
+      const ShotExtractionController = (
+        await import('../../../controllers/shotExtraction.controller')
+      ).ShotExtractionController;
       const controller = new ShotExtractionController();
-      
+
       await controller.one(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { id: '1' },
       });
@@ -86,14 +94,18 @@ describe('ShotExtractionController', () => {
     it('should handle shot extraction not found', async () => {
       mockRequest.params = { id: '999' };
       mockRepository.findOne.mockResolvedValue(null);
-      
-      const ShotExtractionController = (await import('../../../controllers/shotExtraction.controller')).ShotExtractionController;
+
+      const ShotExtractionController = (
+        await import('../../../controllers/shotExtraction.controller')
+      ).ShotExtractionController;
       const controller = new ShotExtractionController();
-      
+
       await controller.one(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Shot extraction not found' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Shot extraction not found',
+      });
     });
   });
 
@@ -112,16 +124,18 @@ describe('ShotExtractionController', () => {
         notes: 'Good extraction',
       };
       const savedExtraction = { id: '1', ...createdExtraction };
-      
+
       mockRequest.body = newExtraction;
       mockRepository.create.mockReturnValue(createdExtraction);
       mockRepository.save.mockResolvedValue(savedExtraction);
-      
-      const ShotExtractionController = (await import('../../../controllers/shotExtraction.controller')).ShotExtractionController;
+
+      const ShotExtractionController = (
+        await import('../../../controllers/shotExtraction.controller')
+      ).ShotExtractionController;
       const controller = new ShotExtractionController();
-      
+
       await controller.save(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.create).toHaveBeenCalledWith({
         yield_grams: 36.0,
         extraction_time_seconds: 25,
@@ -130,7 +144,9 @@ describe('ShotExtractionController', () => {
       });
       expect(mockRepository.save).toHaveBeenCalledWith(createdExtraction);
       expect((mockResponse.status as jest.Mock).mock.calls[0][0]).toBe(201);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith(savedExtraction);
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith(
+        savedExtraction
+      );
     });
 
     it('should handle null values correctly', async () => {
@@ -142,16 +158,18 @@ describe('ShotExtractionController', () => {
         notes: null,
       };
       const savedExtraction = { id: '1', ...createdExtraction };
-      
+
       mockRequest.body = newExtraction;
       mockRepository.create.mockReturnValue(createdExtraction);
       mockRepository.save.mockResolvedValue(savedExtraction);
-      
-      const ShotExtractionController = (await import('../../../controllers/shotExtraction.controller')).ShotExtractionController;
+
+      const ShotExtractionController = (
+        await import('../../../controllers/shotExtraction.controller')
+      ).ShotExtractionController;
       const controller = new ShotExtractionController();
-      
+
       await controller.save(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.create).toHaveBeenCalledWith({
         yield_grams: null,
         extraction_time_seconds: null,
@@ -173,16 +191,18 @@ describe('ShotExtractionController', () => {
         notes: null,
       };
       const savedExtraction = { id: '1', ...createdExtraction };
-      
+
       mockRequest.body = newExtraction;
       mockRepository.create.mockReturnValue(createdExtraction);
       mockRepository.save.mockResolvedValue(savedExtraction);
-      
-      const ShotExtractionController = (await import('../../../controllers/shotExtraction.controller')).ShotExtractionController;
+
+      const ShotExtractionController = (
+        await import('../../../controllers/shotExtraction.controller')
+      ).ShotExtractionController;
       const controller = new ShotExtractionController();
-      
+
       await controller.save(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.create).toHaveBeenCalledWith({
         yield_grams: 36.5,
         extraction_time_seconds: 27,
@@ -206,17 +226,23 @@ describe('ShotExtractionController', () => {
         extraction_time_seconds: 27,
         pressure_bars: 8.5,
       };
-      
+
       mockRequest.params = { id: '1' };
-      mockRequest.body = { yield_grams: '38.0', extraction_time_seconds: '27', pressure_bars: '8.5' };
+      mockRequest.body = {
+        yield_grams: '38.0',
+        extraction_time_seconds: '27',
+        pressure_bars: '8.5',
+      };
       mockRepository.findOne.mockResolvedValue(existingExtraction);
       mockRepository.save.mockResolvedValue(updatedExtraction);
-      
-      const ShotExtractionController = (await import('../../../controllers/shotExtraction.controller')).ShotExtractionController;
+
+      const ShotExtractionController = (
+        await import('../../../controllers/shotExtraction.controller')
+      ).ShotExtractionController;
       const controller = new ShotExtractionController();
-      
+
       await controller.update(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { shot_id: '1' },
       });
@@ -228,14 +254,18 @@ describe('ShotExtractionController', () => {
       mockRequest.params = { id: '999' };
       mockRequest.body = { yield_grams: '38.0' };
       mockRepository.findOne.mockResolvedValue(null);
-      
-      const ShotExtractionController = (await import('../../../controllers/shotExtraction.controller')).ShotExtractionController;
+
+      const ShotExtractionController = (
+        await import('../../../controllers/shotExtraction.controller')
+      ).ShotExtractionController;
       const controller = new ShotExtractionController();
-      
+
       await controller.update(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Shot extraction not found' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Shot extraction not found',
+      });
     });
 
     it('should handle partial updates', async () => {
@@ -246,17 +276,19 @@ describe('ShotExtractionController', () => {
         pressure_bars: 9.0,
         notes: 'Good extraction',
       };
-      
+
       mockRequest.params = { id: '1' };
       mockRequest.body = { yield_grams: '38.0' }; // Only updating one field
       mockRepository.findOne.mockResolvedValue(existingExtraction);
       mockRepository.save.mockResolvedValue({ ...existingExtraction, yield_grams: 38.0 });
-      
-      const ShotExtractionController = (await import('../../../controllers/shotExtraction.controller')).ShotExtractionController;
+
+      const ShotExtractionController = (
+        await import('../../../controllers/shotExtraction.controller')
+      ).ShotExtractionController;
       const controller = new ShotExtractionController();
-      
+
       await controller.update(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.save).toHaveBeenCalledWith({
         ...existingExtraction,
         yield_grams: 38.0,
@@ -273,12 +305,14 @@ describe('ShotExtractionController', () => {
         extraction_time_seconds: 25,
       });
       mockRepository.remove.mockResolvedValue({ affected: 1 });
-      
-      const ShotExtractionController = (await import('../../../controllers/shotExtraction.controller')).ShotExtractionController;
+
+      const ShotExtractionController = (
+        await import('../../../controllers/shotExtraction.controller')
+      ).ShotExtractionController;
       const controller = new ShotExtractionController();
-      
+
       await controller.remove(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockRepository.findOne).toHaveBeenCalledWith({
         where: { shot_id: '1' },
       });
@@ -294,14 +328,18 @@ describe('ShotExtractionController', () => {
     it('should handle shot extraction not found on deletion', async () => {
       mockRequest.params = { id: '999' };
       mockRepository.findOne.mockResolvedValue(null);
-      
-      const ShotExtractionController = (await import('../../../controllers/shotExtraction.controller')).ShotExtractionController;
+
+      const ShotExtractionController = (
+        await import('../../../controllers/shotExtraction.controller')
+      ).ShotExtractionController;
       const controller = new ShotExtractionController();
-      
+
       await controller.remove(mockRequest as Request, mockResponse as Response);
-      
+
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({ message: 'Shot extraction not found' });
+      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+        message: 'Shot extraction not found',
+      });
     });
   });
 });
