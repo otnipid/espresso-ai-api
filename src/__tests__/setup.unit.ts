@@ -42,6 +42,18 @@ jest.mock('../middleware/errorHandler', () => ({
   ValidationError: MockValidationError,
   NotFoundError: MockNotFoundError,
   BusinessRuleError: MockBusinessRuleError,
+  DatabaseError: class extends Error {
+    constructor(message: string, originalError?: any) {
+      super(message);
+      this.name = 'DatabaseError';
+    }
+  },
+  asyncHandler: (fn: any) => fn,
+  validationErrorHandler: jest.fn(),
+  notFoundHandler: jest.fn(),
+  rateLimitHandler: jest.fn(),
+  logError: jest.fn(),
+  performanceMonitor: jest.fn((req, res, next) => next()),
 }));
 
 // Export mocks for test files to use

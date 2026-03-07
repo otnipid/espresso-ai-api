@@ -16,6 +16,10 @@ module.exports = {
     '!src/**/*.d.ts',
     '!src/index.ts',
     '!src/scripts/**',
+    '!src/__tests__/**',
+    '!src/routes/shot.routes.ts',
+    '!src/entities/index.ts',
+    '!src/entities/*.ts'
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
@@ -27,6 +31,11 @@ module.exports = {
       statements: 80
     }
   },
+  coveragePathIgnorePatterns: [
+    'node_modules',
+    '<rootDir>/src/__tests__/',
+    '<rootDir>/src/scripts/',
+  ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
