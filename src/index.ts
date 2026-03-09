@@ -42,49 +42,50 @@ app.get('/health', (req, res) => {
 AppDataSource.initialize()
   .then(async () => {
     console.log('Database connection established');
-
-    app.listen(port, () => {
-      console.log(`Server is running on http://localhost:${port}`);
-      console.log('Available endpoints:');
-      console.log(`  GET    /api/machines`);
-      console.log(`  POST   /api/machines`);
-      console.log(`  GET    /api/machines/:id`);
-      console.log(`  PUT    /api/machines/:id`);
-      console.log(`  DELETE /api/machines/:id`);
-      console.log(`  GET    /api/beans`);
-      console.log(`  POST   /api/beans`);
-      console.log(`  GET    /api/beans/:id`);
-      console.log(`  PUT    /api/beans/:id`);
-      console.log(`  DELETE /api/beans/:id`);
-      console.log(`  GET    /api/batches`);
-      console.log(`  POST   /api/batches`);
-      console.log(`  GET    /api/batches/:id`);
-      console.log(`  PUT    /api/batches/:id`);
-      console.log(`  DELETE /api/batches/:id`);
-      console.log(`  GET    /api/preparations`);
-      console.log(`  POST   /api/preparations`);
-      console.log(`  GET    /api/preparations/:id`);
-      console.log(`  PUT    /api/preparations/:id`);
-      console.log(`  DELETE /api/preparations/:id`);
-      console.log(`  GET    /api/extractions`);
-      console.log(`  POST   /api/extractions`);
-      console.log(`  GET    /api/extractions/:id`);
-      console.log(`  PUT    /api/extractions/:id`);
-      console.log(`  DELETE /api/extractions/:id`);
-      console.log(`  GET    /api/environments`);
-      console.log(`  POST   /api/environments`);
-      console.log(`  GET    /api/environments/:id`);
-      console.log(`  PUT    /api/environments/:id`);
-      console.log(`  DELETE /api/environments/:id`);
-      console.log(`  GET    /api/feedback`);
-      console.log(`  POST   /api/feedback`);
-      console.log(`  GET    /api/feedback/:id`);
-      console.log(`  PUT    /api/feedback/:id`);
-      console.log(`  DELETE /api/feedback/:id`);
-      console.log(`  GET    /health`);
-    });
   })
   .catch(error => {
     console.error('Error initializing database:', error);
-    process.exit(1);
+    console.log('Starting server without database connection...');
   });
+
+// Start server regardless of database connection
+app.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
+  console.log('Available endpoints:');
+  console.log(`  GET    /api/machines`);
+  console.log(`  POST   /api/machines`);
+  console.log(`  GET    /api/machines/:id`);
+  console.log(`  PUT    /api/machines/:id`);
+  console.log(`  DELETE /api/machines/:id`);
+  console.log(`  GET    /api/beans`);
+  console.log(`  POST   /api/beans`);
+  console.log(`  GET    /api/beans/:id`);
+  console.log(`  PUT    /api/beans/:id`);
+  console.log(`  DELETE /api/beans/:id`);
+  console.log(`  GET    /api/batches`);
+  console.log(`  POST   /api/batches`);
+  console.log(`  GET    /api/batches/:id`);
+  console.log(`  PUT    /api/batches/:id`);
+  console.log(`  DELETE /api/batches/:id`);
+  console.log(`  GET    /api/preparations`);
+  console.log(`  POST   /api/preparations`);
+  console.log(`  GET    /api/preparations/:id`);
+  console.log(`  PUT    /api/preparations/:id`);
+  console.log(`  DELETE /api/preparations/:id`);
+  console.log(`  GET    /api/extractions`);
+  console.log(`  POST   /api/extractions`);
+  console.log(`  GET    /api/extractions/:id`);
+  console.log(`  PUT    /api/extractions/:id`);
+  console.log(`  DELETE /api/extractions/:id`);
+  console.log(`  GET    /api/environments`);
+  console.log(`  POST   /api/environments`);
+  console.log(`  GET    /api/environments/:id`);
+  console.log(`  PUT    /api/environments/:id`);
+  console.log(`  DELETE /api/environments/:id`);
+  console.log(`  GET    /api/feedback`);
+  console.log(`  POST   /api/feedback`);
+  console.log(`  GET    /api/feedback/:id`);
+  console.log(`  PUT    /api/feedback/:id`);
+  console.log(`  DELETE /api/feedback/:id`);
+  console.log(`  GET    /health`);
+});

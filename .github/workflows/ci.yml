@@ -354,13 +354,12 @@ jobs:
       - name: Test Docker image
         run: |
           docker run --rm -d --name test-container \
-            -e NODE_ENV=test \
-            -e DB_HOST=postgres \
+            -e NODE_ENV=production \
             -p 3001:3001 \
             espresso-ml/backend:${{ steps.meta.outputs.version }}
           
           # Wait for container to start
-          sleep 10
+          sleep 5
           
           # Test health endpoint
           curl -f http://localhost:3001/health || exit 1
