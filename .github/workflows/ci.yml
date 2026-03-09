@@ -178,15 +178,7 @@ jobs:
           PGPASSWORD=${{ secrets.DB_PASSWORD }} psql -h localhost -p 5432 -U ${{ secrets.DB_USERNAME }} -d postgres -c "CREATE DATABASE espresso_ml_test_basic;"
 
       - name: Run integration tests
-        run: npm run test:integration:coverage
-
-      - name: Upload coverage reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-reports-integration
-          path: coverage/
-          retention-days: 30
+        run: npm run test:integration
 
   # Integration Tests (separate job for database tests)
   integration-tests-db:
@@ -249,14 +241,6 @@ jobs:
 
       - name: Run integration tests
         run: npm run test:integration
-
-      - name: Upload coverage reports
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-reports-integration
-          path: coverage/
-          retention-days: 30
 
   # Documentation
   docs:
