@@ -400,7 +400,7 @@ describe('errorHandler', () => {
       error: 'Validation Error',
       message: 'Invalid input data provided',
       code: 'VALIDATION_FAILED',
-      details: { field: 'email' }
+      details: { field: 'email' },
     });
   });
 

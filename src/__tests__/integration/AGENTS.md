@@ -10,12 +10,14 @@
 ## 🚨 Critical Rules
 
 ### **Rule: Documenting Tests**
+
 All test functions must include comments documenting the implementation of the test case and the expected outcome, including:
-  - Description of the behavior being tested
-  - Expected results from the tests
-  - Any required setup or teardown steps
-  - Input parameters for the test
-  - A list of all dependencies or external services used
+
+- Description of the behavior being tested
+- Expected results from the tests
+- Any required setup or teardown steps
+- Input parameters for the test
+- A list of all dependencies or external services used
 
 ### **Rule: Prevent Shared Database State**
 
@@ -228,7 +230,7 @@ describe('Transaction Management', () => {
     // Verify no partial data was saved
     const shotsCount = await testDataSource.getRepository(Shot).count();
     const preparationsCount = await testDataSource.getRepository(ShotPreparation).count();
-    
+
     expect(shotsCount).toBe(0);
     expect(preparationsCount).toBe(0);
   });
@@ -261,7 +263,7 @@ const initializeTestDataSource = async (): Promise<DataSource> => {
 const cleanTestData = async () => {
   const tables = [
     'shots',
-    'shot_preparation', 
+    'shot_preparation',
     'shot_extraction',
     'shot_environment',
     'shot_feedback',
@@ -288,10 +290,8 @@ const cleanTestData = async () => {
 // Helper to verify test data state
 const verifyDatabaseState = async (expectedCounts: Record<string, number>) => {
   for (const [table, expectedCount] of Object.entries(expectedCounts)) {
-    const actualCount = await testDataSource
-      .getRepository(table)
-      .count();
-    
+    const actualCount = await testDataSource.getRepository(table).count();
+
     expect(actualCount).toBe(expectedCount);
     console.log(`✅ Table ${table}: ${actualCount}/${expectedCount} records`);
   }
@@ -341,7 +341,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data_test:/var/lib/postgresql/data
 
@@ -405,8 +405,9 @@ describe('Error Handling', () => {
     };
 
     // Act & Assert
-    await expect(service.createShot(invalidShotData))
-      .rejects.toThrow('Foreign key constraint violation');
+    await expect(service.createShot(invalidShotData)).rejects.toThrow(
+      'Foreign key constraint violation'
+    );
   });
 });
 ```

@@ -19,11 +19,11 @@ Routes are configuration files that define HTTP endpoints. Test the routing beha
 it('should register GET /shots route', () => {
   const app = express();
   shotsRoutes(app);
-  
+
   // Verify route is registered
   expect(app._router.stack).toContainEqual(
     expect.objectContaining({
-      route: { path: '/shots', methods: ['GET'] }
+      route: { path: '/shots', methods: ['GET'] },
     })
   );
 });
@@ -65,12 +65,12 @@ Routes combine middleware with route handlers - test this composition:
 it('should apply validation middleware to POST /shots', () => {
   const app = express();
   shotsRoutes(app);
-  
+
   // Extract middleware from route registration
   const postRoute = app._router.stack.find(
     route => route.route?.path === '/shots' && route.route?.methods?.includes('POST')
   );
-  
+
   expect(postRoute.route.stack).toContainEqual(
     expect.objectContaining({
       handle: expect.any(Function), // Validation middleware
@@ -101,9 +101,9 @@ describe('Shot Routes', () => {
       use: jest.fn(),
       stack: [],
     };
-    
+
     jest.spyOn(require('express'), 'Router').mockReturnValue(mockRouter);
-    
+
     // Mock Express app
     mockApp = {
       get: jest.fn(),
@@ -113,7 +113,7 @@ describe('Shot Routes', () => {
       use: jest.fn(),
       _router: { stack: [] }, // Track registered routes
     };
-    
+
     // Reset all mocks
     jest.clearAllMocks();
   });
@@ -126,37 +126,37 @@ describe('Shot Routes', () => {
 describe('route registration', () => {
   it('should register all expected routes', () => {
     shotsRoutes(mockApp);
-    
+
     // Verify all routes are registered
     const registeredRoutes = mockApp._router.stack;
-    
+
     expect(registeredRoutes).toContainEqual(
       expect.objectContaining({
-        route: { path: '/shots', methods: ['GET'] }
+        route: { path: '/shots', methods: ['GET'] },
       })
     );
-    
+
     expect(registeredRoutes).toContainEqual(
       expect.objectContaining({
-        route: { path: '/shots', methods: ['POST'] }
+        route: { path: '/shots', methods: ['POST'] },
       })
     );
-    
+
     expect(registeredRoutes).toContainEqual(
       expect.objectContaining({
-        route: { path: '/shots/:id', methods: ['GET'] }
+        route: { path: '/shots/:id', methods: ['GET'] },
       })
     );
-    
+
     expect(registeredRoutes).toContainEqual(
       expect.objectContaining({
-        route: { path: '/shots/:id', methods: ['PUT'] }
+        route: { path: '/shots/:id', methods: ['PUT'] },
       })
     );
-    
+
     expect(registeredRoutes).toContainEqual(
       expect.objectContaining({
-        route: { path: '/shots/:id', methods: ['DELETE'] }
+        route: { path: '/shots/:id', methods: ['DELETE'] },
       })
     );
   });
@@ -171,7 +171,7 @@ describe('route registration', () => {
 describe('GET /shots', () => {
   it('should register GET route with correct middleware', () => {
     shotsRoutes(mockApp);
-    
+
     expect(mockApp.get).toHaveBeenCalledWith(
       '/shots',
       expect.arrayContaining([
@@ -192,9 +192,9 @@ describe('GET /shots', () => {
 
     // Import and test with mocked controller
     jest.doMock('../../../src/controllers/shot.controller', () => mockShotController);
-    
+
     shotsRoutes(mockApp);
-    
+
     expect(mockApp.get).toHaveBeenCalledWith(
       '/shots',
       expect.arrayContaining([mockShotController.getAll])
@@ -209,7 +209,7 @@ describe('GET /shots', () => {
 describe('POST /shots', () => {
   it('should register POST route with validation middleware', () => {
     shotsRoutes(mockApp);
-    
+
     expect(mockApp.post).toHaveBeenCalledWith(
       '/shots',
       expect.arrayContaining([
@@ -224,16 +224,14 @@ describe('POST /shots', () => {
     const mockValidation = {
       validateCreateShot: [jest.fn(), jest.fn()],
     };
-    
+
     jest.doMock('../../../src/middleware/validation/shotValidation', () => mockValidation);
-    
+
     shotsRoutes(mockApp);
-    
+
     // Verify validation middleware is included
-    const postCall = mockApp.post.mock.calls.find(
-      call => call[0] === '/shots'
-    );
-    
+    const postCall = mockApp.post.mock.calls.find(call => call[0] === '/shots');
+
     expect(postCall[1]).toContainEqual(mockValidation.validateCreateShot[0]);
     expect(postCall[1]).toContainEqual(mockValidation.validateCreateShot[1]);
   });
@@ -246,7 +244,7 @@ describe('POST /shots', () => {
 describe('GET /shots/:id', () => {
   it('should register parameterized GET route', () => {
     shotsRoutes(mockApp);
-    
+
     expect(mockApp.get).toHaveBeenCalledWith(
       '/shots/:id',
       expect.arrayContaining([
@@ -260,15 +258,13 @@ describe('GET /shots/:id', () => {
     const mockShotController = {
       getById: jest.fn(),
     };
-    
+
     jest.doMock('../../../src/controllers/shot.controller', () => mockShotController);
-    
+
     shotsRoutes(mockApp);
-    
-    const getByIdCall = mockApp.get.mock.calls.find(
-      call => call[0] === '/shots/:id'
-    );
-    
+
+    const getByIdCall = mockApp.get.mock.calls.find(call => call[0] === '/shots/:id');
+
     expect(getByIdCall[1]).toContainEqual(mockShotController.getById);
   });
 });
@@ -280,7 +276,7 @@ describe('GET /shots/:id', () => {
 describe('PUT /shots/:id', () => {
   it('should register PUT route with update middleware', () => {
     shotsRoutes(mockApp);
-    
+
     expect(mockApp.put).toHaveBeenCalledWith(
       '/shots/:id',
       expect.arrayContaining([
@@ -295,15 +291,13 @@ describe('PUT /shots/:id', () => {
     const mockValidation = {
       validateUpdateShot: [jest.fn(), jest.fn()],
     };
-    
+
     jest.doMock('../../../src/middleware/validation/shotValidation', () => mockValidation);
-    
+
     shotsRoutes(mockApp);
-    
-    const putCall = mockApp.put.mock.calls.find(
-      call => call[0] === '/shots/:id'
-    );
-    
+
+    const putCall = mockApp.put.mock.calls.find(call => call[0] === '/shots/:id');
+
     expect(putCall[1]).toContainEqual(mockValidation.validateUpdateShot[0]);
   });
 });
@@ -315,7 +309,7 @@ describe('PUT /shots/:id', () => {
 describe('DELETE /shots/:id', () => {
   it('should register DELETE route', () => {
     shotsRoutes(mockApp);
-    
+
     expect(mockApp.delete).toHaveBeenCalledWith(
       '/shots/:id',
       expect.arrayContaining([
@@ -329,15 +323,13 @@ describe('DELETE /shots/:id', () => {
     const mockShotController = {
       remove: jest.fn(),
     };
-    
+
     jest.doMock('../../../src/controllers/shot.controller', () => mockShotController);
-    
+
     shotsRoutes(mockApp);
-    
-    const deleteCall = mockApp.delete.mock.calls.find(
-      call => call[0] === '/shots/:id'
-    );
-    
+
+    const deleteCall = mockApp.delete.mock.calls.find(call => call[0] === '/shots/:id');
+
     expect(deleteCall[1]).toContainEqual(mockShotController.remove);
   });
 });
@@ -351,7 +343,7 @@ describe('DELETE /shots/:id', () => {
 describe('error handling', () => {
   it('should include error handler for all routes', () => {
     shotsRoutes(mockApp);
-    
+
     // All route registrations should have error handler as last argument
     const allRouteCalls = [
       ...mockApp.get.mock.calls,
@@ -359,11 +351,11 @@ describe('error handling', () => {
       ...mockApp.put.mock.calls,
       ...mockApp.delete.mock.calls,
     ];
-    
+
     allRouteCalls.forEach(call => {
       const middleware = call[1]; // Second argument (middleware array)
       const errorHandler = middleware[middleware.length - 1]; // Last middleware
-      
+
       expect(errorHandler).toBeDefined();
       expect(typeof errorHandler).toBe('function');
     });
@@ -379,16 +371,14 @@ describe('route parameters', () => {
     const mockShotController = {
       getById: jest.fn(),
     };
-    
+
     jest.doMock('../../../src/controllers/shot.controller', () => mockShotController);
-    
+
     shotsRoutes(mockApp);
-    
+
     // Verify parameter extraction in route definition
-    const getByIdCall = mockApp.get.mock.calls.find(
-      call => call[0] === '/shots/:id'
-    );
-    
+    const getByIdCall = mockApp.get.mock.calls.find(call => call[0] === '/shots/:id');
+
     expect(getByIdCall[0]).toBe('/shots/:id');
     expect(mockShotController.getById).toHaveBeenCalled();
   });
@@ -403,16 +393,16 @@ describe('route parameters', () => {
 describe('debugging route registration', () => {
   it('should log all registered routes', () => {
     console.log('🧪 ROUTE TEST START: Registering shots routes');
-    
+
     shotsRoutes(mockApp);
-    
+
     console.log('📋 REGISTERED ROUTES:', {
       get: mockApp.get.mock.calls.map(call => call[0]),
       post: mockApp.post.mock.calls.map(call => call[0]),
       put: mockApp.put.mock.calls.map(call => call[0]),
       delete: mockApp.delete.mock.calls.map(call => call[0]),
     });
-    
+
     // Verify expected routes
     const expectedRoutes = ['/shots', '/shots/:id'];
     const registeredRoutes = [
@@ -421,11 +411,11 @@ describe('debugging route registration', () => {
       ...mockApp.put.mock.calls.map(call => call[0]),
       ...mockApp.delete.mock.calls.map(call => call[0]),
     ];
-    
+
     expectedRoutes.forEach(route => {
       expect(registeredRoutes).toContain(route);
     });
-    
+
     console.log('✅ ROUTE REGISTRATION COMPLETE');
   });
 });
@@ -439,25 +429,23 @@ describe('debugging middleware chains', () => {
     const mockMiddleware = {
       validateCreateShot: [jest.fn(), jest.fn()],
     };
-    
+
     jest.doMock('../../../src/middleware/validation/shotValidation', () => mockMiddleware);
-    
+
     console.log('🔧 MIDDLEWARE SETUP:', {
       validateCreateShot: mockMiddleware.validateCreateShot.length,
     });
-    
+
     shotsRoutes(mockApp);
-    
-    const postCall = mockApp.post.mock.calls.find(
-      call => call[0] === '/shots'
-    );
-    
+
+    const postCall = mockApp.post.mock.calls.find(call => call[0] === '/shots');
+
     const middlewareStack = postCall[1];
-    
+
     middlewareStack.forEach((middleware, index) => {
       console.log(`📍 MIDDLEWARE ${index + 1}:`, typeof middleware);
     });
-    
+
     console.log('✅ MIDDLEWARE CHAIN ANALYZED');
   });
 });
@@ -565,9 +553,9 @@ describe('Route Structure', () => {
       { method: 'PUT', path: '/shots/:id' },
       { method: 'DELETE', path: '/shots/:id' },
     ];
-    
+
     shotsRoutes(mockApp);
-    
+
     routes.forEach(({ method, path }) => {
       expect(mockApp[method.toLowerCase()]).toHaveBeenCalledWith(
         path,
@@ -584,14 +572,14 @@ describe('Route Structure', () => {
 describe('Middleware Integration', () => {
   it('should apply authentication to protected routes', () => {
     const mockAuth = jest.fn();
-    
+
     jest.doMock('../../../src/middleware/auth', () => mockAuth);
-    
+
     shotsRoutes(mockApp);
-    
+
     // Check that auth middleware is applied to protected routes
     const protectedRoutes = ['POST', 'PUT', 'DELETE'];
-    
+
     protectedRoutes.forEach(method => {
       const calls = mockApp[method.toLowerCase()].mock.calls;
       calls.forEach(call => {
@@ -609,14 +597,14 @@ describe('Middleware Integration', () => {
 describe('Error Handler Integration', () => {
   it('should include error handler for all routes', () => {
     const mockErrorHandler = jest.fn();
-    
+
     jest.doMock('../../../src/middleware/errorHandler', () => mockErrorHandler);
-    
+
     shotsRoutes(mockApp);
-    
+
     // Verify error handler is included in all route middleware
     const allMethods = ['get', 'post', 'put', 'delete'];
-    
+
     allMethods.forEach(method => {
       const calls = mockApp[method].mock.calls;
       calls.forEach(call => {

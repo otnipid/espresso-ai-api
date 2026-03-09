@@ -285,9 +285,7 @@ describe('getById', () => {
   it('should handle invalid ID format', async () => {
     // Arrange
     mockRequest.params = { id: 'invalid-uuid' };
-    mockShotService.getShotById.mockRejectedValue(
-      new Error('Invalid ID format')
-    );
+    mockShotService.getShotById.mockRejectedValue(new Error('Invalid ID format'));
 
     // Act
     await shotController.getById(mockRequest as Request, mockResponse as Response);
@@ -336,9 +334,7 @@ describe('create', () => {
     // Arrange
     const invalidData = { shot_type: 'invalid-type' };
     mockRequest.body = invalidData;
-    mockShotService.createShot.mockRejectedValue(
-      new ValidationError('Invalid shot type')
-    );
+    mockShotService.createShot.mockRejectedValue(new ValidationError('Invalid shot type'));
 
     // Act
     await shotController.create(mockRequest as Request, mockResponse as Response);
@@ -484,9 +480,7 @@ describe('validation errors', () => {
   validationTestCases.forEach(({ name, data, expectedError }) => {
     it(`should return 400 for ${name}`, async () => {
       mockRequest.body = data;
-      mockShotService.createShot.mockRejectedValue(
-        new ValidationError(expectedError)
-      );
+      mockShotService.createShot.mockRejectedValue(new ValidationError(expectedError));
 
       await shotController.create(mockRequest as Request, mockResponse as Response);
 
@@ -508,9 +502,7 @@ describe('service error handling', () => {
   it('should handle database connection errors', async () => {
     // Arrange
     mockRequest.body = validShotData;
-    mockShotService.createShot.mockRejectedValue(
-      new Error('Database connection failed')
-    );
+    mockShotService.createShot.mockRejectedValue(new Error('Database connection failed'));
 
     // Act
     await shotController.create(mockRequest as Request, mockResponse as Response);
@@ -526,9 +518,7 @@ describe('service error handling', () => {
   it('should handle timeout errors', async () => {
     // Arrange
     mockRequest.body = validShotData;
-    mockShotService.createShot.mockRejectedValue(
-      new Error('Request timeout')
-    );
+    mockShotService.createShot.mockRejectedValue(new Error('Request timeout'));
 
     // Act
     await shotController.create(mockRequest as Request, mockResponse as Response);

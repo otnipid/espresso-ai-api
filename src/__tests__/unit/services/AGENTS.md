@@ -61,9 +61,9 @@ it('should calculate extraction ratio correctly', async () => {
     extraction_time: 25,
     shot_type: 'espresso',
   };
-  
+
   const result = await shotService.validateExtractionRatio(shotData);
-  
+
   expect(result.isValid).toBe(true);
   expect(result.ratio).toBeCloseTo(1.35, 2);
 });
@@ -84,9 +84,9 @@ it('should validate espresso extraction time range', async () => {
     shot_type: 'espresso',
     extraction_time: 60, // Too long for espresso
   };
-  
+
   const result = await shotService.validateBusinessRules(espressoShot);
-  
+
   expect(result.isValid).toBe(false);
   expect(result.errors).toContainEqual({
     field: 'extraction_time',
@@ -121,7 +121,7 @@ describe('ShotService', () => {
 
     // Setup mock data source
     mockDataSource = {
-      getRepository: jest.fn().mockImplementation((entity) => {
+      getRepository: jest.fn().mockImplementation(entity => {
         if (entity.name === 'Shot') return mockShotRepository;
         if (entity.name === 'Machine') return mockMachineRepository;
         if (entity.name === 'BeanBatch') return mockBeanBatchRepository;
@@ -352,7 +352,9 @@ describe('updateShot', () => {
     mockShotRepository.findOne.mockResolvedValue(null);
 
     // Act & Assert
-    await expect(shotService.updateShot(nonExistentId, updateData)).rejects.toThrow('Shot not found');
+    await expect(shotService.updateShot(nonExistentId, updateData)).rejects.toThrow(
+      'Shot not found'
+    );
   });
 });
 ```
@@ -482,7 +484,7 @@ describe('transaction management', () => {
 
     mockMachineRepository.findOne.mockResolvedValue(machine);
     mockBeanBatchRepository.findOne.mockResolvedValue(null);
-    
+
     const mockQueryRunner = {
       connect: jest.fn().mockResolvedValue(undefined),
       startTransaction: jest.fn().mockResolvedValue(undefined),
@@ -513,7 +515,7 @@ describe('transaction management', () => {
     mockMachineRepository.findOne.mockResolvedValue(createTestMachine());
     mockBeanBatchRepository.findOne.mockResolvedValue(createTestBeanBatch());
     mockShotRepository.save.mockResolvedValue(createTestShot(validShotData));
-    
+
     const mockQueryRunner = {
       connect: jest.fn().mockResolvedValue(undefined),
       startTransaction: jest.fn().mockResolvedValue(undefined),

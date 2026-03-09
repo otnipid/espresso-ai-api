@@ -10,13 +10,15 @@
 ## 🚨 Critical Rules
 
 ### **Rule: Documenting Tests**
+
 All test functions must include comments documenting the implementation of the test case and the expected outcome, including:
-  - Description of the behavior being tested
-  - Expected results from the tests
-  - Any required setup or teardown steps
-  - Input parameters for the test
-  - A list of all dependencies or external services used
-  - A list of mocked dependencies
+
+- Description of the behavior being tested
+- Expected results from the tests
+- Any required setup or teardown steps
+- Input parameters for the test
+- A list of all dependencies or external services used
+- A list of mocked dependencies
 
 ### **Rule: Read Each File for Unit Under Test Before Writing Tests**
 

@@ -26,7 +26,9 @@ Execute the unit test suite with coverage enabled.
 ```bash id="u1t3hz"
 npm run test:unit:coverage
 ```
+
 Capture:
+
 - Failing tests
 - Error messages
 - Stack traces
@@ -41,12 +43,14 @@ For each failing test:
 ## 2.1 Identify the Root Cause
 
 Investigate:
+
 - Application logic
 - Test assertions
 - Mocked dependencies
 - Test configuration or environment
 
 Determine whether the failure originates from:
+
 - Incorrect logic in the application
 - Errors in the test itself
 - Misconfigured mocks or stubs
@@ -61,10 +65,13 @@ Determine whether the failure originates from:
 ## 2.3 Re-run the Individual Test
 
 Verify the fix by running the specific failing test:
+
 ```
 npm run test:unit -- --testNamePattern="<failing-test>"
 ```
+
 Confirm:
+
 - The test passes consistently.
 - No new failures have been introduced.
 
@@ -75,10 +82,13 @@ Continue debugging until the test passes reliably.
 # Step 3: Run the Full Unit Test Suite
 
 Once individual failures are fixed, run the full unit test suite to confirm all tests pass:
+
 ```
 npm run test:unit:coverage
 ```
+
 Verify:
+
 - All unit tests pass
 - No regressions were introduced
 - Coverage reports are generated successfully
