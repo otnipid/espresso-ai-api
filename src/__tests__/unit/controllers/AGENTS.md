@@ -561,7 +561,250 @@ describe('service error handling', () => {
 - [ ] Edge cases (empty data, invalid formats)
 - [ ] Service error handling
 
-## 🔧 Common Controller Testing Issues
+## 🚨 Critical Rules for Controller Testing
+
+### **Rule: Always Mock Services, Never Repositories**
+
+**Problem**: Repository mocking breaks separation of concerns and couples tests to implementation details.
+
+**Rule**: Controller tests must mock service dependencies, not database repositories:
+
+```typescript
+// ❌ FORBIDDEN - Repository direct access
+jest.mock('../../../data-source', () => ({
+  AppDataSource: {
+    getRepository: jest.fn(),
+  },
+}));
+
+describe('BeanController', () => {
+  let mockRepository: any;
+  beforeEach(() => {
+    mockRepository = {
+      find: jest.fn(),
+      findOne: jest.fn(),
+      save: jest.fn(),
+    };
+    (AppDataSource.getRepository as jest.Mock).mockReturnValue(mockRepository);
+  });
+});
+
+// ✅ REQUIRED - Service layer abstraction
+jest.mock('../../../services/BeanService');
+
+describe('BeanController', () => {
+  let mockBeanService: jest.Mocked<BeanService>;
+  beforeEach(() => {
+    mockBeanService = {
+      getBeans: jest.fn(),
+      getBeanById: jest.fn(),
+      createBean: jest.fn(),
+      updateBean: jest.fn(),
+      deleteBean: jest.fn(),
+    } as any;
+    (BeanService as jest.Mock).mockImplementation(() => mockBeanService);
+  });
+});
+```
+
+**Enforcement**: All controller tests must follow service mocking pattern without exception.
+
+### **Rule: Use Type Assertions for Mock Data**
+
+**Problem**: Strict TypeScript causes compilation errors in mock data setup.
+
+**Rule**: Use strategic `as any` type assertions for mock data to focus on behavior testing:
+
+```typescript
+// ❌ FORBIDDEN - Strict typing causes errors
+const mockShot = { id: '1', shot_type: 'espresso' }; // Missing required properties
+const mockResult = { shots: mockShots, total: 2 }; // Type mismatch
+
+// ✅ REQUIRED - Use type assertions for mock data
+const mockShot = { id: '1', shot_type: 'espresso' } as any;
+const mockResult = { 
+  shots: mockShots as any, 
+  total: 2, 
+  page: 1, 
+  limit: 10, 
+  totalPages: 1 
+};
+
+// ✅ ALTERNATIVE - Partial mocks with type assertions
+const mockShot: Partial<Shot> = { 
+  id: '1', 
+  shot_type: 'espresso' 
+} as Shot;
+```
+
+**Enforcement**: All mock data must use appropriate type assertions to avoid TypeScript errors.
+
+### **Rule: Follow Standard Controller Test Template**
+
+**Problem**: Inconsistent test structure makes maintenance difficult and error-prone.
+
+**Rule**: All controller tests must follow this exact structure:
+
+```typescript
+import { Request, Response } from 'express';
+import { ControllerName } from '../../../controllers/controllerName';
+import { ServiceName } from '../../../services/serviceName';
+
+// Mock the service
+jest.mock('../../../services/serviceName');
+
+describe('ControllerName', () => {
+  let controller: ControllerName;
+  let mockService: jest.Mocked<ServiceName>;
+  let mockRequest: Partial<Request>;
+  let mockResponse: Partial<Response>;
+
+  beforeEach(() => {
+    // Create fresh mock for each test
+    mockService = {
+      method1: jest.fn(),
+      method2: jest.fn(),
+      method3: jest.fn(),
+      method4: jest.fn(),
+      method5: jest.fn(),
+    } as any;
+
+    // Mock the constructor to return our mock service
+    (ServiceName as jest.Mock).mockImplementation(() => mockService);
+
+    // Initialize controller
+    controller = new ControllerName();
+
+    // Setup mock request
+    mockRequest = {
+      body: {},
+      params: {},
+      query: {},
+    };
+
+    // Setup mock response
+    mockResponse = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis(),
+    };
+
+    // Clear all mocks
+    jest.clearAllMocks();
+  });
+
+  describe('HTTP Interface Tests', () => {
+    describe('methodName', () => {
+      it('should handle success scenario', async () => {
+        // Test success path
+      });
+
+      it('should handle validation errors', async () => {
+        // Test validation failures
+      });
+
+      it('should handle service errors', async () => {
+        // Test service errors
+      });
+
+      it('should handle null/undefined returns', async () => {
+        // Test not found scenarios
+      });
+    });
+  });
+});
+```
+
+**Structure Requirements**:
+1. **Import Order**: Express → Controller → Service
+2. **Service Mocking**: Always mock services, never repositories
+3. **Mock Setup**: Fresh mocks in beforeEach
+4. **Request/Response**: Standardized mock objects
+5. **Test Organization**: Group by HTTP method, then by scenario
+6. **Error Coverage**: All methods must test error scenarios
+
+**Enforcement**: Deviation from this template is not permitted.
+
+### **Rule: Achieve Comprehensive Branch Coverage**
+
+**Problem**: High branch coverage requires testing all conditional branches, especially error handling.
+
+**Rule**: All controller tests must include comprehensive error path testing:
+
+```typescript
+describe('comprehensive error handling', () => {
+  // Required: Test all try/catch blocks
+  it('should handle database connection errors', async () => {
+    mockService.method.mockRejectedValue(new Error('Database connection failed'));
+    await controller.method(mockRequest, mockResponse);
+    expect(mockResponse.status).toHaveBeenCalledWith(500);
+    expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error message' });
+  });
+
+  // Required: Test conditional branches
+  it('should handle null data assignment', async () => {
+    mockRequest.body = { field: null };
+    const existingEntity = { id: '1', field: 'existing-value' };
+    mockService.method.mockResolvedValue(existingEntity);
+    
+    await controller.update(mockRequest, mockResponse);
+    
+    expect(mockService.method).toHaveBeenCalledWith('1', { field: null });
+  });
+
+  // Required: Test type conversion branches
+  it('should handle invalid number conversions', async () => {
+    mockRequest.query = { page: 'invalid-number' };
+    mockService.method.mockResolvedValue({ data: [], pagination: {} });
+    
+    await controller.all(mockRequest, mockResponse);
+    
+    expect(mockService.method).toHaveBeenCalledWith(expect.objectContaining({
+      page: expect.any(Number), // Should be NaN or default
+    }));
+  });
+
+  // Required: Test business rule validation branches
+  it('should handle business rule violations', async () => {
+    mockRequest.body = { field: 'invalid-value' };
+    mockService.method.mockRejectedValue(new Error('Business rule violation'));
+    
+    await controller.method(mockRequest, mockResponse);
+    
+    expect(mockResponse.status).toHaveBeenCalledWith(400);
+    expect(mockResponse.json).toHaveBeenCalledWith({ 
+      message: 'Business rule violation' 
+    });
+  });
+
+  // Required: Test entity existence checks
+  it('should handle not found scenarios', async () => {
+    mockRequest.params = { id: 'non-existent-id' };
+    mockService.method.mockResolvedValue(null as any);
+    
+    await controller.method(mockRequest, mockResponse);
+    
+    expect(mockResponse.status).toHaveBeenCalledWith(404);
+    expect(mockResponse.json).toHaveBeenCalledWith({ 
+      message: 'Resource not found' 
+    });
+  });
+});
+```
+
+**Branch Coverage Requirements**:
+- [ ] **Database Errors**: Test all `mockRejectedValue` scenarios
+- [ ] **Conditional Logic**: Test both true/false branches
+- [ ] **Type Conversions**: Test parseInt, parseFloat with invalid inputs
+- [ ] **Null Assignments**: Test explicit null/undefined assignments
+- [ ] **Business Rules**: Test validation failures and boundary values
+- [ ] **Entity Existence**: Test not found scenarios with `mockResolvedValue(null)`
+- [ ] **Error Response Format**: Verify consistent error response structure
+- [ ] **Status Code Logic**: Test all possible status code paths
+
+**Enforcement**: Coverage targets must be met: 95%+ line, 90%+ branch, 100% function, 95%+ error path.
+
+## � Common Controller Testing Issues
 
 ### **Issue: Mock Response Chain**
 

@@ -1,455 +1,307 @@
 import { Request, Response } from 'express';
-import { AppDataSource } from '../../../data-source';
+import { ShotController } from '../../../controllers/shot.controller';
+import { ShotService } from '../../../services/ShotService';
 
-// Mock the data source
-jest.mock('../../../data-source', () => ({
-  AppDataSource: {
-    getRepository: jest.fn(),
-    createQueryRunner: jest.fn(),
-  },
-}));
+// Mock the ShotService
+jest.mock('../../../services/ShotService');
 
 describe('ShotController', () => {
-  let mockShotRepository: any;
-  let mockShotPreparationRepository: any;
-  let mockShotExtractionRepository: any;
-  let mockQueryRunner: any;
+  let shotController: ShotController;
+  let mockShotService: jest.Mocked<ShotService>;
   let mockRequest: Partial<Request>;
-  let mockResponse: any;
+  let mockResponse: Partial<Response>;
 
   beforeEach(() => {
-    mockShotRepository = {
-      find: jest.fn(),
-      findOne: jest.fn(),
-      create: jest.fn(),
-      save: jest.fn(),
-      remove: jest.fn(),
+    // Create a fresh mock for each test
+    mockShotService = {
+      getShots: jest.fn(),
+      getShotById: jest.fn(),
+      createShot: jest.fn(),
+      updateShot: jest.fn(),
+      hardDeleteShot: jest.fn(),
+    } as any;
+
+    // Mock the constructor to return our mock service
+    (ShotService as jest.Mock).mockImplementation(() => mockShotService);
+
+    // Initialize controller
+    shotController = new ShotController();
+
+    // Setup mock request
+    mockRequest = {
+      body: {},
+      params: {},
+      query: {},
     };
 
-    mockShotPreparationRepository = {
-      create: jest.fn(),
-      save: jest.fn(),
-      remove: jest.fn(),
-    };
-
-    mockShotExtractionRepository = {
-      create: jest.fn(),
-      save: jest.fn(),
-      remove: jest.fn(),
-    };
-
-    mockQueryRunner = {
-      connect: jest.fn().mockResolvedValue(undefined),
-      startTransaction: jest.fn().mockResolvedValue(undefined),
-      commitTransaction: jest.fn().mockResolvedValue(undefined),
-      rollbackTransaction: jest.fn().mockResolvedValue(undefined),
-      release: jest.fn().mockResolvedValue(undefined),
-      manager: {
-        save: jest.fn(),
-      },
-    };
-
-    (AppDataSource.getRepository as jest.Mock).mockImplementation((entity: any) => {
-      if (entity.name === 'Shot') return mockShotRepository;
-      if (entity.name === 'ShotPreparation') return mockShotPreparationRepository;
-      if (entity.name === 'ShotExtraction') return mockShotExtractionRepository;
-      return mockShotRepository;
-    });
-
-    (AppDataSource.createQueryRunner as jest.Mock).mockReturnValue(mockQueryRunner);
-
-    mockRequest = {} as Request;
+    // Setup mock response
     mockResponse = {
-      json: jest.fn(),
-      status: jest.fn().mockImplementation(() => ({
-        send: jest.fn(),
-        json: jest.fn(),
-      })),
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis(),
     };
+
+    // Clear all mocks
+    jest.clearAllMocks();
   });
 
   describe('all', () => {
-    it('should return all shots', async () => {
+    it('should return shots with filters', async () => {
+      // Arrange
       const mockShots = [
-        { id: '1', machine: { id: '1' } },
-        { id: '2', machine: { id: '2' } },
+        { id: '1', shot_type: 'espresso' },
+        { id: '2', shot_type: 'ristretto' },
       ];
+      const mockResult = {
+        shots: mockShots as any,
+        total: 2,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+      };
 
-      mockShotRepository.find.mockResolvedValue(mockShots);
+      mockRequest.query = {
+        machineId: 'machine-1',
+        page: '1',
+        limit: '10',
+      };
 
-      const ShotController = (await import('../../../controllers/shot.controller')).ShotController;
-      const controller = new ShotController();
+      mockShotService.getShots.mockResolvedValue(mockResult);
 
-      await controller.all(mockRequest as Request, mockResponse as Response);
+      // Act
+      await shotController.all(mockRequest as Request, mockResponse as Response);
 
-      expect(mockShotRepository.find).toHaveBeenCalledWith({
-        relations: ['machine', 'beanBatch', 'preparation', 'extraction'],
+      // Assert
+      expect(mockShotService.getShots).toHaveBeenCalledWith({
+        machineId: 'machine-1',
+        beanBatchId: undefined,
+        shot_type: undefined,
+        success: undefined,
+        dateFrom: undefined,
+        dateTo: undefined,
+        page: 1,
+        limit: 10,
+        sortBy: undefined,
+        sortOrder: undefined,
       });
-      expect(mockResponse.json).toHaveBeenCalledWith(mockShots);
+      expect(mockResponse.json).toHaveBeenCalledWith(mockResult);
     });
 
-    it('should handle errors', async () => {
+    it('should handle service errors', async () => {
+      // Arrange
+      mockRequest.query = {};
       const error = new Error('Database error');
-      mockShotRepository.find.mockRejectedValue(error);
+      mockShotService.getShots.mockRejectedValue(error);
 
-      const ShotController = (await import('../../../controllers/shot.controller')).ShotController;
-      const controller = new ShotController();
+      // Act
+      await shotController.all(mockRequest as Request, mockResponse as Response);
 
-      await controller.all(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Error fetching shots',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error fetching shots' });
     });
   });
 
   describe('one', () => {
-    it('should return a single shot by ID', async () => {
-      const mockShot = { id: '1', machine: { id: '1' } };
+    it('should return shot when found', async () => {
+      // Arrange
+      const mockShot = { id: '1', shot_type: 'espresso' } as any;
       mockRequest.params = { id: '1' };
-      mockShotRepository.findOne.mockResolvedValue(mockShot);
+      mockShotService.getShotById.mockResolvedValue(mockShot);
 
-      const ShotController = (await import('../../../controllers/shot.controller')).ShotController;
-      const controller = new ShotController();
+      // Act
+      await shotController.one(mockRequest as Request, mockResponse as Response);
 
-      await controller.one(mockRequest as Request, mockResponse as Response);
-
-      expect(mockShotRepository.findOne).toHaveBeenCalledWith({
-        where: { id: '1' },
-        relations: ['machine', 'beanBatch', 'preparation', 'extraction'],
-      });
+      // Assert
+      expect(mockShotService.getShotById).toHaveBeenCalledWith('1');
       expect(mockResponse.json).toHaveBeenCalledWith(mockShot);
     });
 
-    it('should handle shot not found', async () => {
-      mockRequest.params = { id: '999' };
-      mockShotRepository.findOne.mockResolvedValue(null);
+    it('should return 404 when shot not found', async () => {
+      // Arrange
+      mockRequest.params = { id: 'non-existent' };
+      mockShotService.getShotById.mockResolvedValue(null as any);
 
-      const ShotController = (await import('../../../controllers/shot.controller')).ShotController;
-      const controller = new ShotController();
+      // Act
+      await shotController.one(mockRequest as Request, mockResponse as Response);
 
-      await controller.one(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Shot not found',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Shot not found' });
     });
 
-    it('should handle database errors', async () => {
-      const error = new Error('Database connection failed');
+    it('should handle service errors', async () => {
+      // Arrange
       mockRequest.params = { id: '1' };
-      mockShotRepository.findOne.mockRejectedValue(error);
+      const error = new Error('Database error');
+      mockShotService.getShotById.mockRejectedValue(error);
 
-      const ShotController = (await import('../../../controllers/shot.controller')).ShotController;
-      const controller = new ShotController();
+      // Act
+      await shotController.one(mockRequest as Request, mockResponse as Response);
 
-      await controller.one(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Error fetching shot',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error fetching shot' });
     });
   });
 
   describe('save', () => {
-    it('should create a new shot', async () => {
-      const newShot = {
-        machineId: '1',
-        beanBatchId: '1',
+    it('should create shot successfully', async () => {
+      // Arrange
+      const shotData = {
+        machineId: 'machine-1',
+        beanBatchId: 'batch-1',
+        shot_type: 'espresso' as const,
         preparation: { dose: 18.5 },
         extraction: { time: 25 },
-        notes: 'Test shot',
       };
 
-      const savedPrep = { id: 'prep1', dose: 18.5 };
-      const savedExtr = { id: 'extr1', time: 25 };
-      const savedShot = { id: '1', machine: { id: '1' }, beanBatch: { id: '1' } };
+      mockRequest.body = shotData;
+      const createdShot = { id: 'new-shot', ...shotData } as any;
+      mockShotService.createShot.mockResolvedValue(createdShot);
 
-      mockRequest.body = newShot;
-      mockShotPreparationRepository.create.mockReturnValue({ dose: 18.5 });
-      mockShotExtractionRepository.create.mockReturnValue({ time: 25 });
-      mockQueryRunner.manager.save
-        .mockResolvedValueOnce(savedPrep)
-        .mockResolvedValueOnce(savedExtr)
-        .mockResolvedValueOnce(savedShot);
+      // Act
+      await shotController.save(mockRequest as Request, mockResponse as Response);
 
-      const ShotController = (await import('../../../controllers/shot.controller')).ShotController;
-      const controller = new ShotController();
-
-      await controller.save(mockRequest as Request, mockResponse as Response);
-
-      expect(mockQueryRunner.connect).toHaveBeenCalled();
-      expect(mockQueryRunner.startTransaction).toHaveBeenCalled();
-      expect(mockShotPreparationRepository.create).toHaveBeenCalledWith({ dose: 18.5 });
-      expect(mockShotExtractionRepository.create).toHaveBeenCalledWith({ time: 25 });
-      expect(mockQueryRunner.manager.save).toHaveBeenCalledTimes(3);
-      expect(mockQueryRunner.commitTransaction).toHaveBeenCalled();
-      expect(mockQueryRunner.release).toHaveBeenCalled();
-      expect((mockResponse.status as jest.Mock).mock.calls[0][0]).toBe(201);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith(
-        savedShot
-      );
+      // Assert
+      expect(mockShotService.createShot).toHaveBeenCalledWith(shotData);
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith(createdShot);
     });
 
-    it('should handle missing required fields', async () => {
-      mockRequest.body = { machineId: '1' }; // Missing required fields
+    it('should handle service errors', async () => {
+      // Arrange
+      const shotData = {
+        machineId: 'machine-1',
+        beanBatchId: 'batch-1',
+        shot_type: 'espresso' as const,
+      };
 
-      const ShotController = (await import('../../../controllers/shot.controller')).ShotController;
-      const controller = new ShotController();
+      mockRequest.body = shotData;
+      const error = new Error('Validation failed');
+      mockShotService.createShot.mockRejectedValue(error);
 
-      await controller.save(mockRequest as Request, mockResponse as Response);
+      // Act
+      await shotController.save(mockRequest as Request, mockResponse as Response);
 
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'machineId, beanBatchId, preparation, and extraction are required',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Validation failed' });
     });
 
-    it('should handle transaction rollback on error', async () => {
-      const newShot = {
-        machineId: '1',
-        beanBatchId: '1',
-        preparation: { dose: 18.5 },
-        extraction: { time: 25 },
+    it('should handle errors without message', async () => {
+      // Arrange
+      const shotData = {
+        machineId: 'machine-1',
+        beanBatchId: 'batch-1',
+        shot_type: 'espresso' as const,
       };
 
-      mockRequest.body = newShot;
-      mockShotPreparationRepository.create.mockReturnValue({ dose: 18.5 });
-      mockQueryRunner.manager.save.mockRejectedValue(new Error('Database error'));
+      mockRequest.body = shotData;
+      const error = new Error();
+      mockShotService.createShot.mockRejectedValue(error);
 
-      const ShotController = (await import('../../../controllers/shot.controller')).ShotController;
-      const controller = new ShotController();
+      // Act
+      await shotController.save(mockRequest as Request, mockResponse as Response);
 
-      await controller.save(mockRequest as Request, mockResponse as Response);
-
-      expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
-      expect(mockQueryRunner.release).toHaveBeenCalled();
-      expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Error creating shot',
-      });
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error creating shot' });
     });
   });
 
   describe('update', () => {
-    it('should update an existing shot', async () => {
-      const existingShot = {
-        id: '1',
-        machine: { id: '1' },
-        beanBatch: { id: '1' },
-        preparation: { id: 'prep1', dose: 18.5 },
-        extraction: { id: 'extr1', time: 25 },
-      };
-
-      const updatedShot = {
-        id: '1',
-        machine: { id: '2' },
-        beanBatch: { id: '2' },
-        preparation: { id: 'prep1', dose: 19.0 },
-        extraction: { id: 'extr1', time: 26 },
+    it('should update shot successfully', async () => {
+      // Arrange
+      const updateData = {
+        shot_type: 'ristretto' as const,
+        notes: 'Updated notes',
       };
 
       mockRequest.params = { id: '1' };
-      mockRequest.body = {
-        machineId: '2',
-        beanBatchId: '2',
-        preparation: { dose: 19.0 },
-        extraction: { time: 26 },
-      };
-      mockShotRepository.findOne.mockResolvedValue(existingShot);
-      mockQueryRunner.manager.save.mockResolvedValue(updatedShot);
+      mockRequest.body = updateData;
+      const updatedShot = { id: '1', ...updateData } as any;
+      mockShotService.updateShot.mockResolvedValue(updatedShot);
 
-      const ShotController = (await import('../../../controllers/shot.controller')).ShotController;
-      const controller = new ShotController();
+      // Act
+      await shotController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockQueryRunner.connect).toHaveBeenCalled();
-      expect(mockQueryRunner.startTransaction).toHaveBeenCalled();
-      expect(mockShotRepository.findOne).toHaveBeenCalledWith({
-        where: { id: '1' },
-        relations: ['preparation', 'extraction'],
-      });
-      expect(mockQueryRunner.manager.save).toHaveBeenCalledTimes(3);
-      expect(mockQueryRunner.commitTransaction).toHaveBeenCalled();
-      expect(mockQueryRunner.release).toHaveBeenCalled();
+      // Assert
+      expect(mockShotService.updateShot).toHaveBeenCalledWith('1', updateData);
       expect(mockResponse.json).toHaveBeenCalledWith(updatedShot);
     });
 
-    it('should handle shot not found on update', async () => {
-      mockRequest.params = { id: '999' };
-      mockRequest.body = { machineId: '1' };
-      mockShotRepository.findOne.mockResolvedValue(null);
+    it('should handle service errors', async () => {
+      // Arrange
+      const updateData = { shot_type: 'ristretto' as const };
+      mockRequest.params = { id: '1' };
+      mockRequest.body = updateData;
+      const error = new Error('Update failed');
+      mockShotService.updateShot.mockRejectedValue(error);
 
-      const ShotController = (await import('../../../controllers/shot.controller')).ShotController;
-      const controller = new ShotController();
+      // Act
+      await shotController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Shot not found',
-      });
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Update failed' });
     });
 
-    it('should handle preparation creation branch when preparation is null', async () => {
-      const existingShot = {
-        id: '1',
-        machine: { id: '1' },
-        preparation: null, // No preparation exists
-        extraction: null,
-      };
-      const updatedShot = {
-        id: '1',
-        machine: { id: '1' },
-        preparation: { id: 'prep1', dose: 18.5 }, // New preparation created
-        extraction: null,
-      };
-
+    it('should handle errors without message', async () => {
+      // Arrange
+      const updateData = { shot_type: 'ristretto' as const };
       mockRequest.params = { id: '1' };
-      mockRequest.body = { preparation: { dose: 18.5 } };
-      mockShotRepository.findOne.mockResolvedValue(existingShot);
-      mockQueryRunner.manager.save.mockResolvedValue({ id: 'prep1', dose: 18.5 });
+      mockRequest.body = updateData;
+      const error = new Error();
+      mockShotService.updateShot.mockRejectedValue(error);
 
-      const ShotController = (await import('../../../controllers/shot.controller')).ShotController;
-      const controller = new ShotController();
+      // Act
+      await shotController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockQueryRunner.manager.save).toHaveBeenCalled();
-    });
-
-    it('should handle extraction creation branch when extraction is null', async () => {
-      const existingShot = {
-        id: '1',
-        machine: { id: '1' },
-        preparation: null,
-        extraction: null, // No extraction exists
-      };
-      const updatedShot = {
-        id: '1',
-        machine: { id: '1' },
-        preparation: null,
-        extraction: { id: 'extr1', time: 25 }, // New extraction created
-      };
-
-      mockRequest.params = { id: '1' };
-      mockRequest.body = { extraction: { time: 25 } };
-      mockShotRepository.findOne.mockResolvedValue(existingShot);
-      mockQueryRunner.manager.save.mockResolvedValue({ id: 'extr1', time: 25 });
-
-      const ShotController = (await import('../../../controllers/shot.controller')).ShotController;
-      const controller = new ShotController();
-
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockQueryRunner.manager.save).toHaveBeenCalled();
-    });
-
-    it('should handle database errors during update', async () => {
-      const error = new Error('Database update failed');
-      mockRequest.params = { id: '1' };
-      mockRequest.body = { machineId: '1' };
-      mockShotRepository.findOne.mockResolvedValue({ id: '1', machine: { id: '1' } });
-      mockQueryRunner.manager.save.mockRejectedValue(error);
-
-      const ShotController = (await import('../../../controllers/shot.controller')).ShotController;
-      const controller = new ShotController();
-
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
-      expect(mockQueryRunner.release).toHaveBeenCalled();
-      expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Error updating shot',
-      });
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error updating shot' });
     });
   });
 
   describe('remove', () => {
-    it('should delete a shot and its related entities', async () => {
-      const existingShot = {
-        id: '1',
-        machine: { id: '1' },
-        preparation: { id: 'prep1', dose: 18.5 },
-        extraction: { id: 'extr1', time: 25 },
-      };
-
+    it('should delete shot successfully', async () => {
+      // Arrange
       mockRequest.params = { id: '1' };
-      mockShotRepository.findOne.mockResolvedValue(existingShot);
-      mockShotRepository.remove.mockResolvedValue({ affected: 1 });
-      mockShotPreparationRepository.remove.mockResolvedValue({ affected: 1 });
-      mockShotExtractionRepository.remove.mockResolvedValue({ affected: 1 });
+      mockShotService.hardDeleteShot.mockResolvedValue(true);
 
-      const ShotController = (await import('../../../controllers/shot.controller')).ShotController;
-      const controller = new ShotController();
+      // Act
+      await shotController.remove(mockRequest as Request, mockResponse as Response);
 
-      await controller.remove(mockRequest as Request, mockResponse as Response);
-
-      expect(mockShotRepository.findOne).toHaveBeenCalledWith({
-        where: { id: '1' },
-        relations: ['preparation', 'extraction'],
-      });
-      expect(mockShotRepository.remove).toHaveBeenCalledWith(existingShot);
-      expect(mockShotPreparationRepository.remove).toHaveBeenCalledWith(existingShot.preparation);
-      expect(mockShotExtractionRepository.remove).toHaveBeenCalledWith(existingShot.extraction);
+      // Assert
+      expect(mockShotService.hardDeleteShot).toHaveBeenCalledWith('1');
       expect(mockResponse.status).toHaveBeenCalledWith(204);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.send).toHaveBeenCalled();
+      expect(mockResponse.send).toHaveBeenCalled();
     });
 
-    it('should handle shot not found on deletion', async () => {
-      mockRequest.params = { id: '999' };
-      mockShotRepository.findOne.mockResolvedValue(null);
+    it('should return 404 when shot not found', async () => {
+      // Arrange
+      mockRequest.params = { id: 'non-existent' };
+      mockShotService.hardDeleteShot.mockResolvedValue(false);
 
-      const ShotController = (await import('../../../controllers/shot.controller')).ShotController;
-      const controller = new ShotController();
+      // Act
+      await shotController.remove(mockRequest as Request, mockResponse as Response);
 
-      await controller.remove(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Shot not found',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Shot not found' });
     });
 
-    it('should handle deletion without related entities', async () => {
-      const existingShot = {
-        id: '1',
-        machine: { id: '1' },
-        preparation: null,
-        extraction: null,
-      };
-
+    it('should handle service errors', async () => {
+      // Arrange
       mockRequest.params = { id: '1' };
-      mockShotRepository.findOne.mockResolvedValue(existingShot);
-      mockShotRepository.remove.mockResolvedValue({ affected: 1 });
+      const error = new Error('Delete failed');
+      mockShotService.hardDeleteShot.mockRejectedValue(error);
 
-      const ShotController = (await import('../../../controllers/shot.controller')).ShotController;
-      const controller = new ShotController();
+      // Act
+      await shotController.remove(mockRequest as Request, mockResponse as Response);
 
-      await controller.remove(mockRequest as Request, mockResponse as Response);
-
-      expect(mockShotRepository.remove).toHaveBeenCalledWith(existingShot);
-      expect(mockShotPreparationRepository.remove).not.toHaveBeenCalled();
-      expect(mockShotExtractionRepository.remove).not.toHaveBeenCalled();
-      expect(mockResponse.status).toHaveBeenCalledWith(204);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.send).toHaveBeenCalled();
-    });
-
-    it('should handle database errors during deletion', async () => {
-      const error = new Error('Database delete failed');
-      mockRequest.params = { id: '1' };
-      mockShotRepository.findOne.mockResolvedValue({
-        id: '1',
-        machine: { id: '1' },
-        preparation: null,
-        extraction: null,
-      });
-      mockShotRepository.remove.mockRejectedValue(error);
+      // Assert
 
       const ShotController = (await import('../../../controllers/shot.controller')).ShotController;
       const controller = new ShotController();

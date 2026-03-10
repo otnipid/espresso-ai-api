@@ -1,20 +1,32 @@
 import { Request, Response } from 'express';
 import { AppDataSource } from '../data-source';
-import { Shot } from '../entities/Shot';
-import { ShotPreparation } from '../entities/ShotPreparation';
-import { ShotExtraction } from '../entities/ShotExtraction';
+import { ShotService, CreateShotData, UpdateShotData } from '../services/ShotService';
 
 export class ShotController {
-  private shotRepository = AppDataSource.getRepository(Shot);
-  private shotPreparationRepository = AppDataSource.getRepository(ShotPreparation);
-  private shotExtractionRepository = AppDataSource.getRepository(ShotExtraction);
+  private shotService: ShotService;
+
+  constructor() {
+    this.shotService = new ShotService(AppDataSource);
+  }
 
   async all(request: Request, response: Response) {
     try {
-      const shots = await this.shotRepository.find({
-        relations: ['machine', 'beanBatch', 'preparation', 'extraction'],
-      });
-      response.json(shots);
+      // Extract query parameters for filtering
+      const filters = {
+        machineId: request.query.machineId as string,
+        beanBatchId: request.query.beanBatchId as string,
+        shot_type: request.query.shot_type as string,
+        success: request.query.success ? request.query.success === 'true' : undefined,
+        dateFrom: request.query.dateFrom ? new Date(request.query.dateFrom as string) : undefined,
+        dateTo: request.query.dateTo ? new Date(request.query.dateTo as string) : undefined,
+        page: request.query.page ? parseInt(request.query.page as string) : undefined,
+        limit: request.query.limit ? parseInt(request.query.limit as string) : undefined,
+        sortBy: request.query.sortBy as string,
+        sortOrder: request.query.sortOrder as 'ASC' | 'DESC',
+      };
+
+      const result = await this.shotService.getShots(filters);
+      response.json(result);
     } catch (error) {
       console.error('Error fetching shots:', error);
       response.status(500).json({ message: 'Error fetching shots' });
@@ -23,10 +35,7 @@ export class ShotController {
 
   async one(request: Request, response: Response) {
     try {
-      const shot = await this.shotRepository.findOne({
-        where: { id: request.params.id },
-        relations: ['machine', 'beanBatch', 'preparation', 'extraction'],
-      });
+      const shot = await this.shotService.getShotById(request.params.id);
 
       if (!shot) {
         return response.status(404).json({ message: 'Shot not found' });
@@ -40,126 +49,60 @@ export class ShotController {
   }
 
   async save(request: Request, response: Response) {
-    const queryRunner = AppDataSource.createQueryRunner();
-
     try {
-      const { machineId, beanBatchId, preparation, extraction, notes } = request.body;
-
-      // Validate required fields
-      if (!machineId || !beanBatchId || !preparation || !extraction) {
-        return response.status(400).json({
-          message: 'machineId, beanBatchId, preparation, and extraction are required',
-        });
-      }
-
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
-
-      // Create preparation
-      const prep = this.shotPreparationRepository.create(preparation);
-      const savedPrep = await queryRunner.manager.save(prep);
-
-      // Create extraction
-      const extr = this.shotExtractionRepository.create(extraction);
-      const savedExtr = await queryRunner.manager.save(extr);
-
-      // Create shot
-      const shotData = {
-        machine: { id: machineId },
-        beanBatch: { id: beanBatchId },
-        preparation: savedPrep,
-        extraction: savedExtr,
-        notes: notes || null,
+      // Extract and validate shot data from request body
+      const shotData: CreateShotData = {
+        machineId: request.body.machineId,
+        beanBatchId: request.body.beanBatchId,
+        shot_type: request.body.shot_type,
+        pulled_at: request.body.pulled_at ? new Date(request.body.pulled_at) : undefined,
+        success: request.body.success,
+        notes: request.body.notes,
+        preparation: request.body.preparation,
+        extraction: request.body.extraction,
+        environment: request.body.environment,
+        feedback: request.body.feedback,
       };
 
-      const result = await queryRunner.manager.save(shotData);
-
-      await queryRunner.commitTransaction();
-      response.status(201).json(result);
+      // Let the service handle validation and business logic
+      const shot = await this.shotService.createShot(shotData);
+      response.status(201).json(shot);
     } catch (error) {
-      await queryRunner.rollbackTransaction();
       console.error('Error creating shot:', error);
-      response.status(500).json({ message: 'Error creating shot' });
-    } finally {
-      await queryRunner.release();
+      response.status(400).json({ message: (error as Error).message || 'Error creating shot' });
     }
   }
 
   async update(request: Request, response: Response) {
-    const queryRunner = AppDataSource.createQueryRunner();
-
     try {
-      const { machineId, beanBatchId, preparation, extraction, notes } = request.body;
+      // Extract and validate update data from request body
+      const updateData: UpdateShotData = {
+        machineId: request.body.machineId,
+        beanBatchId: request.body.beanBatchId,
+        shot_type: request.body.shot_type,
+        pulled_at: request.body.pulled_at ? new Date(request.body.pulled_at) : undefined,
+        success: request.body.success,
+        notes: request.body.notes,
+        preparation: request.body.preparation,
+        extraction: request.body.extraction,
+        environment: request.body.environment,
+        feedback: request.body.feedback,
+      };
 
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
-
-      // Find the shot with relations
-      const shot = await this.shotRepository.findOne({
-        where: { id: request.params.id },
-        relations: ['preparation', 'extraction'],
-      });
-
-      if (!shot) {
-        return response.status(404).json({ message: 'Shot not found' });
-      }
-
-      // Update basic fields
-      if (machineId !== undefined) shot.machine = { id: machineId } as any;
-      if (beanBatchId !== undefined) shot.beanBatch = { id: beanBatchId } as any;
-      if (notes !== undefined) shot.notes = notes;
-
-      // Update preparation if provided
-      if (preparation) {
-        if (!shot.preparation) {
-          shot.preparation = new ShotPreparation();
-        }
-        Object.assign(shot.preparation, preparation);
-        await queryRunner.manager.save(shot.preparation);
-      }
-
-      // Update extraction if provided
-      if (extraction) {
-        if (!shot.extraction) {
-          shot.extraction = new ShotExtraction();
-        }
-        Object.assign(shot.extraction, extraction);
-        await queryRunner.manager.save(shot.extraction);
-      }
-
-      const result = await queryRunner.manager.save(shot);
-
-      await queryRunner.commitTransaction();
-      response.json(result);
+      const shot = await this.shotService.updateShot(request.params.id, updateData);
+      response.json(shot);
     } catch (error) {
-      await queryRunner.rollbackTransaction();
       console.error('Error updating shot:', error);
-      response.status(500).json({ message: 'Error updating shot' });
-    } finally {
-      await queryRunner.release();
+      response.status(400).json({ message: (error as Error).message || 'Error updating shot' });
     }
   }
 
   async remove(request: Request, response: Response) {
     try {
-      const shot = await this.shotRepository.findOne({
-        where: { id: request.params.id },
-        relations: ['preparation', 'extraction'],
-      });
+      const success = await this.shotService.hardDeleteShot(request.params.id);
 
-      if (!shot) {
+      if (!success) {
         return response.status(404).json({ message: 'Shot not found' });
-      }
-
-      // Delete the shot and its related entities
-      await this.shotRepository.remove(shot);
-
-      if (shot.preparation) {
-        await this.shotPreparationRepository.remove(shot.preparation);
-      }
-
-      if (shot.extraction) {
-        await this.shotExtractionRepository.remove(shot.extraction);
       }
 
       response.status(204).send();
