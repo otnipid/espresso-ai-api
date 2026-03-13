@@ -1,18 +1,21 @@
 services:
-  # Custom PostgreSQL database with pre-loaded schemas
+  # Espresso ML PostgreSQL database with pre-loaded schemas
   postgres:
     image: ghcr.io/otnipid/espresso-ml-postgres:latest
+    # Fallback to official image if custom image is not available
+    # image: postgres:15
     container_name: ${COMPOSE_PROJECT_NAME:-espresso_ml}_postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_password}
-      POSTGRES_DB: ${POSTGRES_DB:-espresso_ml_test}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-espresso_ml}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres_user}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -49,12 +52,18 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME:-espresso_ml}_api
     environment:
       NODE_ENV: ${NODE_ENV:-development}
-      # Database configuration
+      # Database configuration (matching api-integration.md standards)
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_USERNAME: ${POSTGRES_USER:-postgres_user}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres_password}
-      DB_NAME: ${POSTGRES_DB:-espresso_ml_dev}
+      DB_NAME: ${DB_NAME:-espresso_ml}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      # Optional database settings
+      DB_SSL: ${DB_SSL:-false}
+      DB_POOL_MIN: ${DB_POOL_MIN:-2}
+      DB_POOL_MAX: ${DB_POOL_MAX:-10}
+      DB_CONNECTION_TIMEOUT: ${DB_CONNECTION_TIMEOUT:-30}
+      DB_STATEMENT_TIMEOUT: ${DB_STATEMENT_TIMEOUT:-60}
       # Redis configuration
       REDIS_HOST: redis
       REDIS_PORT: 6379
