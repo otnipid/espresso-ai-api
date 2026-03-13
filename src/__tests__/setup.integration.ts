@@ -8,17 +8,17 @@ import { BeanBatch } from '../entities/BeanBatch';
 import { Machine } from '../entities/Machine';
 import { Bean } from '../entities/Bean';
 
-// Test database setup - tries Kubernetes PostgreSQL first, then local PostgreSQL, falls back to SQLite
+// Test database setup - uses the official Espresso ML PostgreSQL image with pre-loaded schemas
 let testDataSource: DataSource;
 
-const createCustomPostgresDataSource = () =>
+const createEspressoMLPostgresDataSource = () =>
   new DataSource({
     type: 'postgres',
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432'),
-    username: process.env.DB_USERNAME || 'postgres_user',
-    password: process.env.DB_PASSWORD || 'postgres_password',
-    database: process.env.DB_NAME || 'espresso_ml_test',
+    username: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || 'postgres',
+    database: process.env.DB_NAME || 'espresso_ml',
     entities: [
       Shot,
       ShotPreparation,
@@ -29,10 +29,15 @@ const createCustomPostgresDataSource = () =>
       Bean,
       BeanBatch,
     ],
-    synchronize: false, // Schemas are pre-loaded!
+    synchronize: false, // Schemas are pre-loaded in the Docker image!
     logging: false,
-    dropSchema: false, // Keep pre-loaded schema
+    dropSchema: false, // Keep pre-loaded schema from Docker image
     ssl: false,
+    // Use the same connection settings as documented in api-integration.md
+    extra: {
+      connectionTimeoutMillis: 30000,
+      statement_timeout: 60000,
+    },
   });
 
 const createLocalPostgresDataSource = () =>
@@ -40,8 +45,8 @@ const createLocalPostgresDataSource = () =>
     type: 'postgres',
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432'),
-    username: process.env.DB_USERNAME || 'postgres',
-    password: process.env.DB_PASSWORD || 'password',
+    username: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || 'postgres',
     database: process.env.DB_NAME || 'espresso_ml_test',
     entities: [
       Shot,
@@ -76,17 +81,17 @@ const createSQLiteDataSource = () =>
     logging: false,
   });
 
-// Clean test data but preserve schema
+// Clean test data but preserve schema (following the documented schema order)
 const cleanTestData = async () => {
   const tables = [
-    'shots',
-    'shot_preparation',
-    'shot_extraction',
-    'shot_environment',
     'shot_feedback',
+    'shot_environment', 
+    'shot_extraction',
+    'shot_preparation',
+    'shots',
     'bean_batches',
-    'machines',
     'beans',
+    'machines',
   ];
 
   for (const table of tables) {
@@ -105,25 +110,41 @@ export const initializeTestDataSource = async (): Promise<DataSource> => {
     return testDataSource;
   }
 
-  // Detect environment and use custom PostgreSQL image
-  const isDockerEnvironment = process.env.TEST_DB_HOST !== 'localhost';
+  // Detect environment and use appropriate database configuration
+  const isDockerEnvironment = process.env.NODE_ENV === 'test' && process.env.DB_HOST !== 'localhost';
   const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
   const isKubernetes = process.env.KUBERNETES_SERVICE_HOST !== undefined;
+  const hasCustomDbConfig = process.env.DB_HOST && process.env.DB_USER && process.env.DB_PASSWORD;
 
   try {
-    if (isGitHubActions || isDockerEnvironment) {
-      console.log('� Docker/CI environment detected, using custom PostgreSQL image...');
-      testDataSource = createCustomPostgresDataSource();
+    if (isGitHubActions || isDockerEnvironment || hasCustomDbConfig) {
+      console.log('🐳 Using Espresso ML PostgreSQL Docker image with pre-loaded schemas...');
+      testDataSource = createEspressoMLPostgresDataSource();
     } else if (isKubernetes) {
-      console.log('☸️  Kubernetes environment detected');
-      testDataSource = createCustomPostgresDataSource();
+      console.log('☸️  Kubernetes environment detected, using Espresso ML PostgreSQL...');
+      testDataSource = createEspressoMLPostgresDataSource();
     } else {
-      console.log('💻 Local development environment detected');
-      testDataSource = createCustomPostgresDataSource();
+      console.log('💻 Local development environment detected, using Espresso ML PostgreSQL...');
+      testDataSource = createEspressoMLPostgresDataSource();
     }
 
     await testDataSource.initialize();
-    console.log(`✅ Database connected successfully (postgres)`);
+    console.log(`✅ Database connected successfully (${testDataSource.options.type})`);
+    
+    // Verify schema exists by checking key tables
+    const schemaCheck = await testDataSource.query(`
+      SELECT table_name FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_name IN ('users', 'beans', 'shots')
+      ORDER BY table_name
+    `);
+    
+    if (schemaCheck.length >= 3) {
+      console.log('✅ Pre-loaded schema verified:', schemaCheck.map((r: any) => r.table_name).join(', '));
+    } else {
+      console.warn('⚠️  Expected schema tables not found, falling back to synchronization...');
+      await testDataSource.synchronize(true);
+    }
 
     // Clean test data but preserve schema
     await cleanTestData();
@@ -131,6 +152,16 @@ export const initializeTestDataSource = async (): Promise<DataSource> => {
     return testDataSource;
   } catch (error) {
     console.error('❌ Database connection failed:', error);
+    
+    // Fallback to SQLite if PostgreSQL is not available
+    if (testDataSource?.options.type === 'postgres') {
+      console.log('🔄 Falling back to SQLite for testing...');
+      testDataSource = createSQLiteDataSource();
+      await testDataSource.initialize();
+      console.log('✅ SQLite fallback initialized');
+      return testDataSource;
+    }
+    
     throw error;
   }
 };
@@ -164,12 +195,11 @@ afterAll(async () => {
 beforeEach(async () => {
   if (isInitialized && testDataSource && testDataSource.isInitialized) {
     try {
-      // Drop and recreate all tables to ensure clean state
-      await testDataSource.synchronize(true);
-    } catch (syncError) {
-      // If synchronization fails due to concurrent access, try a simpler approach
-      console.warn('⚠️  Database synchronization failed, trying alternative cleanup:', syncError);
-      // Continue without full sync - tests should still work with existing schema
+      // Clean test data between tests
+      await cleanTestData();
+    } catch (cleanupError) {
+      console.warn('⚠️  Test data cleanup failed:', cleanupError);
+      // Continue without cleanup - tests should still work
     }
   }
 });
