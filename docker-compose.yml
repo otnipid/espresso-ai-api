@@ -1,21 +1,19 @@
 services:
   # Espresso ML PostgreSQL database with pre-loaded schemas
   postgres:
-    image: ghcr.io/otnipid/espresso-ml-postgres:latest
-    # Fallback to official image if custom image is not available
-    # image: postgres:15
+    image: ghcr.io/otnipid/espresso-ai-db-postgres:develop
     container_name: ${COMPOSE_PROJECT_NAME:-espresso_ml}_postgres
     environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-espresso_ml}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -55,9 +53,9 @@ services:
       # Database configuration (matching api-integration.md standards)
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: ${DB_NAME:-espresso_ml}
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
       # Optional database settings
       DB_SSL: ${DB_SSL:-false}
       DB_POOL_MIN: ${DB_POOL_MIN:-2}
