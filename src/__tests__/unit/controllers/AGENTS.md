@@ -622,18 +622,18 @@ const mockResult = { shots: mockShots, total: 2 }; // Type mismatch
 
 // ✅ REQUIRED - Use type assertions for mock data
 const mockShot = { id: '1', shot_type: 'espresso' } as any;
-const mockResult = { 
-  shots: mockShots as any, 
-  total: 2, 
-  page: 1, 
-  limit: 10, 
-  totalPages: 1 
+const mockResult = {
+  shots: mockShots as any,
+  total: 2,
+  page: 1,
+  limit: 10,
+  totalPages: 1,
 };
 
 // ✅ ALTERNATIVE - Partial mocks with type assertions
-const mockShot: Partial<Shot> = { 
-  id: '1', 
-  shot_type: 'espresso' 
+const mockShot: Partial<Shot> = {
+  id: '1',
+  shot_type: 'espresso',
 } as Shot;
 ```
 
@@ -716,6 +716,7 @@ describe('ControllerName', () => {
 ```
 
 **Structure Requirements**:
+
 1. **Import Order**: Express → Controller → Service
 2. **Service Mocking**: Always mock services, never repositories
 3. **Mock Setup**: Fresh mocks in beforeEach
@@ -746,9 +747,9 @@ describe('comprehensive error handling', () => {
     mockRequest.body = { field: null };
     const existingEntity = { id: '1', field: 'existing-value' };
     mockService.method.mockResolvedValue(existingEntity);
-    
+
     await controller.update(mockRequest, mockResponse);
-    
+
     expect(mockService.method).toHaveBeenCalledWith('1', { field: null });
   });
 
@@ -756,24 +757,26 @@ describe('comprehensive error handling', () => {
   it('should handle invalid number conversions', async () => {
     mockRequest.query = { page: 'invalid-number' };
     mockService.method.mockResolvedValue({ data: [], pagination: {} });
-    
+
     await controller.all(mockRequest, mockResponse);
-    
-    expect(mockService.method).toHaveBeenCalledWith(expect.objectContaining({
-      page: expect.any(Number), // Should be NaN or default
-    }));
+
+    expect(mockService.method).toHaveBeenCalledWith(
+      expect.objectContaining({
+        page: expect.any(Number), // Should be NaN or default
+      })
+    );
   });
 
   // Required: Test business rule validation branches
   it('should handle business rule violations', async () => {
     mockRequest.body = { field: 'invalid-value' };
     mockService.method.mockRejectedValue(new Error('Business rule violation'));
-    
+
     await controller.method(mockRequest, mockResponse);
-    
+
     expect(mockResponse.status).toHaveBeenCalledWith(400);
-    expect(mockResponse.json).toHaveBeenCalledWith({ 
-      message: 'Business rule violation' 
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      message: 'Business rule violation',
     });
   });
 
@@ -781,18 +784,19 @@ describe('comprehensive error handling', () => {
   it('should handle not found scenarios', async () => {
     mockRequest.params = { id: 'non-existent-id' };
     mockService.method.mockResolvedValue(null as any);
-    
+
     await controller.method(mockRequest, mockResponse);
-    
+
     expect(mockResponse.status).toHaveBeenCalledWith(404);
-    expect(mockResponse.json).toHaveBeenCalledWith({ 
-      message: 'Resource not found' 
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      message: 'Resource not found',
     });
   });
 });
 ```
 
 **Branch Coverage Requirements**:
+
 - [ ] **Database Errors**: Test all `mockRejectedValue` scenarios
 - [ ] **Conditional Logic**: Test both true/false branches
 - [ ] **Type Conversions**: Test parseInt, parseFloat with invalid inputs

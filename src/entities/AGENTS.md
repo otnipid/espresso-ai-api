@@ -7,6 +7,7 @@ An **Entity** is a TypeScript class that maps to a database table. It represents
 ## Entity Characteristics
 
 ### **Core Properties**
+
 - **Database Mapping**: Each entity class maps to a specific database table
 - **Type Safety**: Provides compile-time type checking for database operations
 - **Relationships**: Defines how entities relate to each other (one-to-one, one-to-many, many-to-many)
@@ -14,18 +15,19 @@ An **Entity** is a TypeScript class that maps to a database table. It represents
 - **Serialization**: Automatic conversion between database records and TypeScript objects
 
 ### **TypeORM Decorators**
+
 ```typescript
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from 'typeorm';
 
-@Entity('table_name')           // Maps to database table
+@Entity('table_name') // Maps to database table
 export class ExampleEntity {
-  @PrimaryGeneratedColumn('uuid')  // Auto-generated primary key
+  @PrimaryGeneratedColumn('uuid') // Auto-generated primary key
   id!: string;
-  
-  @Column({ type: 'varchar' })     // Database column mapping
+
+  @Column({ type: 'varchar' }) // Database column mapping
   name!: string;
-  
-  @ManyToOne(() => RelatedEntity)   // Relationship definition
+
+  @ManyToOne(() => RelatedEntity) // Relationship definition
   related!: RelatedEntity;
 }
 ```
@@ -35,19 +37,21 @@ export class ExampleEntity {
 ### **Critical Rule: Entity-Schema Correspondence**
 
 **Every entity in this folder MUST have a corresponding schema file in:**
+
 ```
 ../../espresso-db/schema
 ```
 
 #### **Mapping Requirements:**
 
-| Entity File | Schema File | Example |
-|-------------|-------------|---------|
-| `User.ts` | `01-users.sql` | ✅ Maps users table |
-| `Bean.ts` | `02-beans.sql` | ✅ Maps beans table |
-| `Shot.ts` | `07-shots.sql` | ✅ Maps shots table |
+| Entity File | Schema File    | Example             |
+| ----------- | -------------- | ------------------- |
+| `User.ts`   | `01-users.sql` | ✅ Maps users table |
+| `Bean.ts`   | `02-beans.sql` | ✅ Maps beans table |
+| `Shot.ts`   | `07-shots.sql` | ✅ Maps shots table |
 
 #### **Naming Convention:**
+
 - **Entity**: `PascalCase.ts` (e.g., `UserProfile.ts`)
 - **Schema**: `XX-descriptive-name.sql` (e.g., `12-user-profiles.sql`)
 - **Table**: `snake_case` (e.g., `user_profiles`)
@@ -55,11 +59,12 @@ export class ExampleEntity {
 #### **Consistency Requirements:**
 
 1. **Column Names Must Match**:
+
    ```typescript
    // Entity (TypeScript)
    @Column({ name: 'first_name' })
    firstName!: string;
-   
+
    // Schema (SQL)
    CREATE TABLE users (
        first_name VARCHAR(100) NOT NULL
@@ -67,21 +72,23 @@ export class ExampleEntity {
    ```
 
 2. **Data Types Must Align**:
+
    ```typescript
    // Entity
    @Column({ type: 'timestamp' })
    createdAt!: Date;
-   
+
    // Schema
    created_at TIMESTAMP DEFAULT NOW()
    ```
 
 3. **Relationships Must Be Defined in Both**:
+
    ```typescript
    // Entity
    @ManyToOne(() => User, user => user.shots)
    user!: User;
-   
+
    // Schema
    user_id UUID REFERENCES users(id)
    ```
@@ -91,22 +98,25 @@ export class ExampleEntity {
 ### **Required Elements**
 
 1. **Entity Declaration**:
+
    ```typescript
    @Entity('table_name')
    export class EntityName {
    ```
 
 2. **Primary Key**:
+
    ```typescript
    @PrimaryGeneratedColumn('uuid')
    id!: string;
    ```
 
 3. **Audit Fields** (Recommended):
+
    ```typescript
    @CreateDateColumn()
    created_at!: Date;
-   
+
    @UpdateDateColumn()
    updated_at!: Date;
    ```
@@ -134,18 +144,21 @@ type StatusType = 'active' | 'inactive';
 ## 🔍 **Entity Validation Rules**
 
 ### **Type Safety Requirements**
+
 - ✅ **All properties must have explicit types**
 - ✅ **Use definite assignment assertion (!:) for required fields**
 - ✅ **Make nullable fields explicit with `| null`**
 - ✅ **Define relationships with proper typing**
 
 ### **Naming Conventions**
+
 - ✅ **Class names**: `PascalCase`
 - ✅ **Property names**: `camelCase`
 - ✅ **Table names**: `snake_case`
 - ✅ **Column names**: `snake_case`
 
 ### **Relationship Best Practices**
+
 ```typescript
 // ✅ CORRECT - Proper relationship definition
 @ManyToOne(() => User, user => user.shots)
@@ -160,12 +173,14 @@ user!: User;
 ## 📋 **Entity Development Checklist**
 
 ### **Before Creating an Entity:**
+
 - [ ] **Verify schema exists** in `../../espresso-db/schema/`
 - [ ] **Review table structure** and column definitions
 - [ ] **Identify relationships** with existing entities
 - [ ] **Plan naming conventions** for consistency
 
 ### **When Creating an Entity:**
+
 - [ ] **Use proper TypeORM decorators**
 - [ ] **Match column names exactly** with schema
 - [ ] **Define all relationships** bidirectionally
@@ -173,6 +188,7 @@ user!: User;
 - [ ] **Use TypeScript strict typing**
 
 ### **After Creating an Entity:**
+
 - [ ] **Add to entities/index.ts** export list
 - [ ] **Update data-source.ts** if needed
 - [ ] **Create unit tests** for entity operations
@@ -183,16 +199,18 @@ user!: User;
 ### **❌ Frequent Mistakes:**
 
 1. **Schema Mismatch**:
+
    ```typescript
    // Entity says 'email'
    @Column({ name: 'email' })
    email!: string;
-   
+
    // Schema says 'user_email'
    user_email VARCHAR(255)  // ❌ MISMATCH!
    ```
 
 2. **Missing Relationships**:
+
    ```typescript
    // Only one side defined
    @ManyToOne(() => User)  // ❌ INCOMPLETE
@@ -237,6 +255,7 @@ npm run typeorm migration:run
 ## 📚 **Entity Examples**
 
 ### **Simple Entity**:
+
 ```typescript
 @Entity('categories')
 export class Category {
@@ -258,6 +277,7 @@ export class Category {
 ```
 
 ### **Complex Entity with Relationships**:
+
 ```typescript
 @Entity('shots')
 export class Shot {

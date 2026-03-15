@@ -85,7 +85,7 @@ const createSQLiteDataSource = () =>
 const cleanTestData = async () => {
   const tables = [
     'shot_feedback',
-    'shot_environment', 
+    'shot_environment',
     'shot_extraction',
     'shot_preparation',
     'shots',
@@ -111,7 +111,8 @@ export const initializeTestDataSource = async (): Promise<DataSource> => {
   }
 
   // Detect environment and use appropriate database configuration
-  const isDockerEnvironment = process.env.NODE_ENV === 'test' && process.env.DB_HOST !== 'localhost';
+  const isDockerEnvironment =
+    process.env.NODE_ENV === 'test' && process.env.DB_HOST !== 'localhost';
   const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
   const isKubernetes = process.env.KUBERNETES_SERVICE_HOST !== undefined;
   const hasCustomDbConfig = process.env.DB_HOST && process.env.DB_USER && process.env.DB_PASSWORD;
@@ -130,7 +131,7 @@ export const initializeTestDataSource = async (): Promise<DataSource> => {
 
     await testDataSource.initialize();
     console.log(`✅ Database connected successfully (${testDataSource.options.type})`);
-    
+
     // Verify schema exists by checking key tables
     const schemaCheck = await testDataSource.query(`
       SELECT table_name FROM information_schema.tables 
@@ -138,9 +139,12 @@ export const initializeTestDataSource = async (): Promise<DataSource> => {
       AND table_name IN ('users', 'beans', 'shots')
       ORDER BY table_name
     `);
-    
+
     if (schemaCheck.length >= 3) {
-      console.log('✅ Pre-loaded schema verified:', schemaCheck.map((r: any) => r.table_name).join(', '));
+      console.log(
+        '✅ Pre-loaded schema verified:',
+        schemaCheck.map((r: any) => r.table_name).join(', ')
+      );
     } else {
       console.warn('⚠️  Expected schema tables not found, falling back to synchronization...');
       await testDataSource.synchronize(true);
@@ -152,7 +156,7 @@ export const initializeTestDataSource = async (): Promise<DataSource> => {
     return testDataSource;
   } catch (error) {
     console.error('❌ Database connection failed:', error);
-    
+
     // Fallback to SQLite if PostgreSQL is not available
     if (testDataSource?.options.type === 'postgres') {
       console.log('🔄 Falling back to SQLite for testing...');
@@ -161,7 +165,7 @@ export const initializeTestDataSource = async (): Promise<DataSource> => {
       console.log('✅ SQLite fallback initialized');
       return testDataSource;
     }
-    
+
     throw error;
   }
 };
