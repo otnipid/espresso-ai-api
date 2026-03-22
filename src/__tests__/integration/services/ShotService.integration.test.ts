@@ -3,20 +3,18 @@ import { ShotService } from '../../../services/ShotService';
 import { Shot } from '../../../entities/Shot';
 import { BeanBatch } from '../../../entities/BeanBatch';
 import { Machine } from '../../../entities/Machine';
+import { User } from '../../../entities/User';
+import { Grinder } from '../../../entities/Grinder';
 import { Bean } from '../../../entities/Bean';
+import { cleanTestData } from '../../setup.integration.main';
 import {
   initializeTestDataSource,
   getTestDataSource,
-  createTestMachine,
-  createTestBean,
-  createTestBeanBatch,
+  createTestShotData,
 } from '../../setup.integration.main';
 
 describe('ShotService', () => {
   let shotService: ShotService;
-  let machine: Machine;
-  let bean: Bean;
-  let beanBatch: BeanBatch;
   let testDataSource: DataSource;
 
   beforeAll(async () => {
@@ -25,22 +23,31 @@ describe('ShotService', () => {
     shotService = new ShotService(testDataSource);
   });
 
-  beforeEach(async () => {
-    // Create test data for each test using helper functions
-    machine = await createTestMachine();
-    bean = await createTestBean();
-    beanBatch = await createTestBeanBatch(bean);
-  });
-
   describe('createShot', () => {
+    let user: User;
+    let machine: Machine;
+    let bean: Bean;
+    let beanBatch: BeanBatch;
+    let grinder: Grinder;
+
+    beforeEach(async () => {
+      // Create fresh test data for each test
+      const testData = await createTestShotData();
+      user = testData.user;
+      machine = testData.machine;
+      bean = testData.bean;
+      beanBatch = testData.beanBatch;
+      grinder = testData.grinder;
+    });
     it('should create a basic shot successfully', async () => {
       const shotData = {
+        userId: user.id,
         machineId: machine.id,
         beanBatchId: beanBatch.id,
+        grinderId: grinder.id,
         shot_type: 'normale' as const,
         pulled_at: new Date(),
         success: true,
-        notes: 'Test shot',
       };
 
       const result = await shotService.createShot(shotData);
@@ -49,30 +56,33 @@ describe('ShotService', () => {
       expect(result.id).toBeDefined();
       expect(result.shot_type).toBe('normale');
       expect(result.success).toBe(true);
-      expect(result.notes).toBe('Test shot');
+      expect(result.user.id).toBe(user.id);
       expect(result.machine.id).toBe(machine.id);
       expect(result.beanBatch.id).toBe(beanBatch.id);
+      expect(result.grinder.id).toBe(grinder.id);
     });
 
     it('should create a shot with all related entities', async () => {
       const shotData = {
+        userId: user.id,
         machineId: machine.id,
         beanBatchId: beanBatch.id,
+        grinderId: grinder.id,
         shot_type: 'ristretto' as const,
         pulled_at: new Date(),
         success: true,
-        notes: 'Complete test shot',
         preparation: {
           grind_setting: 15,
           dose_grams: 18.0,
           basket_type: 'double',
         },
         extraction: {
-          dose_grams: 18.0,
+          water_temp_c: 93.0,
+          preinfusion_seconds: 5.0,
+          shot_time_seconds: 25.0,
           yield_grams: 36.0,
-          extraction_time_seconds: 25,
-          temperature_celsius: 93.0,
-          pressure_bars: 9.0,
+          peak_pressure_bar: 9.0,
+          avg_pressure_bar: 8.5,
         },
         environment: {
           ambient_temp_c: 22.5,
@@ -83,13 +93,11 @@ describe('ShotService', () => {
           shots_since_clean: 5,
         },
         feedback: {
-          overall_score: 8.5,
-          acidity: 7.0,
-          sweetness: 8.0,
-          bitterness: 3.0,
-          body: 7.5,
-          extraction_assessment: 'Balanced extraction',
-          notes: 'Good balance',
+          overall_score: 8,
+          acidity: 4,
+          bitterness: 3,
+          body: 7,
+          extraction_assessment: 'balanced',
         },
       };
 
@@ -107,9 +115,12 @@ describe('ShotService', () => {
       expect(result.preparation?.basket_type).toBe('double');
 
       // Verify extraction data
-      expect(result.extraction?.dose_grams).toBe('18.00');
+      expect(result.extraction?.water_temp_c).toBe('93.0');
+      expect(result.extraction?.preinfusion_seconds).toBe('5.0');
+      expect(result.extraction?.shot_time_seconds).toBe('25.00');
       expect(result.extraction?.yield_grams).toBe('36.00');
-      expect(result.extraction?.extraction_time_seconds).toBe(25);
+      expect(result.extraction?.peak_pressure_bar).toBe('9.00');
+      expect(result.extraction?.avg_pressure_bar).toBe('8.50');
 
       // Verify environment data
       expect(result.environment?.ambient_temp_c).toBe('22.5');
@@ -120,19 +131,19 @@ describe('ShotService', () => {
       expect(result.environment?.shots_since_clean).toBe(5);
 
       // Verify feedback data
-      expect(result.feedback?.overall_score).toBe('8.5');
-      expect(result.feedback?.acidity).toBe('7.0');
-      expect(result.feedback?.sweetness).toBe('8.0');
-      expect(result.feedback?.bitterness).toBe('3.0');
-      expect(result.feedback?.body).toBe('7.5');
-      expect(result.feedback?.extraction_assessment).toBe('Balanced extraction');
-      expect(result.feedback?.notes).toBe('Good balance');
+      expect(result.feedback?.overall_score).toBe(8);
+      expect(result.feedback?.acidity).toBe(4);
+      expect(result.feedback?.bitterness).toBe(3);
+      expect(result.feedback?.body).toBe(7);
+      expect(result.feedback?.extraction_assessment).toBe('balanced');
     });
 
     it('should throw error when machine does not exist', async () => {
       const shotData = {
+        userId: user.id,
         machineId: '550e8400-e29b-41d4-a716-446655440014',
         beanBatchId: beanBatch.id,
+        grinderId: grinder.id,
         shot_type: 'normale' as const,
       };
 
@@ -143,8 +154,10 @@ describe('ShotService', () => {
 
     it('should throw error when bean batch does not exist', async () => {
       const shotData = {
+        userId: user.id,
         machineId: machine.id,
         beanBatchId: '550e8400-e29b-41d4-a716-446655440015',
+        grinderId: grinder.id,
         shot_type: 'normale' as const,
       };
 
@@ -156,6 +169,8 @@ describe('ShotService', () => {
     it('should use current date when pulled_at is not provided', async () => {
       const shotData = {
         machineId: machine.id,
+        userId: user.id,
+        grinderId: grinder.id,
         beanBatchId: beanBatch.id,
         shot_type: 'normale' as const,
       };
@@ -174,13 +189,26 @@ describe('ShotService', () => {
     let createdShot: Shot;
 
     beforeEach(async () => {
+      // Step 1: Create test data
+      const testData = await createTestShotData();
+      
+      // Step 2: Create shot using service
       const shotData = {
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
+        userId: testData.user.id,
+        machineId: testData.machine.id,
+        beanBatchId: testData.beanBatch.id,
+        grinderId: testData.grinder.id,
         shot_type: 'normale' as const,
         success: true,
+        pulled_at: new Date(),
       };
+      
       createdShot = await shotService.createShot(shotData);
+    });
+
+    afterEach(async () => {
+      // Clean up data created in this describe block
+      await cleanTestData();
     });
 
     it('should return shot with all relations', async () => {
@@ -190,8 +218,8 @@ describe('ShotService', () => {
       expect(result.id).toBe(createdShot.id);
       expect(result.machine).toBeDefined();
       expect(result.beanBatch).toBeDefined();
-      expect(result.machine.id).toBe(machine.id);
-      expect(result.beanBatch.id).toBe(beanBatch.id);
+      expect(result.user).toBeDefined();
+      expect(result.grinder).toBeDefined();
     });
 
     it('should throw error when shot does not exist', async () => {
@@ -202,19 +230,30 @@ describe('ShotService', () => {
   });
 
   describe('getShots', () => {
+    let freshTestData: any;
+
     beforeEach(async () => {
+      // Create fresh test data for this describe block
+      console.log('🔍 DEBUG: Creating fresh test data...');
+      freshTestData = await createTestShotData();
+      
       // Create multiple test shots
+      console.log('🔍 DEBUG: Creating test shots...');
       const shotData1 = {
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
+        userId: freshTestData.user.id,
+        machineId: freshTestData.machine.id,
+        beanBatchId: freshTestData.beanBatch.id,
+        grinderId: freshTestData.grinder.id,
         shot_type: 'normale' as const,
         success: true,
         pulled_at: new Date('2024-01-01T10:00:00Z'),
       };
 
       const shotData2 = {
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
+        userId: freshTestData.user.id,
+        machineId: freshTestData.machine.id,
+        beanBatchId: freshTestData.beanBatch.id,
+        grinderId: freshTestData.grinder.id,
         shot_type: 'ristretto' as const,
         success: false,
         pulled_at: new Date('2024-01-01T11:00:00Z'),
@@ -222,6 +261,7 @@ describe('ShotService', () => {
 
       await shotService.createShot(shotData1);
       await shotService.createShot(shotData2);
+      console.log('🔍 DEBUG: Test data created successfully');
     });
 
     it('should return paginated shots', async () => {
@@ -235,20 +275,20 @@ describe('ShotService', () => {
     });
 
     it('should filter by machine ID', async () => {
-      const result = await shotService.getShots({ machineId: machine.id });
+      const result = await shotService.getShots({ machineId: freshTestData.machine.id });
 
       expect(result.shots).toHaveLength(2);
       result.shots.forEach(shot => {
-        expect(shot.machine.id).toBe(machine.id);
+        expect(shot.machine.id).toBe(freshTestData.machine.id);
       });
     });
 
     it('should filter by bean batch ID', async () => {
-      const result = await shotService.getShots({ beanBatchId: beanBatch.id });
+      const result = await shotService.getShots({ beanBatchId: freshTestData.beanBatch.id });
 
       expect(result.shots).toHaveLength(2);
       result.shots.forEach(shot => {
-        expect(shot.beanBatch.id).toBe(beanBatch.id);
+        expect(shot.beanBatch.id).toBe(freshTestData.beanBatch.id);
       });
     });
 
@@ -311,14 +351,17 @@ describe('ShotService', () => {
 
   describe('updateShot', () => {
     let createdShot: Shot;
+    let freshTestData: any;
 
     beforeEach(async () => {
+      freshTestData = await createTestShotData();
       const shotData = {
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
+        userId: freshTestData.user.id,
+        machineId: freshTestData.machine.id,
+        beanBatchId: freshTestData.beanBatch.id,
+        grinderId: freshTestData.grinder.id,
         shot_type: 'normale' as const,
         success: true,
-        notes: 'Original notes',
       };
       createdShot = await shotService.createShot(shotData);
     });
@@ -327,14 +370,12 @@ describe('ShotService', () => {
       const updateData = {
         shot_type: 'ristretto' as const,
         success: false,
-        notes: 'Updated notes',
       };
 
       const result = await shotService.updateShot(createdShot.id, updateData);
 
       expect(result.shot_type).toBe('ristretto');
       expect(result.success).toBe(false);
-      expect(result.notes).toBe('Updated notes');
     });
 
     it('should update related entities', async () => {
@@ -344,8 +385,12 @@ describe('ShotService', () => {
           dose_grams: 20.0,
         },
         extraction: {
+          water_temp_c: 94.0,
+          preinfusion_seconds: 6.0,
+          shot_time_seconds: 30.0,
           yield_grams: 40.0,
-          extraction_time_seconds: 30,
+          peak_pressure_bar: 9.5,
+          avg_pressure_bar: 9.0,
         },
       };
 
@@ -354,8 +399,12 @@ describe('ShotService', () => {
       expect(result.preparation).toBeDefined();
       expect(result.preparation?.grind_setting).toBe(20);
       expect(result.preparation?.dose_grams).toBe('20.00');
+      expect(result.extraction?.water_temp_c).toBe('94.0');
+      expect(result.extraction?.preinfusion_seconds).toBe('6.0');
+      expect(result.extraction?.shot_time_seconds).toBe('30.00');
       expect(result.extraction?.yield_grams).toBe('40.00');
-      expect(result.extraction?.extraction_time_seconds).toBe(30);
+      expect(result.extraction?.peak_pressure_bar).toBe('9.50');
+      expect(result.extraction?.avg_pressure_bar).toBe('9.00');
     });
 
     it('should create new related entities if they do not exist', async () => {
@@ -365,8 +414,8 @@ describe('ShotService', () => {
           humidity_percent: 55.0,
         },
         feedback: {
-          overall_score: 9.0,
-          acidity: 8.0,
+          overall_score: 9,
+          acidity: 8,
         },
       };
 
@@ -375,7 +424,7 @@ describe('ShotService', () => {
       expect(result.environment).toBeDefined();
       expect(result.environment?.ambient_temp_c).toBe('25.0');
       expect(result.feedback).toBeDefined();
-      expect(result.feedback?.overall_score).toBe('9.0');
+      expect(result.feedback?.overall_score).toBe(9);
     });
 
     it('should throw error when updating non-existent shot', async () => {
@@ -389,11 +438,15 @@ describe('ShotService', () => {
 
   describe('softDeleteShot', () => {
     let createdShot: Shot;
+    let freshTestData: any;
 
     beforeEach(async () => {
+      freshTestData = await createTestShotData();
       const shotData = {
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
+        userId: freshTestData.user.id,
+        machineId: freshTestData.machine.id,
+        beanBatchId: freshTestData.beanBatch.id,
+        grinderId: freshTestData.grinder.id,
         shot_type: 'normale' as const,
       };
       createdShot = await shotService.createShot(shotData);
@@ -417,23 +470,32 @@ describe('ShotService', () => {
 
   describe('hardDeleteShot', () => {
     let createdShot: Shot;
+    let freshTestData: any;
 
     beforeEach(async () => {
+      freshTestData = await createTestShotData();
       const shotData = {
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
+        userId: freshTestData.user.id,
+        machineId: freshTestData.machine.id,
+        beanBatchId: freshTestData.beanBatch.id,
+        grinderId: freshTestData.grinder.id,
         shot_type: 'normale' as const,
         preparation: {
           grind_setting: 15,
         },
         extraction: {
-          dose_grams: 18.0,
+          water_temp_c: 92.0,
+          preinfusion_seconds: 4.0,
+          shot_time_seconds: 24.0,
+          yield_grams: 35.0,
+          peak_pressure_bar: 8.5,
+          avg_pressure_bar: 8.0,
         },
         environment: {
           ambient_temp_c: 22.0,
         },
         feedback: {
-          overall_score: 8.0,
+          overall_score: 8,
         },
       };
       createdShot = await shotService.createShot(shotData);
@@ -457,11 +519,15 @@ describe('ShotService', () => {
 
   describe('restoreShot', () => {
     let createdShot: Shot;
+    let freshTestData: any;
 
     beforeEach(async () => {
+      freshTestData = await createTestShotData();
       const shotData = {
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
+        userId: freshTestData.user.id,
+        machineId: freshTestData.machine.id,
+        beanBatchId: freshTestData.beanBatch.id,
+        grinderId: freshTestData.grinder.id,
         shot_type: 'normale' as const,
       };
       createdShot = await shotService.createShot(shotData);
@@ -491,24 +557,31 @@ describe('ShotService', () => {
 
   describe('getShotStatistics', () => {
     beforeEach(async () => {
+      let freshTestData = await createTestShotData();
       // Create test shots with different success rates
       await shotService.createShot({
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
+        userId: freshTestData.user.id,
+        machineId: freshTestData.machine.id,
+        beanBatchId: freshTestData.beanBatch.id,
+        grinderId: freshTestData.grinder.id,
         shot_type: 'normale',
         success: true,
       });
 
       await shotService.createShot({
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
+        userId: freshTestData.user.id,
+        machineId: freshTestData.machine.id,
+        beanBatchId: freshTestData.beanBatch.id,
+        grinderId: freshTestData.grinder.id,
         shot_type: 'ristretto',
         success: true,
       });
 
       await shotService.createShot({
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
+        userId: freshTestData.user.id,
+        machineId: freshTestData.machine.id,
+        beanBatchId: freshTestData.beanBatch.id,
+        grinderId: freshTestData.grinder.id,
         shot_type: 'lungo',
         success: false,
       });
@@ -524,7 +597,8 @@ describe('ShotService', () => {
     });
 
     it('should filter statistics by machine', async () => {
-      const result = await shotService.getShotStatistics({ machineId: machine.id });
+      const freshTestData = await createTestShotData();
+      const result = await shotService.getShotStatistics({ machineId: freshTestData.machine.id });
 
       expect(result.total).toBe(3);
       expect(result.successful).toBe(2);
@@ -532,8 +606,8 @@ describe('ShotService', () => {
     });
 
     it('should handle empty results', async () => {
-      // Use synchronize to drop and recreate all tables to ensure clean state
-      await testDataSource.synchronize(true);
+      // Clean all test data to ensure empty state
+      await cleanTestData();
 
       const result = await shotService.getShotStatistics();
 
@@ -546,10 +620,13 @@ describe('ShotService', () => {
 
   describe('Transaction Management', () => {
     it('should rollback on creation failure', async () => {
+      const freshTestData = await createTestShotData();
       // Mock a failure by using invalid machine ID
       const shotData = {
+        userId: freshTestData.user.id,
         machineId: 'invalid-machine-id',
-        beanBatchId: beanBatch.id,
+        beanBatchId: freshTestData.beanBatch.id,
+        grinderId: freshTestData.grinder.id,
         shot_type: 'normale' as const,
       };
 
@@ -562,9 +639,12 @@ describe('ShotService', () => {
     });
 
     it('should rollback on update failure', async () => {
+      const freshTestData = await createTestShotData();
       const shotData = {
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
+        userId: freshTestData.user.id,
+        machineId: freshTestData.machine.id,
+        beanBatchId: freshTestData.beanBatch.id,
+        grinderId: freshTestData.grinder.id,
         shot_type: 'normale' as const,
       };
       const createdShot = await shotService.createShot(shotData);
@@ -578,7 +658,7 @@ describe('ShotService', () => {
 
       // Verify original data is intact
       const originalShot = await shotService.getShotById(createdShot.id);
-      expect(originalShot.machine.id).toBe(machine.id);
+      expect(originalShot.machine.id).toBe(freshTestData.machine.id);
     });
   });
 });

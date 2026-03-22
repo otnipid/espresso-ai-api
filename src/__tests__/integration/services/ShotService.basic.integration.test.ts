@@ -6,6 +6,8 @@ import {
   createTestMachine,
   createTestBean,
   createTestBeanBatch,
+  createTestUser,
+  createTestGrinder,
 } from '../../setup.integration.basic';
 
 describe('ShotService - Basic Tests', () => {
@@ -40,18 +42,21 @@ describe('ShotService - Basic Tests', () => {
   describe('Basic CRUD Operations', () => {
     it('should create and retrieve a basic shot', async () => {
       // Create test data
+      const user = await createTestUser();
       const machine = await createTestMachine();
+      const grinder = await createTestGrinder();
       const bean = await createTestBean();
       const beanBatch = await createTestBeanBatch(bean);
 
       // Create shot data
       const shotData = {
+        userId: user.id,
         machineId: machine.id,
         beanBatchId: beanBatch.id,
+        grinderId: grinder.id,
         shot_type: 'normale' as const,
         pulled_at: new Date(),
         success: true,
-        notes: 'Test shot',
       };
 
       // Create the shot
@@ -62,29 +67,32 @@ describe('ShotService - Basic Tests', () => {
       expect(createdShot.id).toBeDefined();
       expect(createdShot.shot_type).toBe('normale');
       expect(createdShot.success).toBe(true);
-      expect(createdShot.notes).toBe('Test shot');
 
       // Retrieve the shot
       const retrievedShot = await shotService.getShotById(createdShot.id);
 
-      // Verify the retrieved shot matches
+      // Verify the retrieved shot
+      expect(retrievedShot).toBeDefined();
       expect(retrievedShot.id).toBe(createdShot.id);
       expect(retrievedShot.shot_type).toBe('normale');
       expect(retrievedShot.success).toBe(true);
-      expect(retrievedShot.notes).toBe('Test shot');
     });
 
     it('should handle pagination correctly', async () => {
       // Create test data
+      const user = await createTestUser();
       const machine = await createTestMachine();
+      const grinder = await createTestGrinder();
       const bean = await createTestBean();
       const beanBatch = await createTestBeanBatch(bean);
 
       // Create multiple shots
       for (let i = 0; i < 5; i++) {
         await shotService.createShot({
+          userId: user.id,
           machineId: machine.id,
           beanBatchId: beanBatch.id,
+          grinderId: grinder.id,
           shot_type: 'normale' as const,
           success: i % 2 === 0, // Alternate success
         });
@@ -109,21 +117,27 @@ describe('ShotService - Basic Tests', () => {
 
     it('should filter shots by success status', async () => {
       // Create test data
+      const user = await createTestUser();
       const machine = await createTestMachine();
+      const grinder = await createTestGrinder();
       const bean = await createTestBean();
       const beanBatch = await createTestBeanBatch(bean);
 
       // Create shots with different success statuses
       await shotService.createShot({
+        userId: user.id,
         machineId: machine.id,
         beanBatchId: beanBatch.id,
+        grinderId: grinder.id,
         shot_type: 'normale' as const,
         success: true,
       });
 
       await shotService.createShot({
+        userId: user.id,
         machineId: machine.id,
         beanBatchId: beanBatch.id,
+        grinderId: grinder.id,
         shot_type: 'normale' as const,
         success: false,
       });
@@ -141,41 +155,46 @@ describe('ShotService - Basic Tests', () => {
 
     it('should update a shot successfully', async () => {
       // Create test data
+      const user = await createTestUser();
       const machine = await createTestMachine();
+      const grinder = await createTestGrinder();
       const bean = await createTestBean();
       const beanBatch = await createTestBeanBatch(bean);
 
-      // Create a shot
+      // Create the shot
       const createdShot = await shotService.createShot({
+        userId: user.id,
         machineId: machine.id,
         beanBatchId: beanBatch.id,
+        grinderId: grinder.id,
         shot_type: 'normale' as const,
         success: true,
-        notes: 'Original notes',
       });
 
       // Update the shot
       const updatedShot = await shotService.updateShot(createdShot.id, {
         success: false,
-        notes: 'Updated notes',
       });
 
       // Verify the update
       expect(updatedShot.id).toBe(createdShot.id);
       expect(updatedShot.success).toBe(false);
-      expect(updatedShot.notes).toBe('Updated notes');
     });
 
     it('should handle soft delete and restore', async () => {
       // Create test data
+      const user = await createTestUser();
       const machine = await createTestMachine();
+      const grinder = await createTestGrinder();
       const bean = await createTestBean();
       const beanBatch = await createTestBeanBatch(bean);
 
       // Create a shot
       const createdShot = await shotService.createShot({
+        userId: user.id,
         machineId: machine.id,
         beanBatchId: beanBatch.id,
+        grinderId: grinder.id,
         shot_type: 'normale' as const,
         success: true,
       });
@@ -196,30 +215,38 @@ describe('ShotService - Basic Tests', () => {
       expect(foundShot.id).toBe(createdShot.id);
     });
 
-    it('should calculate statistics correctly', async () => {
+    it('should calculate shot statistics correctly', async () => {
       // Create test data
+      const user = await createTestUser();
       const machine = await createTestMachine();
+      const grinder = await createTestGrinder();
       const bean = await createTestBean();
       const beanBatch = await createTestBeanBatch(bean);
 
       // Create shots with known success rates
       await shotService.createShot({
+        userId: user.id,
         machineId: machine.id,
         beanBatchId: beanBatch.id,
+        grinderId: grinder.id,
         shot_type: 'normale' as const,
         success: true,
       });
 
       await shotService.createShot({
+        userId: user.id,
         machineId: machine.id,
         beanBatchId: beanBatch.id,
+        grinderId: grinder.id,
         shot_type: 'normale' as const,
         success: true,
       });
 
       await shotService.createShot({
+        userId: user.id,
         machineId: machine.id,
         beanBatchId: beanBatch.id,
+        grinderId: grinder.id,
         shot_type: 'normale' as const,
         success: false,
       });
@@ -239,10 +266,14 @@ describe('ShotService - Basic Tests', () => {
     it('should throw error when creating shot with invalid machine', async () => {
       const bean = await createTestBean();
       const beanBatch = await createTestBeanBatch(bean);
+      const user = await createTestUser();
+      const grinder = await createTestGrinder();
 
       const shotData = {
+        userId: user.id,
         machineId: '550e8400-e29b-41d4-a716-446655440000', // Valid UUID format but doesn't exist
         beanBatchId: beanBatch.id,
+        grinderId: grinder.id,
         shot_type: 'normale' as const,
       };
 
@@ -253,10 +284,14 @@ describe('ShotService - Basic Tests', () => {
 
     it('should throw error when creating shot with invalid bean batch', async () => {
       const machine = await createTestMachine();
+      const user = await createTestUser();
+      const grinder = await createTestGrinder();
 
       const shotData = {
+        userId: user.id,
         machineId: machine.id,
         beanBatchId: '550e8400-e29b-41d4-a716-446655440001', // Valid UUID format but doesn't exist
+        grinderId: grinder.id,
         shot_type: 'normale' as const,
       };
 
