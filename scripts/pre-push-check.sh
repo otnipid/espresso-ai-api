@@ -65,7 +65,48 @@ fi
 
 print_status "success" "All unit tests with coverage passed"
 
-# 4. Check TypeScript compilation
+# 4. Run integration tests (mimics CI integration test job)
+print_status "info" "Running integration tests with Vitest..."
+
+# Check if Docker is running and PostgreSQL is available
+if ! docker info > /dev/null 2>&1; then
+    print_status "warning" "Docker is not running - skipping integration tests"
+    print_status "info" "To run integration tests locally, start Docker with:"
+    print_status "info" "  docker-compose --profile test up -d postgres"
+else
+    # Check if PostgreSQL test container is running
+    if ! docker ps --format "table {{.Names}}" | grep -q "postgres"; then
+        print_status "info" "Starting PostgreSQL test container..."
+        if ! docker-compose --profile test up -d postgres; then
+            print_status "warning" "Failed to start PostgreSQL - skipping integration tests"
+        else
+            print_status "info" "Waiting for PostgreSQL to be ready..."
+            sleep 5
+            
+            # Run integration tests with Vitest
+            if ! npm run test:integration; then
+                print_status "error" "Integration tests failed!"
+                print_status "info" "To debug integration tests locally:"
+                print_status "info" "  npm run test:integration:watch"
+                exit 1
+            fi
+            
+            print_status "success" "All integration tests passed"
+        fi
+    else
+        # PostgreSQL is already running, run integration tests
+        if ! npm run test:integration; then
+            print_status "error" "Integration tests failed!"
+            print_status "info" "To debug integration tests locally:"
+            print_status "info" "  npm run test:integration:watch"
+            exit 1
+        fi
+        
+        print_status "success" "All integration tests passed"
+    fi
+fi
+
+# 5. Check TypeScript compilation
 print_status "info" "Checking TypeScript compilation..."
 
 if ! npx tsc --noEmit; then
@@ -82,6 +123,13 @@ echo "💡 This pre-push hook mimics the CI workflow:"
 echo "   - Code Quality (Prettier formatting)"
 echo "   - Build verification"
 echo "   - Unit Tests with coverage instrumentation"
+echo "   - Integration Tests with Vitest (when Docker is available)"
 echo "   - TypeScript compilation"
 echo ""
 echo "If any of these checks fail, the CI will also fail."
+echo ""
+echo "🐳 Integration Tests Note:"
+echo "   - Requires Docker and PostgreSQL to run"
+echo "   - Automatically starts test database if needed"
+echo "   - Skipped gracefully if Docker is not available"
+echo "   - Use 'npm run test:integration:watch' for debugging"

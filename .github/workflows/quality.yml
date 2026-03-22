@@ -620,7 +620,7 @@ jobs:
           echo "QUALITY_STATUS=$overall_status" >> $GITHUB_ENV
 
       - name: Notify quality gate results
-        if: env.QUALITY_STATUS == 'FAIL' && secrets.NOTIFICATION_EMAIL != ''
+        if: env.QUALITY_STATUS == 'FAIL' && secrets.NOTIFICATION_EMAIL
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.gmail.com

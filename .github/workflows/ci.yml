@@ -168,6 +168,10 @@ jobs:
           echo "DB_PORT=5432" >> $GITHUB_ENV
           echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> $GITHUB_ENV
           echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $GITHUB_ENV
+          # Vitest specific environment variables
+          echo "VITEST_POOL_OPTIONS_THREADS_SINGLE_THREAD=true" >> $GITHUB_ENV
+          echo "VITEST_TEST_TIMEOUT=45000" >> $GITHUB_ENV
+          echo "VITEST_HOOK_TIMEOUT=60000" >> $GITHUB_ENV
 
       - name: Wait for PostgreSQL
         run: |
@@ -177,8 +181,20 @@ jobs:
         run: |
           PGPASSWORD=${{ secrets.DB_PASSWORD }} psql -h localhost -p 5432 -U ${{ secrets.DB_USERNAME }} -d postgres -c "CREATE DATABASE espresso_ml_test_basic;"
 
-      - name: Run integration tests
-        run: npm run test:integration
+      - name: Run integration tests with coverage
+        run: npm run test:integration:coverage
+        env:
+          CI: true
+          VITEST_CI: true
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        if: always()
+        with:
+          file: ./coverage/integration/coverage-final.json
+          flags: integration
+          name: integration-coverage
+          fail_ci_if_error: false
 
   # Integration Tests (separate job for database tests)
   integration-tests-db:
@@ -230,17 +246,16 @@ jobs:
           echo "DB_PORT=5432" >> $GITHUB_ENV
           echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> $GITHUB_ENV
           echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $GITHUB_ENV
-
-      - name: Wait for PostgreSQL
-        run: |
-          timeout 60 bash -c 'until pg_isready -h localhost -p 5432 -U ${{ secrets.DB_USERNAME }}; do sleep 1; done'
-
-      - name: Create additional test database
-        run: |
-          PGPASSWORD=${{ secrets.DB_PASSWORD }} psql -h localhost -p 5432 -U ${{ secrets.DB_USERNAME }} -d postgres -c "CREATE DATABASE espresso_ml_test_basic;"
+          # Vitest specific environment variables
+          echo "VITEST_POOL_OPTIONS_THREADS_SINGLE_THREAD=true" >> $GITHUB_ENV
+          echo "VITEST_TEST_TIMEOUT=45000" >> $GITHUB_ENV
+          echo "VITEST_HOOK_TIMEOUT=60000" >> $GITHUB_ENV
 
       - name: Run integration tests
         run: npm run test:integration
+        env:
+          CI: true
+          VITEST_CI: true
 
   # Documentation
   docs:
