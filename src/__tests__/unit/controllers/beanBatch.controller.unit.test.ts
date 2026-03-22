@@ -127,13 +127,11 @@ describe('BeanBatchController', () => {
 
   describe('save', () => {
     it('should create a new bean batch', async () => {
-      const newBatch = { beanId: '1', roastDate: '2023-01-01', weightKg: '5.5' };
+      const newBatch = { beanId: '1', roastDate: '2023-01-01' };
       const createdBatch = {
         bean: { id: '1' },
         roastDate: new Date('2023-01-01'),
-        bestByDate: null,
-        weightKg: 5.5,
-        notes: null,
+        bagOpenDate: null,
       };
       const savedBatch = { id: '1', ...createdBatch };
 
@@ -150,9 +148,7 @@ describe('BeanBatchController', () => {
       expect(mockRepository.create).toHaveBeenCalledWith({
         bean: { id: '1' },
         roastDate: new Date('2023-01-01'),
-        bestByDate: null,
-        weightKg: 5.5,
-        notes: null,
+        bagOpenDate: null,
       });
       expect(mockRepository.save).toHaveBeenCalledWith(createdBatch);
       expect((mockResponse.status as jest.Mock).mock.calls[0][0]).toBe(201);
@@ -191,14 +187,12 @@ describe('BeanBatchController', () => {
       });
     });
 
-    it('should handle bestByDate conversion', async () => {
-      const newBatch = { beanId: '1', roastDate: '2023-01-01', bestByDate: '2023-06-01' };
+    it('should handle bagOpenDate conversion', async () => {
+      const newBatch = { beanId: '1', roastDate: '2023-01-01', bagOpenDate: '2023-06-01' };
       const createdBatch = {
         bean: { id: '1' },
         roastDate: new Date('2023-01-01'),
-        bestByDate: new Date('2023-06-01'),
-        weightKg: null,
-        notes: null,
+        bagOpenDate: new Date('2023-06-01'),
       };
       const savedBatch = { id: '1', ...createdBatch };
 
@@ -215,9 +209,7 @@ describe('BeanBatchController', () => {
       expect(mockRepository.create).toHaveBeenCalledWith({
         bean: { id: '1' },
         roastDate: new Date('2023-01-01'),
-        bestByDate: new Date('2023-06-01'),
-        weightKg: null,
-        notes: null,
+        bagOpenDate: new Date('2023-06-01'),
       });
     });
 
@@ -249,17 +241,15 @@ describe('BeanBatchController', () => {
         id: '1',
         bean: { id: '1' },
         roastDate: new Date('2023-01-01'),
-        weightKg: 5.0,
       };
       const updatedBatch = {
         id: '1',
         bean: { id: '2' },
         roastDate: new Date('2023-01-02'),
-        weightKg: 6.0,
       };
 
       mockRequest.params = { id: '1' };
-      mockRequest.body = { beanId: '2', roastDate: '2023-01-02', weightKg: '6.0' };
+      mockRequest.body = { beanId: '2', roastDate: '2023-01-02' };
       mockRepository.findOne.mockResolvedValue(existingBatch);
       mockRepository.save.mockResolvedValue(updatedBatch);
 
@@ -293,24 +283,22 @@ describe('BeanBatchController', () => {
       });
     });
 
-    it('should handle bestByDate null branch', async () => {
+    it('should handle bagOpenDate null branch', async () => {
       const existingBatch = {
         id: '1',
         bean: { id: '1' },
         roastDate: new Date('2023-01-01'),
-        bestByDate: new Date('2023-06-01'),
-        weightKg: 5.0,
+        bagOpenDate: new Date('2023-06-01'),
       };
       const updatedBatch = {
         id: '1',
         bean: { id: '1' },
         roastDate: new Date('2023-01-01'),
-        bestByDate: null, // Set to null
-        weightKg: 5.0,
+        bagOpenDate: null, // Set to null
       };
 
       mockRequest.params = { id: '1' };
-      mockRequest.body = { bestByDate: null }; // Explicit null
+      mockRequest.body = { bagOpenDate: null }; // Explicit null
       mockRepository.findOne.mockResolvedValue(existingBatch);
       mockRepository.save.mockResolvedValue(updatedBatch);
 

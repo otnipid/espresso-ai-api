@@ -37,7 +37,7 @@ export class BeanBatchController {
 
   async save(request: Request, response: Response) {
     try {
-      const { beanId, roastDate, bestByDate, weightKg, notes } = request.body;
+      const { beanId, roastDate, bagOpenDate } = request.body;
 
       if (!beanId || !roastDate) {
         return response.status(400).json({
@@ -48,9 +48,7 @@ export class BeanBatchController {
       const batch = this.beanBatchRepository.create({
         bean: { id: beanId },
         roastDate: new Date(roastDate),
-        bestByDate: bestByDate ? new Date(bestByDate) : null,
-        weightKg: weightKg ? parseFloat(weightKg) : null,
-        notes: notes || null,
+        bagOpenDate: bagOpenDate ? new Date(bagOpenDate) : null
       });
 
       const result = await this.beanBatchRepository.save(batch);
@@ -63,7 +61,7 @@ export class BeanBatchController {
 
   async update(request: Request, response: Response) {
     try {
-      const { beanId, roastDate, bestByDate, weightKg, notes } = request.body;
+      const { beanId, roastDate, bagOpenDate } = request.body;
 
       const batch = await this.beanBatchRepository.findOne({
         where: { id: request.params.id },
@@ -75,13 +73,9 @@ export class BeanBatchController {
 
       if (beanId !== undefined) batch.bean = { id: beanId } as any;
       if (roastDate !== undefined) batch.roastDate = new Date(roastDate);
-      if (bestByDate !== undefined) {
-        batch.bestByDate = bestByDate ? new Date(bestByDate) : null;
+      if (bagOpenDate !== undefined) {
+        batch.bagOpenDate = bagOpenDate ? new Date(bagOpenDate) : null;
       }
-      if (weightKg !== undefined) {
-        batch.weightKg = weightKg ? parseFloat(weightKg) : null;
-      }
-      if (notes !== undefined) batch.notes = notes;
 
       const result = await this.beanBatchRepository.save(batch);
       response.json(result);
