@@ -1,240 +1,174 @@
+import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { DataSource } from 'typeorm';
+import { Bean } from '../entities/Bean';
+import { BeanBatch } from '../entities/BeanBatch';
+import { Machine } from '../entities/Machine';
 import { Shot } from '../entities/Shot';
 import { ShotPreparation } from '../entities/ShotPreparation';
 import { ShotExtraction } from '../entities/ShotExtraction';
 import { ShotEnvironment } from '../entities/shotEnvironment';
 import { ShotFeedback } from '../entities/shotFeedback';
-import { BeanBatch } from '../entities/BeanBatch';
-import { Machine } from '../entities/Machine';
-import { Bean } from '../entities/Bean';
+import { User } from '../entities/User';
+import { Grinder } from '../entities/Grinder';
 
-// Test database setup - uses the official Espresso ML PostgreSQL image with pre-loaded schemas
-let testDataSource: DataSource;
+// Interface for what setupTestDatabase will return
+export interface TestDatabase {
+  dataSource: DataSource; // Test should use this DataSource
+  container: StartedPostgreSqlContainer; // Reference to the container
+  cleanup: () => Promise<void>; // Function to cleanup DataSource
+}
 
-const createEspressoMLPostgresDataSource = () =>
-  new DataSource({
-    type: 'postgres',
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    entities: [
-      Shot,
-      ShotPreparation,
-      ShotExtraction,
-      ShotEnvironment,
-      ShotFeedback,
-      Machine,
-      Bean,
-      BeanBatch,
-    ],
-    synchronize: false, // Schemas are pre-loaded in the Docker image!
-    logging: false,
-    dropSchema: false, // Keep pre-loaded schema from Docker image
-    ssl: false,
-    // Use the same connection settings as documented in api-integration.md
-    extra: {
-      connectionTimeoutMillis: 30000,
-      statement_timeout: 60000,
-    },
-  });
+// Manages the PostgreSQL container lifecycle for tests
+export class PostgresContainerManager {
+  private static instance: PostgresContainerManager | null = null;
+  private container: StartedPostgreSqlContainer | null = null;
+  private snapshotName = 'clean-db-snapshot'; // Name for our baseline snapshot
 
-const createLocalPostgresDataSource = () =>
-  new DataSource({
-    type: 'postgres',
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    entities: [
-      Shot,
-      ShotPreparation,
-      ShotExtraction,
-      ShotEnvironment,
-      ShotFeedback,
-      Machine,
-      Bean,
-      BeanBatch,
-    ],
-    synchronize: true,
-    logging: false,
-    dropSchema: true,
-  });
+ // Singleton pattern to potentially share container across test suites (though we scope it per-file here)
+ private constructor() { }
 
-const createSQLiteDataSource = () =>
-  new DataSource({
-    type: 'sqlite',
-    database: ':memory:',
-    entities: [
-      Shot,
-      ShotPreparation,
-      ShotExtraction,
-      ShotEnvironment,
-      ShotFeedback,
-      Machine,
-      Bean,
-      BeanBatch,
-    ],
-    synchronize: true,
-    logging: false,
-  });
-
-// Clean test data but preserve schema (following the documented schema order)
-const cleanTestData = async () => {
-  const tables = [
-    'shot_feedback',
-    'shot_environment',
-    'shot_extraction',
-    'shot_preparation',
-    'shots',
-    'bean_batches',
-    'beans',
-    'machines',
-  ];
-
-  for (const table of tables) {
-    try {
-      await testDataSource.query(`TRUNCATE TABLE ${table} RESTART IDENTITY CASCADE`);
-      console.log(`🧹 Cleaned table: ${table}`);
-    } catch (error) {
-      console.warn(`⚠️  Could not clean table ${table}:`, error);
-    }
+ public static getInstance(): PostgresContainerManager {
+  if (!PostgresContainerManager.instance) {
+   PostgresContainerManager.instance = new PostgresContainerManager();
   }
-};
+  return PostgresContainerManager.instance;
+ }
 
-// Initialize test database
-export const initializeTestDataSource = async (): Promise<DataSource> => {
-  if (testDataSource && testDataSource.isInitialized) {
-    return testDataSource;
+ // Starts container, runs migrations *in* the container DB, takes snapshot
+ async initialize(): Promise<void> {
+  if (this.container) {
+   console.log('Container already initialized.');
+   return;
   }
 
-  // Detect environment and use appropriate database configuration
-  const isDockerEnvironment =
-    process.env.NODE_ENV === 'test' && process.env.DB_HOST !== 'localhost';
-  const isGitHubActions = process.env.GITHUB_ACTIONS === 'true';
-  const isKubernetes = process.env.KUBERNETES_SERVICE_HOST !== undefined;
-  const hasCustomDbConfig = process.env.DB_HOST && process.env.DB_USER && process.env.DB_PASSWORD;
-
+  console.log('Starting PostgreSQL container...');
+  
   try {
-    if (isGitHubActions || isDockerEnvironment || hasCustomDbConfig) {
-      console.log('🐳 Using Espresso ML PostgreSQL Docker image with pre-loaded schemas...');
-      testDataSource = createEspressoMLPostgresDataSource();
-    } else if (isKubernetes) {
-      console.log('☸️  Kubernetes environment detected, using Espresso ML PostgreSQL...');
-      testDataSource = createEspressoMLPostgresDataSource();
-    } else {
-      console.log('💻 Local development environment detected, using Espresso ML PostgreSQL...');
-      testDataSource = createEspressoMLPostgresDataSource();
-    }
-
-    await testDataSource.initialize();
-    console.log(`✅ Database connected successfully (${testDataSource.options.type})`);
-
-    // Verify schema exists by checking key tables
-    const schemaCheck = await testDataSource.query(`
-      SELECT table_name FROM information_schema.tables 
-      WHERE table_schema = 'public' 
-      AND table_name IN ('users', 'beans', 'shots')
-      ORDER BY table_name
-    `);
-
-    if (schemaCheck.length >= 3) {
-      console.log(
-        '✅ Pre-loaded schema verified:',
-        schemaCheck.map((r: any) => r.table_name).join(', ')
-      );
-    } else {
-      console.warn('⚠️  Expected schema tables not found, falling back to synchronization...');
-      await testDataSource.synchronize(true);
-    }
-
-    // Clean test data but preserve schema
-    await cleanTestData();
-
-    return testDataSource;
+    this.container = await new PostgreSqlContainer('postgres:15')
+      .withDatabase('espresso_ml')
+      .withUsername('postgres')
+      .withPassword('postgres')
+      .withExposedPorts(5432)
+      .withStartupTimeout(120000) // 2 minutes startup timeout
+      .start();
   } catch (error) {
-    console.error('❌ Database connection failed:', error);
-
-    // Fallback to SQLite if PostgreSQL is not available
-    if (testDataSource?.options.type === 'postgres') {
-      console.log('🔄 Falling back to SQLite for testing...');
-      testDataSource = createSQLiteDataSource();
-      await testDataSource.initialize();
-      console.log('✅ SQLite fallback initialized');
-      return testDataSource;
-    }
-
+    console.error('Failed to start PostgreSQL container:', error);
     throw error;
   }
-};
 
-// Export data source (will be initialized when needed)
-export const getTestDataSource = () => {
-  if (!testDataSource) {
-    throw new Error('Test data source not initialized. Call initializeTestDataSource() first.');
+  console.log(`Container started on port ${this.container.getMappedPort(5432)}`);
+
+  // Create a DataSource to run migrations/synchronization
+  const migrationDataSource = new DataSource({
+    type: 'postgres',
+    host: this.container.getHost(),
+    port: this.container.getMappedPort(5432),
+    username: 'postgres',
+    password: 'postgres',
+    database: 'espresso_ml',
+    entities: [
+      Bean,
+      BeanBatch,
+      Machine,
+      Shot,
+      ShotPreparation,
+      ShotExtraction,
+      ShotEnvironment,
+      ShotFeedback,
+      User,
+      Grinder,
+    ],
+    synchronize: true, // Use synchronize for test setup since schemas are pre-loaded in Docker image
+    logging: false,
+  });
+
+  try {
+   console.log("Initializing database schema...");
+   await migrationDataSource.initialize();
+   console.log('Database schema initialized.');
+  } catch (error) {
+   console.error('Database initialization failed:', error);
+   throw error; // Fail fast if initialization doesn't work
+  } finally {
+   if (migrationDataSource.isInitialized) {
+     await migrationDataSource.destroy();
+   }
   }
-  return testDataSource;
-};
 
-// Global test setup
-let isInitialized = false;
+  // Take a snapshot of the database state *after* migrations
+  console.log(`Taking snapshot '${this.snapshotName}'...`);
+  await this.container.snapshot(this.snapshotName);
+  console.log('Snapshot taken.');
+ }
 
-beforeAll(async () => {
-  if (!isInitialized) {
-    await initializeTestDataSource();
-    isInitialized = true;
+ // Restores the 'clean' snapshot and provides a DataSource
+ async setupTestDatabase(): Promise<TestDatabase> {
+  if (!this.container) {
+   throw new Error('Container not initialized. Call initialize() first.');
   }
-});
 
-afterAll(async () => {
-  if (isInitialized && testDataSource && testDataSource.isInitialized) {
-    await testDataSource.destroy();
-    isInitialized = false;
-  }
-});
+  try {
+   // Restore the database to the state captured in the snapshot
+   console.log(`Restoring snapshot '${this.snapshotName}'...`);
+   await this.container.restoreSnapshot(this.snapshotName);
+   console.log('Snapshot restored.');
 
-// Reset database before each test
-beforeEach(async () => {
-  if (isInitialized && testDataSource && testDataSource.isInitialized) {
+   // Create a *new DataSource* connecting to the restored database for this test
+   const testDataSource = new DataSource({
+     type: 'postgres',
+     host: this.container.getHost(),
+     port: this.container.getMappedPort(5432),
+     username: 'postgres',
+     password: 'postgres',
+     database: 'espresso_ml',
+     entities: [
+       Bean,
+       BeanBatch,
+       Machine,
+       Shot,
+       ShotPreparation,
+       ShotExtraction,
+       ShotEnvironment,
+       ShotFeedback,
+       User,
+       Grinder,
+     ],
+     synchronize: false, // Schema is already there from snapshot
+     logging: false,
+   });
+
+   await testDataSource.initialize();
+
+   // Cleanup function specific to this test's DataSource
+   const cleanup = async () => {
     try {
-      // Clean test data between tests
-      await cleanTestData();
-    } catch (cleanupError) {
-      console.warn('⚠️  Test data cleanup failed:', cleanupError);
-      // Continue without cleanup - tests should still work
+     if (testDataSource.isInitialized) {
+       await testDataSource.destroy();
+     }
+    } catch (error) {
+     console.error('Error during test DB cleanup:', error);
     }
+   };
+
+   return {
+    dataSource: testDataSource, // Provide the DataSource to the test
+    container: this.container,
+    cleanup,
+   };
+  } catch (error) {
+   console.error('Error setting up test database:', error);
+   throw error;
   }
-});
+ }
 
-// Helper function to create test data
-export const createTestMachine = async () => {
-  const machineRepository = testDataSource.getRepository(Machine);
-  const machine = machineRepository.create({
-    model: 'Test Machine Model',
-    firmware_version: '1.0.0',
-  });
-  return await machineRepository.save(machine);
-};
-
-export const createTestBean = async () => {
-  const beanRepository = testDataSource.getRepository(Bean);
-  const bean = beanRepository.create({
-    name: 'Test Bean',
-    roaster: 'Test Roaster',
-    country: 'Colombia',
-    region: 'Huila',
-  });
-  return await beanRepository.save(bean);
-};
-
-export const createTestBeanBatch = async (bean: Bean) => {
-  const beanBatchRepository = testDataSource.getRepository(BeanBatch);
-  const beanBatch = beanBatchRepository.create({
-    bean: bean,
-    roastDate: new Date('2024-01-01'),
-    bagOpenDate: new Date('2024-07-01'),
-  });
-  return await beanBatchRepository.save(beanBatch);
-};
+ // Stops and removes the container
+ async teardown(): Promise<void> {
+  if (this.container) {
+   console.log('Stopping PostgreSQL container...');
+   await this.container.stop();
+   this.container = null;
+   console.log('Container stopped.');
+  }
+  PostgresContainerManager.instance = null; // Reset singleton state
+ }
+}
