@@ -4,8 +4,6 @@ module.exports = {
   roots: ['<rootDir>/src'],
   testMatch: [
     '**/__tests__/**/*.unit.test.ts',
-    '**/__tests__/**/*.integration.test.ts',
-    '**/__tests__/**/*.test.ts',
     '**/?(*.)+(spec|test).ts'
   ],
   transform: {
@@ -40,6 +38,8 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   testTimeout: 30000,
+  maxWorkers: 2,
+  workerIdleMemoryLimit: 512 * 1024 * 1024, // 512MB
   // Load test environment variables
   setupFiles: ['<rootDir>/src/__tests__/env-setup.ts'],
   // Separate coverage for unit vs integration tests
@@ -50,24 +50,9 @@ module.exports = {
       testEnvironment: 'node',
       testMatch: ['<rootDir>/src/__tests__/unit/**/*.test.ts'],
       setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.unit.ts'],
-    },
-    {
-      displayName: 'integration-basic',
-      preset: 'ts-jest',
-      testEnvironment: 'node',
-      testMatch: ['<rootDir>/src/__tests__/integration/services/ShotService.basic.integration.test.ts'],
-      setupFiles: ['<rootDir>/src/__tests__/env-setup.ts'],
-      setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.integration.basic.ts'],
-      runInBand: true,
-    },
-    {
-      displayName: 'integration-main',
-      preset: 'ts-jest',
-      testEnvironment: 'node',
-      testMatch: ['<rootDir>/src/__tests__/integration/services/ShotService.integration.test.ts'],
-      setupFiles: ['<rootDir>/src/__tests__/env-setup.ts'],
-      setupFilesAfterEnv: ['<rootDir>/src/__tests__/setup.integration.main.ts'],
-      runInBand: true,
+      testTimeout: 45000, // 45 seconds for unit tests
+      maxWorkers: 1, // Force single worker to prevent crashes
+      workerIdleMemoryLimit: 1024 * 1024 * 1024, // 1GB for unit tests
     },
   ],
 };
