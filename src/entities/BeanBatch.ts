@@ -4,6 +4,8 @@ import {
   Column,
   ManyToOne,
   CreateDateColumn,
+  UpdateDateColumn,
+  JoinColumn,
   OneToMany,
 } from 'typeorm';
 import { Bean } from './Bean';
@@ -15,22 +17,26 @@ export class BeanBatch {
   id!: string;
 
   @ManyToOne(() => Bean, bean => bean.beanBatches)
+  @JoinColumn({ name: 'bean_id' })
   bean!: Bean;
 
-  @Column({ type: 'date' })
+  @Column({ name: 'roast_date', type: 'date' })
   roastDate!: Date;
 
-  @Column({ type: 'date', nullable: true })
-  bestByDate?: Date | null;
+  @Column({ name: 'bag_open_date', type: 'date', nullable: true })
+  bagOpenDate?: Date | null;
 
-  @Column({ type: 'numeric', precision: 5, scale: 2, nullable: true })
-  weightKg?: number | null;
+  @Column({ name: 'roast_level', type: 'text', nullable: true })
+  roastLevel?: string | null;
 
-  @Column({ type: 'text', nullable: true })
-  notes?: string | null;
+  @Column({ name: 'roast_degree', type: 'integer', nullable: true })
+  roastDegree?: number | null;
 
-  @CreateDateColumn({ type: 'timestamp' })
+  @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at', type: 'timestamp' })
+  updatedAt!: Date;
 
   @OneToMany(() => Shot, shot => shot.beanBatch)
   shots!: Shot[];
