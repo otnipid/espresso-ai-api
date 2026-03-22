@@ -194,7 +194,16 @@ export class ShotService {
       // Get the complete shot with all relations before committing
       const completeShot = await queryRunner.manager.findOne(Shot, {
         where: { id: savedShot.id },
-        relations: ['user', 'machine', 'beanBatch', 'grinder', 'preparation', 'extraction', 'environment', 'feedback'],
+        relations: [
+          'user',
+          'machine',
+          'beanBatch',
+          'grinder',
+          'preparation',
+          'extraction',
+          'environment',
+          'feedback',
+        ],
       });
 
       await queryRunner.commitTransaction();
@@ -220,7 +229,16 @@ export class ShotService {
   async getShotById(id: string): Promise<Shot> {
     const shot = await this.shotRepository.findOne({
       where: { id },
-      relations: ['user', 'machine', 'beanBatch', 'grinder', 'preparation', 'extraction', 'environment', 'feedback'],
+      relations: [
+        'user',
+        'machine',
+        'beanBatch',
+        'grinder',
+        'preparation',
+        'extraction',
+        'environment',
+        'feedback',
+      ],
     });
 
     if (!shot) {
@@ -272,7 +290,16 @@ export class ShotService {
     // Build find options
     const findOptions: FindManyOptions<Shot> = {
       where,
-      relations: ['user', 'machine', 'beanBatch', 'grinder', 'preparation', 'extraction', 'environment', 'feedback'],
+      relations: [
+        'user',
+        'machine',
+        'beanBatch',
+        'grinder',
+        'preparation',
+        'extraction',
+        'environment',
+        'feedback',
+      ],
       order: { [sortBy]: sortOrder },
       skip,
       take: limit,

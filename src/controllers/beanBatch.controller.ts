@@ -48,7 +48,7 @@ export class BeanBatchController {
       const batch = this.beanBatchRepository.create({
         bean: { id: beanId },
         roastDate: new Date(roastDate),
-        bagOpenDate: bagOpenDate ? new Date(bagOpenDate) : null
+        bagOpenDate: bagOpenDate ? new Date(bagOpenDate) : null,
       });
 
       const result = await this.beanBatchRepository.save(batch);

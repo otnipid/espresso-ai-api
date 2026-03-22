@@ -113,7 +113,13 @@ describe('ShotService - Comprehensive Unit Tests', () => {
       const mockBatch = { id: 'batch-1', name: 'Test Batch' };
       const mockUser = { id: '550e8400-e29b-41d4-a716-446655440000', name: 'Test User' };
       const mockGrinder = { id: 'grinder-1', model: 'Test Grinder' };
-      const mockShot = { id: 'shot-1', machine: mockMachine, beanBatch: mockBatch, user: mockUser, grinder: mockGrinder };
+      const mockShot = {
+        id: 'shot-1',
+        machine: mockMachine,
+        beanBatch: mockBatch,
+        user: mockUser,
+        grinder: mockGrinder,
+      };
 
       mockMachineRepo.findOne.mockResolvedValue(mockMachine);
       mockBeanBatchRepo.findOne.mockResolvedValue(mockBatch);
@@ -173,7 +179,10 @@ describe('ShotService - Comprehensive Unit Tests', () => {
 
       mockMachineRepo.findOne.mockResolvedValue({ id: 'machine-1' });
       mockBeanBatchRepo.findOne.mockResolvedValue({ id: 'batch-1' });
-      mockUserRepo.findOne.mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000', name: 'Test User' });
+      mockUserRepo.findOne.mockResolvedValue({
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        name: 'Test User',
+      });
       mockGrinderRepo.findOne.mockResolvedValue({ id: 'grinder-1', model: 'Test Grinder' });
       mockQueryRunner.manager.save.mockRejectedValue(new Error('Database error'));
 
@@ -196,7 +205,16 @@ describe('ShotService - Comprehensive Unit Tests', () => {
 
       expect(mockShotRepo.findOne).toHaveBeenCalledWith({
         where: { id: 'shot-1' },
-        relations: ['user', 'machine', 'beanBatch', 'grinder', 'preparation', 'extraction', 'environment', 'feedback'],
+        relations: [
+          'user',
+          'machine',
+          'beanBatch',
+          'grinder',
+          'preparation',
+          'extraction',
+          'environment',
+          'feedback',
+        ],
       });
       expect(result).toEqual(mockShot);
     });
@@ -231,7 +249,16 @@ describe('ShotService - Comprehensive Unit Tests', () => {
           shot_type: 'normale',
           success: true,
         },
-        relations: ['user', 'machine', 'beanBatch', 'grinder', 'preparation', 'extraction', 'environment', 'feedback'],
+        relations: [
+          'user',
+          'machine',
+          'beanBatch',
+          'grinder',
+          'preparation',
+          'extraction',
+          'environment',
+          'feedback',
+        ],
         order: { pulled_at: 'DESC' },
         skip: 0,
         take: 10,
@@ -251,7 +278,16 @@ describe('ShotService - Comprehensive Unit Tests', () => {
 
       expect(mockShotRepo.findAndCount).toHaveBeenCalledWith({
         where: {},
-        relations: ['user', 'machine', 'beanBatch', 'grinder', 'preparation', 'extraction', 'environment', 'feedback'],
+        relations: [
+          'user',
+          'machine',
+          'beanBatch',
+          'grinder',
+          'preparation',
+          'extraction',
+          'environment',
+          'feedback',
+        ],
         order: { pulled_at: 'DESC' },
         skip: 0,
         take: 20,

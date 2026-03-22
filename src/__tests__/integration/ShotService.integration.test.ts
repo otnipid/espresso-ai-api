@@ -32,13 +32,13 @@ describe('ShotService Integration Tests', () => {
   // Restore snapshot and get a fresh DB connection BEFORE EACH test
   beforeEach(async () => {
     testDb = await containerManager.setupTestDatabase();
-    
+
     // Point mocked getDataSource function to return our test database DataSource
     vi.mocked(getDataSource).mockReturnValue(testDb.dataSource);
-    
+
     // Initialize service with mocked DataSource
     shotService = new ShotService(testDb.dataSource);
-    
+
     // Get repositories for test data setup
     beanRepository = testDb.dataSource.getRepository(Bean);
     beanBatchRepository = testDb.dataSource.getRepository(BeanBatch);
@@ -128,7 +128,9 @@ describe('ShotService Integration Tests', () => {
         shot_type: 'espresso' as Shot['shot_type'],
       };
 
-      await expect(shotService.createShot(shotData)).rejects.toThrow('User with ID 00000000-0000-0000-0000-000000000000 not found');
+      await expect(shotService.createShot(shotData)).rejects.toThrow(
+        'User with ID 00000000-0000-0000-0000-000000000000 not found'
+      );
     });
 
     it('should throw error for invalid machine ID', async () => {
@@ -162,7 +164,9 @@ describe('ShotService Integration Tests', () => {
         shot_type: 'espresso' as Shot['shot_type'],
       };
 
-      await expect(shotService.createShot(shotData)).rejects.toThrow('Machine with ID 00000000-0000-0000-0000-000000000000 not found');
+      await expect(shotService.createShot(shotData)).rejects.toThrow(
+        'Machine with ID 00000000-0000-0000-0000-000000000000 not found'
+      );
     });
   });
 
@@ -220,7 +224,9 @@ describe('ShotService Integration Tests', () => {
     });
 
     it('should return null for non-existent shot ID', async () => {
-      await expect(shotService.getShotById('00000000-0000-0000-0000-000000000000')).rejects.toThrow('Shot with ID 00000000-0000-0000-0000-000000000000 not found');
+      await expect(shotService.getShotById('00000000-0000-0000-0000-000000000000')).rejects.toThrow(
+        'Shot with ID 00000000-0000-0000-0000-000000000000 not found'
+      );
     });
   });
 
@@ -265,7 +271,7 @@ describe('ShotService Integration Tests', () => {
         pulled_at: new Date(),
         success: true,
       };
-      
+
       const shotData2 = {
         userId: savedUser.id,
         machineId: savedMachine.id,

@@ -81,7 +81,7 @@ describe('getShots', () => {
   beforeEach(async () => {
     // Create fresh data for this describe block
     freshTestData = await createTestShotData();
-    
+
     // Create shots for testing
     await shotService.createShot({
       userId: freshTestData.user.id,
@@ -169,7 +169,8 @@ export default defineConfig({
 
 ### **Rule: Fix One Test at a Time**
 
-**Process**: 
+**Process**:
+
 1. Run individual failing tests to isolate issues
 2. Identify root cause before implementing fixes
 3. Verify fix with individual test before running full suite
@@ -178,6 +179,7 @@ export default defineConfig({
 ### **Rule: Identify Root Cause First**
 
 **Common Root Causes**:
+
 - Transaction isolation issues
 - Missing test data setup
 - Incorrect variable scope
@@ -187,6 +189,7 @@ export default defineConfig({
 - Incomplete DTO definitions
 
 **Debugging Strategy**:
+
 - Run `npm run test:integration -- --reporter=verbose --testNamePattern="specific test"`
 - Check if test passes individually
 - Examine test data creation and cleanup
@@ -237,18 +240,18 @@ const mockRepo = {
 
 ## 🐛 Common Pitfalls & Solutions
 
-| Issue                          | Cause                     | Solution                                  |
-| ------------------------------ | ------------------------- | ----------------------------------------- |
-| **PostgreSQL Type Conflicts**  | Multiple schema creation  | Initialize once, cleanup data             |
-| **Test Data Leaking**          | Insufficient cleanup      | Use `TRUNCATE TABLE` with `CASCADE`       |
+| Issue                          | Cause                     | Solution                                   |
+| ------------------------------ | ------------------------- | ------------------------------------------ |
+| **PostgreSQL Type Conflicts**  | Multiple schema creation  | Initialize once, cleanup data              |
+| **Test Data Leaking**          | Insufficient cleanup      | Use `TRUNCATE TABLE` with `CASCADE`        |
 | **Connection Pool Exhaustion** | Parallel tests            | Use `singleThread: true` in Vitest         |
-| **Schema Creation Conflicts**  | Concurrent initialization | Shared initialization with state checking |
-| **Multiple File Conflicts**    | Shared setup files        | Separate Vitest workspace projects        |
-| **Transaction Isolation**     | Direct repository access   | Test through service layer only           |
-| **Entity Not Found Errors**    | Wrong transaction context  | Create data in same context as service     |
+| **Schema Creation Conflicts**  | Concurrent initialization | Shared initialization with state checking  |
+| **Multiple File Conflicts**    | Shared setup files        | Separate Vitest workspace projects         |
+| **Transaction Isolation**      | Direct repository access  | Test through service layer only            |
+| **Entity Not Found Errors**    | Wrong transaction context | Create data in same context as service     |
 | **Variable Scope Issues**      | Global test variables     | Each describe block manages its own data   |
-| **Missing DTO Properties**    | Incomplete test data      | Include all required fields (userId, etc.) |
-| **Vitest Worker Crashes**     | Memory limits exceeded    | Configure pool options and timeouts        |
+| **Missing DTO Properties**     | Incomplete test data      | Include all required fields (userId, etc.) |
+| **Vitest Worker Crashes**      | Memory limits exceeded    | Configure pool options and timeouts        |
 
 ## 📋 Integration Test Checklist
 
@@ -332,7 +335,7 @@ describe('Transaction Management', () => {
   it('should rollback on creation failure', async () => {
     // Arrange: Create partial valid data
     const testData = await createTestShotData();
-    
+
     const invalidShotData = {
       userId: testData.user.id,
       machineId: testData.machine.id,
@@ -463,13 +466,7 @@ export default defineConfig({
       enabled: true,
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'dist/',
-        'src/__tests__/',
-        'src/scripts/',
-        '**/*.d.ts',
-      ],
+      exclude: ['node_modules/', 'dist/', 'src/__tests__/', 'src/scripts/', '**/*.d.ts'],
     },
   },
   resolve: {
@@ -545,7 +542,7 @@ services:
     volumes:
       - postgres_data_test:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -569,7 +566,7 @@ export const initializeTestDataSource = async (): Promise<DataSource> => {
     testDataSource = createCustomPostgresDataSource();
     await testDataSource.initialize();
     console.log('✅ Database connection established');
-    
+
     // Run migrations if needed
     await testDataSource.runMigrations();
     console.log('✅ Database migrations completed');
@@ -592,30 +589,33 @@ export const cleanupTestDataSource = async () => {
 
 ### **Key Differences**
 
-| Feature | Jest | Vitest |
-|---------|-------|--------|
-| **Configuration** | `jest.config.js` | `vitest.config.ts` |
-| **Sequential Execution** | `runInBand: true` | `poolOptions: { threads: { singleThread: true } }` |
-| **Timeouts** | `testTimeout: 30000` | `testTimeout: 45000, hookTimeout: 60000` |
-| **Coverage** | Jest built-in | V8 provider (faster) |
-| **Workspace** | `projects` array | `workspace` function |
-| **Watch Mode** | `--watch` | `--watch` (same) |
-| **Reporter** | Default Jest | More configurable options |
+| Feature                  | Jest                 | Vitest                                             |
+| ------------------------ | -------------------- | -------------------------------------------------- |
+| **Configuration**        | `jest.config.js`     | `vitest.config.ts`                                 |
+| **Sequential Execution** | `runInBand: true`    | `poolOptions: { threads: { singleThread: true } }` |
+| **Timeouts**             | `testTimeout: 30000` | `testTimeout: 45000, hookTimeout: 60000`           |
+| **Coverage**             | Jest built-in        | V8 provider (faster)                               |
+| **Workspace**            | `projects` array     | `workspace` function                               |
+| **Watch Mode**           | `--watch`            | `--watch` (same)                                   |
+| **Reporter**             | Default Jest         | More configurable options                          |
 
 ### **Migration Steps**
 
 1. **Install Vitest**:
+
    ```bash
    npm install -D vitest @vitest/coverage-v8
    ```
 
 2. **Create Vitest Config**:
+
    ```bash
    # Create vitest.config.ts based on jest.config.js
    cp jest.config.js vitest.config.ts.bak
    ```
 
 3. **Update Package.json**:
+
    ```json
    {
      "scripts": {
@@ -694,6 +694,7 @@ const mockQueryRunner = {
 #### **Debugging Strategy**
 
 1. **Run Individual Tests First**:
+
    ```bash
    npm run test:integration -- --reporter=verbose --testNamePattern="specific test"
    ```

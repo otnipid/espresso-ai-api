@@ -540,7 +540,16 @@ describe('ShotService - Unit Tests', () => {
       expect(result.id).toBe(shotId);
       expect(mockShotRepo.findOne).toHaveBeenCalledWith({
         where: { id: shotId },
-        relations: ['user', 'machine', 'beanBatch', 'grinder', 'preparation', 'extraction', 'environment', 'feedback'],
+        relations: [
+          'user',
+          'machine',
+          'beanBatch',
+          'grinder',
+          'preparation',
+          'extraction',
+          'environment',
+          'feedback',
+        ],
       });
     });
 
