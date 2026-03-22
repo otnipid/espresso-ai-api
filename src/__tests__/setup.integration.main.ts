@@ -7,6 +7,9 @@ import { ShotFeedback } from '../entities/shotFeedback';
 import { BeanBatch } from '../entities/BeanBatch';
 import { Machine } from '../entities/Machine';
 import { Bean } from '../entities/Bean';
+import { User } from '../entities/User';
+import { Grinder } from '../entities/Grinder';
+import { ShotService } from '../services/ShotService';
 
 // Test database setup for main integration tests
 let testDataSource: DataSource;
@@ -16,10 +19,10 @@ const createCustomPostgresDataSource = () =>
   new DataSource({
     type: 'postgres',
     host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5433'),
-    username: process.env.DB_USERNAME || 'postgres_user',
-    password: process.env.DB_PASSWORD || 'postgres_password',
-    database: process.env.DB_NAME || 'espresso_ml_test_main', // Different database name
+    port: parseInt(process.env.DB_PORT || '5432'),
+    username: process.env.DB_USER || process.env.DB_USERNAME || 'postgres',
+    password: process.env.DB_PASSWORD || 'postgres',
+    database: process.env.DB_NAME || process.env.DB_DATABASE || 'espresso_ml',
     entities: [
       Shot,
       ShotPreparation,
@@ -29,24 +32,30 @@ const createCustomPostgresDataSource = () =>
       Machine,
       Bean,
       BeanBatch,
+      User,
+      Grinder,
     ],
-    synchronize: true, // Enable synchronization for official PostgreSQL image
+    synchronize: false, // Don't synchronize - we have pre-loaded schema
     logging: false,
-    dropSchema: true, // Clean schema for tests
+    dropSchema: false, // Don't drop schema - use data cleanup instead
     ssl: false,
   });
 
 // Clean test data but preserve schema
-const cleanTestData = async () => {
+export const cleanTestData = async () => {
   const tables = [
     'shots',
     'shot_preparation',
     'shot_extraction',
     'shot_environment',
     'shot_feedback',
+    'shot_history',
+    'shot_drafts',
     'bean_batches',
+    'beans',
     'machines',
-    'bean',
+    'grinders',
+    'users',
   ];
 
   for (const table of tables) {
@@ -108,18 +117,6 @@ afterAll(async () => {
   }
 });
 
-// Reset database after each test
-afterEach(async () => {
-  if (isInitialized && testDataSource && testDataSource.isInitialized) {
-    try {
-      // Clean test data instead of full sync
-      await cleanTestData();
-    } catch (cleanupError) {
-      console.warn('⚠️  Database cleanup failed:', cleanupError);
-    }
-  }
-});
-
 // Helper function to create test data
 export const createTestMachine = async () => {
   const machineRepository = testDataSource.getRepository(Machine);
@@ -148,19 +145,69 @@ export const createTestBean = async () => {
 
 export const createTestBeanBatch = async (bean?: Bean) => {
   const beanBatchRepository = testDataSource.getRepository(BeanBatch);
+  const targetBean = bean || await createTestBean();
+  
   const beanBatch = beanBatchRepository.create({
     roastDate: new Date('2024-01-01'),
-    bestByDate: new Date('2024-07-01'),
-    weightKg: 5.0,
-    notes: 'Test batch',
+    bagOpenDate: new Date('2024-07-01'),
+    roastLevel: 'medium',
   });
 
-  // Set the bean relationship separately if provided
-  if (bean) {
-    beanBatch.bean = bean;
-  } else {
-    beanBatch.bean = await createTestBean();
-  }
+  // Set the bean relationship properly
+  beanBatch.bean = targetBean;
+  
+  const savedBatch = await beanBatchRepository.save(beanBatch);
+  
+  // Ensure the relationship is loaded
+  return await beanBatchRepository.findOne({
+    where: { id: savedBatch.id },
+    relations: ['bean']
+  }) || savedBatch;
+};
 
-  return await beanBatchRepository.save(beanBatch);
+export const createTestUser = async () => {
+  console.log('🔍 DEBUG: createTestUser() - Creating test user...');
+  const userRepository = getTestDataSource().getRepository(User);
+  const user = userRepository.create({
+    name: 'Test User',
+    email: `test-${Date.now()}-${Math.random().toString(36).substring(7)}@example.com`,
+  });
+  const savedUser = await userRepository.save(user);
+  console.log('🔍 DEBUG: User saved successfully:', savedUser.id);
+  return savedUser;
+};
+
+export const createTestGrinder = async () => {
+  console.log('🔍 DEBUG: createTestGrinder() - Creating test grinder...');
+  const grinderRepository = getTestDataSource().getRepository(Grinder);
+  const grinder = grinderRepository.create({
+    model: 'Test Grinder',
+    manufacturer: 'Test Manufacturer',
+    burrType: 'flat',
+    serialNumber: `TEST-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+  });
+  const savedGrinder = await grinderRepository.save(grinder);
+  console.log('🔍 DEBUG: Grinder saved successfully:', savedGrinder.id);
+  return savedGrinder;
+};
+
+// Helper function to create complete test shot data
+export const createTestShotData = async () => {
+  const user = await createTestUser();
+  const machine = await createTestMachine();
+  const bean = await createTestBean();
+  const beanBatch = await createTestBeanBatch(bean);
+  const grinder = await createTestGrinder();
+
+  return {
+    userId: user.id,
+    machineId: machine.id,
+    beanBatchId: beanBatch.id,
+    grinderId: grinder.id,
+    user,
+    machine,
+    bean,
+    beanBatch,
+    grinder,
+  };
 };
