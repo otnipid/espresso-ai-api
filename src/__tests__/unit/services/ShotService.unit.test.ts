@@ -4,6 +4,7 @@ import { Shot } from '../../../entities/Shot';
 import { Machine } from '../../../entities/Machine';
 import { BeanBatch } from '../../../entities/BeanBatch';
 import { Repository } from 'typeorm';
+import { CreateShotData } from '../../../services/ShotService';
 
 // Unmock ShotService for this test file
 jest.unmock('../../../services/ShotService');
@@ -14,6 +15,8 @@ describe('ShotService - Unit Tests', () => {
   let mockMachineRepo: any;
   let mockBeanBatchRepo: any;
   let mockShotRepo: any;
+  let mockUserRepo: any;
+  let mockGrinderRepo: any;
 
   beforeEach(() => {
     // Create mock repositories with Jest mocks
@@ -59,6 +62,48 @@ describe('ShotService - Unit Tests', () => {
       restore: jest.fn(),
     };
 
+    mockUserRepo = {
+      findOne: jest.fn().mockImplementation(options => {
+        if (options.where.id === '550e8400-e29b-41d4-a716-446655440000') {
+          return Promise.resolve({
+            id: '550e8400-e29b-41d4-a716-446655440000',
+            name: 'Test User',
+            email: 'test@example.com',
+            created_at: new Date(),
+          });
+        }
+        return Promise.resolve(null);
+      }),
+      find: jest.fn(),
+      save: jest.fn(),
+      remove: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      restore: jest.fn(),
+    };
+
+    mockGrinderRepo = {
+      findOne: jest.fn().mockImplementation(options => {
+        if (options.where.id === '550e8400-e29b-41d4-a716-446655440002') {
+          return Promise.resolve({
+            id: '550e8400-e29b-41d4-a716-446655440002',
+            model: 'Test Grinder',
+            manufacturer: 'Test Manufacturer',
+            created_at: new Date(),
+          });
+        }
+        return Promise.resolve(null);
+      }),
+      find: jest.fn(),
+      save: jest.fn(),
+      remove: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      restore: jest.fn(),
+    };
+
     // Mock query runner for transaction operations
     const mockQueryRunner = {
       connect: jest.fn().mockResolvedValue(undefined),
@@ -68,6 +113,11 @@ describe('ShotService - Unit Tests', () => {
       release: jest.fn().mockResolvedValue(undefined),
       manager: {
         save: jest.fn().mockResolvedValue({
+          id: '550e8400-e29b-41d4-a716-446655402',
+          shot_type: 'normale',
+          created_at: new Date(),
+        }),
+        findOne: jest.fn().mockResolvedValue({
           id: '550e8400-e29b-41d4-a716-446655402',
           shot_type: 'normale',
           created_at: new Date(),
@@ -120,6 +170,10 @@ describe('ShotService - Unit Tests', () => {
           return mockMachineRepo;
         } else if (entity.name === 'BeanBatch') {
           return mockBeanBatchRepo;
+        } else if (entity.name === 'User') {
+          return mockUserRepo;
+        } else if (entity.name === 'Grinder') {
+          return mockGrinderRepo;
         } else {
           return {
             findOne: jest.fn(),
@@ -168,6 +222,8 @@ describe('ShotService - Unit Tests', () => {
       expect(shotService.createShot).toBeDefined();
       // Check if method is async by checking if it returns a Promise
       const result = shotService.createShot({
+        userId: '550e8400-e29b-41d4-a716-446655440000',
+        grinderId: '550e8400-e29b-41d4-a716-446655440002',
         machineId: '550e8400-e29b-41d4-a716-446655440000',
         beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
         shot_type: 'normale' as const,
@@ -200,8 +256,10 @@ describe('ShotService - Unit Tests', () => {
   describe('Error Handling Structure', () => {
     it('should handle invalid machine ID gracefully', async () => {
       const invalidShotData = {
+        userId: '550e8400-e29b-41d4-a716-446655440000',
         machineId: 'invalid-machine-id',
         beanBatchId: 'invalid-batch-id',
+        grinderId: 'invalid-grinder-id',
         shot_type: 'normale' as const,
       };
 
@@ -285,12 +343,13 @@ describe('ShotService - Unit Tests', () => {
   describe('Data Structure Validation', () => {
     it('should accept valid shot data structure', () => {
       const validShotData = {
+        userId: '550e8400-e29b-41d4-a716-446655440000',
+        grinderId: '550e8400-e29b-41d4-a716-446655440002',
         machineId: 'test-machine-id',
         beanBatchId: 'test-batch-id',
         shot_type: 'normale' as const,
         pulled_at: new Date(),
         success: true,
-        notes: 'Test shot',
       };
 
       expect(() => {
@@ -302,7 +361,6 @@ describe('ShotService - Unit Tests', () => {
     it('should accept valid update data structure', () => {
       const validUpdateData = {
         success: false,
-        notes: 'Updated notes',
         preparation: {
           grind_setting: 20,
         },
@@ -334,12 +392,13 @@ describe('ShotService - Unit Tests', () => {
   describe('Business Logic Tests', () => {
     it('should successfully create a shot with valid data', async () => {
       // Arrange
-      const validShotData = {
+      const validShotData: CreateShotData = {
+        userId: '550e8400-e29b-41d4-a716-446655440000',
         machineId: '550e8400-e29b-41d4-a716-446655440000',
         beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
+        grinderId: '550e8400-e29b-41d4-a716-446655440002',
         shot_type: 'normale' as const,
         success: true,
-        notes: 'Test shot',
       };
 
       mockMachineRepo.findOne.mockResolvedValue({
@@ -349,6 +408,14 @@ describe('ShotService - Unit Tests', () => {
       mockBeanBatchRepo.findOne.mockResolvedValue({
         id: validShotData.beanBatchId,
         name: 'Test Bean Batch',
+      });
+      mockUserRepo.findOne.mockResolvedValue({
+        id: validShotData.userId,
+        name: 'Test User',
+      });
+      mockGrinderRepo.findOne.mockResolvedValue({
+        id: validShotData.grinderId,
+        model: 'Test Grinder',
       });
       const mockShot = { id: '550e8400-e29b-41d4-a716-446655402', ...validShotData };
       mockShotRepo.create.mockReturnValue(mockShot);
@@ -372,11 +439,12 @@ describe('ShotService - Unit Tests', () => {
     it('should successfully create a shot with all related entities', async () => {
       // Arrange
       const validShotData = {
+        userId: '550e8400-e29b-41d4-a716-446655440000',
         machineId: '550e8400-e29b-41d4-a716-446655440000',
         beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
+        grinderId: '550e8400-e29b-41d4-a716-446655440002',
         shot_type: 'normale' as const,
         success: true,
-        notes: 'Test shot with all entities',
         preparation: {
           dose_grams: 18.0,
           grind_setting: 15,
@@ -404,6 +472,14 @@ describe('ShotService - Unit Tests', () => {
         id: validShotData.beanBatchId,
         name: 'Test Bean Batch',
       });
+      mockUserRepo.findOne.mockResolvedValue({
+        id: validShotData.userId,
+        name: 'Test User',
+      });
+      mockGrinderRepo.findOne.mockResolvedValue({
+        id: validShotData.grinderId,
+        model: 'Test Grinder',
+      });
       const mockShot = { id: '550e8400-e29b-41d4-a716-446655403', ...validShotData };
       mockShotRepo.create.mockReturnValue(mockShot);
       mockShotRepo.save.mockResolvedValue(mockShot);
@@ -417,6 +493,7 @@ describe('ShotService - Unit Tests', () => {
         release: jest.fn().mockResolvedValue(undefined),
         manager: {
           save: jest.fn().mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655403' }),
+          findOne: jest.fn().mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655403' }),
         },
       };
 
@@ -463,7 +540,7 @@ describe('ShotService - Unit Tests', () => {
       expect(result.id).toBe(shotId);
       expect(mockShotRepo.findOne).toHaveBeenCalledWith({
         where: { id: shotId },
-        relations: ['machine', 'beanBatch', 'preparation', 'extraction', 'environment', 'feedback'],
+        relations: ['user', 'machine', 'beanBatch', 'grinder', 'preparation', 'extraction', 'environment', 'feedback'],
       });
     });
 
@@ -518,7 +595,6 @@ describe('ShotService - Unit Tests', () => {
       // Assert
       expect(result).toBeDefined();
       expect(result.success).toBe(false);
-      expect(result.notes).toBe('Updated notes');
       // updateShot calls findOne twice: once through getShotById (with relations) and once directly
       expect(mockShotRepo.findOne).toHaveBeenCalledTimes(2);
     });
@@ -575,6 +651,8 @@ describe('ShotService - Unit Tests', () => {
   describe('Type Safety', () => {
     it('should maintain TypeScript types for interfaces', () => {
       const testShotData = {
+        userId: '550e8400-e29b-41d4-a716-446655440000',
+        grinderId: '550e8400-e29b-41d4-a716-446655440002',
         machineId: '550e8400-e29b-41d4-a716-446655440000',
         beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
         shot_type: 'normale' as const,
@@ -587,6 +665,8 @@ describe('ShotService - Unit Tests', () => {
 
     it('should handle optional fields correctly', () => {
       const minimalShotData = {
+        userId: '550e8400-e29b-41d4-a716-446655440000',
+        grinderId: '550e8400-e29b-41d4-a716-446655440002',
         machineId: '550e8400-e29b-41d4-a716-446655440000',
         beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
         shot_type: 'normale' as const,

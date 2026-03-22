@@ -215,7 +215,6 @@ describe('ShotController', () => {
       // Arrange
       const updateData = {
         shot_type: 'ristretto' as const,
-        notes: 'Updated notes',
       };
 
       mockRequest.params = { id: '1' };

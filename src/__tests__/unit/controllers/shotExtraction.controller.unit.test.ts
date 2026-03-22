@@ -113,15 +113,13 @@ describe('ShotExtractionController', () => {
     it('should create a new shot extraction', async () => {
       const newExtraction = {
         yield_grams: '36.0',
-        extraction_time_seconds: '25',
-        pressure_bars: '9.0',
-        notes: 'Good extraction',
+        shot_time_seconds: '25',
+        avg_pressure_bar: '9.0',
       };
       const createdExtraction = {
         yield_grams: 36.0,
-        extraction_time_seconds: 25,
-        pressure_bars: 9.0,
-        notes: 'Good extraction',
+        shot_time_seconds: 25,
+        avg_pressure_bar: 9.0,
       };
       const savedExtraction = { id: '1', ...createdExtraction };
 
@@ -138,9 +136,11 @@ describe('ShotExtractionController', () => {
 
       expect(mockRepository.create).toHaveBeenCalledWith({
         yield_grams: 36.0,
-        extraction_time_seconds: 25,
-        pressure_bars: 9.0,
-        notes: 'Good extraction',
+        shot_time_seconds: 25,
+        avg_pressure_bar: 9.0,
+        water_temp_c: null,
+        preinfusion_seconds: null,
+        peak_pressure_bar: null,
       });
       expect(mockRepository.save).toHaveBeenCalledWith(createdExtraction);
       expect((mockResponse.status as jest.Mock).mock.calls[0][0]).toBe(201);
@@ -150,12 +150,14 @@ describe('ShotExtractionController', () => {
     });
 
     it('should handle null values correctly', async () => {
-      const newExtraction = { yield_grams: null, extraction_time_seconds: null };
+      const newExtraction = { yield_grams: null, shot_time_seconds: null };
       const createdExtraction = {
         yield_grams: null,
-        extraction_time_seconds: null,
-        pressure_bars: null,
-        notes: null,
+        shot_time_seconds: null,
+        avg_pressure_bar: null,
+        water_temp_c: null,
+        preinfusion_seconds: null,
+        peak_pressure_bar: null,
       };
       const savedExtraction = { id: '1', ...createdExtraction };
 
@@ -172,23 +174,24 @@ describe('ShotExtractionController', () => {
 
       expect(mockRepository.create).toHaveBeenCalledWith({
         yield_grams: null,
-        extraction_time_seconds: null,
-        pressure_bars: null,
-        notes: null,
+        shot_time_seconds: null,
+        avg_pressure_bar: null,
+        water_temp_c: null,
+        preinfusion_seconds: null,
+        peak_pressure_bar: null,
       });
     });
 
     it('should handle numeric conversions', async () => {
       const newExtraction = {
         yield_grams: '36.5',
-        extraction_time_seconds: '27',
-        pressure_bars: '8.5',
+        shot_time_seconds: '27',
+        avg_pressure_bar: '8.5',
       };
       const createdExtraction = {
         yield_grams: 36.5,
-        extraction_time_seconds: 27,
-        pressure_bars: 8.5,
-        notes: null,
+        shot_time_seconds: 27,
+        avg_pressure_bar: 8.5,
       };
       const savedExtraction = { id: '1', ...createdExtraction };
 
@@ -205,9 +208,11 @@ describe('ShotExtractionController', () => {
 
       expect(mockRepository.create).toHaveBeenCalledWith({
         yield_grams: 36.5,
-        extraction_time_seconds: 27,
-        pressure_bars: 8.5,
-        notes: null,
+        shot_time_seconds: 27,
+        avg_pressure_bar: 8.5,
+        water_temp_c: null,
+        preinfusion_seconds: null,
+        peak_pressure_bar: null,
       });
     });
   });
@@ -217,21 +222,21 @@ describe('ShotExtractionController', () => {
       const existingExtraction = {
         id: '1',
         yield_grams: 36.0,
-        extraction_time_seconds: 25,
-        pressure_bars: 9.0,
+        shot_time_seconds: 25,
+        avg_pressure_bar: 9.0,
       };
       const updatedExtraction = {
         id: '1',
         yield_grams: 38.0,
-        extraction_time_seconds: 27,
-        pressure_bars: 8.5,
+        shot_time_seconds: 27,
+        avg_pressure_bar: 8.5,
       };
 
       mockRequest.params = { id: '1' };
       mockRequest.body = {
         yield_grams: '38.0',
-        extraction_time_seconds: '27',
-        pressure_bars: '8.5',
+        shot_time_seconds: '27',
+        avg_pressure_bar: '8.5',
       };
       mockRepository.findOne.mockResolvedValue(existingExtraction);
       mockRepository.save.mockResolvedValue(updatedExtraction);
