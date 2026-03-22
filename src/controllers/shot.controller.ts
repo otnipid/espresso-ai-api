@@ -52,12 +52,13 @@ export class ShotController {
     try {
       // Extract and validate shot data from request body
       const shotData: CreateShotData = {
+        userId: request.body.userId,
         machineId: request.body.machineId,
         beanBatchId: request.body.beanBatchId,
+        grinderId: request.body.grinderId,
         shot_type: request.body.shot_type,
         pulled_at: request.body.pulled_at ? new Date(request.body.pulled_at) : undefined,
         success: request.body.success,
-        notes: request.body.notes,
         preparation: request.body.preparation,
         extraction: request.body.extraction,
         environment: request.body.environment,
@@ -77,12 +78,13 @@ export class ShotController {
     try {
       // Extract and validate update data from request body
       const updateData: UpdateShotData = {
+        userId: request.body.userId,
         machineId: request.body.machineId,
         beanBatchId: request.body.beanBatchId,
+        grinderId: request.body.grinderId,
         shot_type: request.body.shot_type,
         pulled_at: request.body.pulled_at ? new Date(request.body.pulled_at) : undefined,
         success: request.body.success,
-        notes: request.body.notes,
         preparation: request.body.preparation,
         extraction: request.body.extraction,
         environment: request.body.environment,

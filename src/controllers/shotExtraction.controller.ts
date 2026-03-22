@@ -35,13 +35,15 @@ export class ShotExtractionController {
 
   async save(request: Request, response: Response) {
     try {
-      const { yield_grams, extraction_time_seconds, pressure_bars, notes } = request.body;
+      const { yield_grams, shot_time_seconds, avg_pressure_bar, water_temp_c, preinfusion_seconds, peak_pressure_bar } = request.body;
 
       const extraction = this.extractionRepository.create({
         yield_grams: yield_grams ? parseFloat(yield_grams) : null,
-        extraction_time_seconds: extraction_time_seconds ? parseInt(extraction_time_seconds) : null,
-        pressure_bars: pressure_bars ? parseFloat(pressure_bars) : null,
-        notes: notes || null,
+        shot_time_seconds: shot_time_seconds ? parseInt(shot_time_seconds) : null,
+        avg_pressure_bar: avg_pressure_bar ? parseFloat(avg_pressure_bar) : null,
+        water_temp_c: water_temp_c ? parseFloat(water_temp_c) : null,
+        preinfusion_seconds: preinfusion_seconds ? parseInt(preinfusion_seconds) : null,
+        peak_pressure_bar: peak_pressure_bar ? parseFloat(peak_pressure_bar) : null,
       });
 
       const result = await this.extractionRepository.save(extraction);
@@ -54,7 +56,7 @@ export class ShotExtractionController {
 
   async update(request: Request, response: Response) {
     try {
-      const { yield_grams, extraction_time_seconds, pressure_bars, notes } = request.body;
+      const { yield_grams, shot_time_seconds, avg_pressure_bar, water_temp_c, preinfusion_seconds, peak_pressure_bar } = request.body;
 
       const extraction = await this.extractionRepository.findOne({
         where: { shot_id: request.params.id } as FindOptionsWhere<ShotExtraction>,
@@ -66,13 +68,18 @@ export class ShotExtractionController {
 
       if (yield_grams !== undefined)
         extraction.yield_grams = yield_grams ? parseFloat(yield_grams) : null;
-      if (extraction_time_seconds !== undefined)
-        extraction.extraction_time_seconds = extraction_time_seconds
-          ? parseInt(extraction_time_seconds)
+      if (shot_time_seconds !== undefined)
+        extraction.shot_time_seconds = shot_time_seconds
+          ? parseInt(shot_time_seconds)
           : null;
-      if (pressure_bars !== undefined)
-        extraction.pressure_bars = pressure_bars ? parseFloat(pressure_bars) : null;
-      if (notes !== undefined) extraction.notes = notes;
+      if (avg_pressure_bar !== undefined)
+        extraction.avg_pressure_bar = avg_pressure_bar ? parseFloat(avg_pressure_bar) : null;
+      if (water_temp_c !== undefined)
+        extraction.water_temp_c = water_temp_c ? parseFloat(water_temp_c) : null;
+      if (preinfusion_seconds !== undefined)
+        extraction.preinfusion_seconds = preinfusion_seconds ? parseInt(preinfusion_seconds) : null;
+      if (peak_pressure_bar !== undefined)
+        extraction.peak_pressure_bar = peak_pressure_bar ? parseFloat(peak_pressure_bar) : null;
 
       const result = await this.extractionRepository.save(extraction);
       response.json(result);

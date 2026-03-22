@@ -31,3 +31,7 @@ export const AppDataSource = new DataSource({
   migrations: [],
   subscribers: [],
 });
+
+// We export a function to get the DataSource. This allows us to easily mock 
+// it in tests to point to our Testcontainers-managed database instead.
+export const getDataSource = () => AppDataSource;
