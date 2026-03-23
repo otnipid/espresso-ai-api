@@ -577,37 +577,129 @@ jest.mock('../../../data-source', () => ({
   },
 }));
 
-describe('BeanController', () => {
-  let mockRepository: any;
+## 🛠️ Controller Test Setup
+
+### **Standard Mock Setup**
+
+```typescript
+import { Request, Response, NextFunction } from 'express';
+import { ShotController } from '../../../src/controllers/shot.controller';
+
+describe('ShotController', () => {
+  let shotController: ShotController;
+  let mockRequest: Partial<Request>;
+  let mockResponse: Partial<Response>;
+  let mockNext: jest.MockedFunction<NextFunction>;
+
   beforeEach(() => {
-    mockRepository = {
-      find: jest.fn(),
-      findOne: jest.fn(),
-      save: jest.fn(),
+    // Reset all mocks
+    jest.clearAllMocks();
+
+    // Setup mock request
+    mockRequest = {
+      body: {},
+      params: {},
+      query: {},
+      user: { id: 'test-user-id' },
     };
-    (AppDataSource.getRepository as jest.Mock).mockReturnValue(mockRepository);
-  });
-});
 
-// ✅ REQUIRED - Service layer abstraction
-jest.mock('../../../services/BeanService');
+    // Setup mock response
+    mockResponse = {
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+    };
 
-describe('BeanController', () => {
-  let mockBeanService: jest.Mocked<BeanService>;
-  beforeEach(() => {
-    mockBeanService = {
-      getBeans: jest.fn(),
-      getBeanById: jest.fn(),
-      createBean: jest.fn(),
-      updateBean: jest.fn(),
-      deleteBean: jest.fn(),
-    } as any;
-    (BeanService as jest.Mock).mockImplementation(() => mockBeanService);
+    // Setup mock next
+    mockNext = jest.fn();
+
+    // Initialize controller with mocked dependencies
+    shotController = new ShotController(mockShotService as any);
   });
 });
 ```
 
-**Enforcement**: All controller tests must follow service mocking pattern without exception.
+### **Service Mocking Pattern**
+
+```typescript
+// ✅ REQUIRED - Service layer abstraction
+jest.mock('../../../services/ShotService');
+
+describe('ShotController', () => {
+  let mockShotService: jest.Mocked<ShotService>;
+  beforeEach(() => {
+    mockShotService = {
+      createShot: jest.fn(),
+      getShotById: jest.fn(),
+      getShots: jest.fn(),
+      updateShot: jest.fn(),
+      deleteShot: jest.fn(),
+    } as any;
+    (ShotService as jest.Mock).mockImplementation(() => mockShotService);
+  });
+});
+```
+
+### **Request Mock Patterns**
+
+```typescript
+// GET request with query parameters
+mockRequest = {
+  method: 'GET',
+  query: {
+    page: '1',
+    limit: '10',
+    machine_id: '550e8400-e29b-41d4-a716-446655440000',
+  },
+};
+
+// POST request with body
+    mockRequest.params = { id: '1' };
+    mockShotService.deleteShot.mockResolvedValue(true);
+
+    // Act
+    await shotController.remove(mockRequest as Request, mockResponse as Response);
+
+    // Assert
+    expect(mockShotService.deleteShot).toHaveBeenCalledWith('1');
+    expect(mockResponse.status).toHaveBeenCalledWith(204);
+    expect(mockResponse.send).toHaveBeenCalled();
+  });
+
+  it('should return 404 when shot not found', async () => {
+    // Arrange
+    mockRequest.params = { id: 'non-existent' };
+    const error = new Error('Shot not found');
+    mockShotService.deleteShot.mockRejectedValue(error);
+
+    // Act
+    await shotController.remove(mockRequest as Request, mockResponse as Response);
+
+    // Assert
+    expect(mockResponse.status).toHaveBeenCalledWith(404);
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      error: 'Not Found',
+      message: 'Shot not found',
+    });
+  });
+});
+  it('should delete shot and return 200', async () => {
+    // Arrange
+    mockRequest.params = { id: '1' };
+    mockShotService.deleteShot.mockResolvedValue(true);
+
+    // Act
+    await shotController.remove(mockRequest as Request, mockResponse as Response);
+
+    // Assert
+    expect(mockShotService.deleteShot).toHaveBeenCalledWith('1');
+    expect(mockResponse.status).toHaveBeenCalledWith(200);
+    expect(mockResponse.json).toHaveBeenCalledWith({
+      success: true,
+      message: 'Shot deleted successfully',
+    });
+  });
+});
+```
 
 ### **Rule: Use Type Assertions for Mock Data**
 
@@ -855,3 +947,54 @@ mockRequest = {
   user: { id: 'test-user-id' },
 } as Request;
 ```
+
+## 🔄 **Service Mocking vs Repository Mocking**
+
+### **❌ OLD PATTERN - Repository Direct Access**
+```typescript
+// FORBIDDEN - Direct database access in controller
+jest.mock('../../../data-source', () => ({
+  AppDataSource: {
+    getRepository: jest.fn(),
+  },
+}));
+
+describe('Controller', () => {
+  let mockRepository: any;
+  beforeEach(() => {
+    mockRepository = {
+      find: jest.fn(),
+      findOne: jest.fn(),
+      save: jest.fn(),
+    };
+    (AppDataSource.getRepository as jest.Mock).mockReturnValue(mockRepository);
+  });
+});
+```
+
+### **✅ NEW PATTERN - Service Layer Abstraction**
+```typescript
+// REQUIRED - Service layer abstraction
+jest.mock('../../../services/ShotService');
+
+describe('Controller', () => {
+  let mockShotService: jest.Mocked<ShotService>;
+  beforeEach(() => {
+    mockShotService = {
+      createShot: jest.fn(),
+      getShotById: jest.fn(),
+      getShots: jest.fn(),
+      updateShot: jest.fn(),
+      deleteShot: jest.fn(),
+    } as any;
+    (ShotService as jest.Mock).mockImplementation(() => mockShotService);
+  });
+});
+```
+
+**Key Benefits:**
+
+- **Separation of Concerns**: Controllers handle HTTP, Services handle business logic
+- **Testability**: Services can be easily mocked for unit testing
+- **Maintainability**: Business logic is centralized and reusable
+- **Error Handling**: Consistent error handling patterns across services
