@@ -1,14 +1,18 @@
 import { FindOptionsWhere } from 'typeorm';
 import { Request, Response } from 'express';
-import { AppDataSource } from '../data-source';
+import { ShotPreparationService } from '../services/ShotPreparationService';
 import { ShotPreparation } from '../entities/ShotPreparation';
 
 export class ShotPreparationController {
-  private preparationRepository = AppDataSource.getRepository(ShotPreparation);
+  private shotPreparationService: ShotPreparationService;
+
+  constructor() {
+    this.shotPreparationService = new ShotPreparationService(require('../data-source').AppDataSource);
+  }
 
   async all(request: Request, response: Response) {
     try {
-      const preparations = await this.preparationRepository.find();
+      const preparations = await this.shotPreparationService.getAllShotPreparations();
       response.json(preparations);
     } catch (error) {
       console.error('Error fetching shot preparations:', error);
@@ -18,14 +22,12 @@ export class ShotPreparationController {
 
   async one(request: Request, response: Response) {
     try {
-      const preparation = await this.preparationRepository.findOne({
-        where: { shot_id: request.params.id } as FindOptionsWhere<ShotPreparation>,
-      });
-
+      const preparation = await this.shotPreparationService.getShotPreparationById(request.params.id);
+      
       if (!preparation) {
         return response.status(404).json({ message: 'Shot preparation not found' });
       }
-
+      
       response.json(preparation);
     } catch (error) {
       console.error('Error fetching shot preparation:', error);
@@ -36,6 +38,7 @@ export class ShotPreparationController {
   async save(request: Request, response: Response) {
     try {
       const {
+        shot_id,
         dose_grams,
         grind_setting,
         basket_type,
@@ -45,20 +48,22 @@ export class ShotPreparationController {
         tamp_pressure_category,
       } = request.body;
 
-      const preparation = this.preparationRepository.create({
-        dose_grams: dose_grams ? parseFloat(dose_grams) : null,
-        grind_setting: grind_setting ? parseFloat(grind_setting) : null,
-        basket_type: basket_type || null,
-        basket_size_grams: basket_size_grams ? parseInt(basket_size_grams) : null,
-        distribution_method: distribution_method || null,
-        tamp_type: tamp_type || null,
-        tamp_pressure_category: tamp_pressure_category || null,
+      const result = await this.shotPreparationService.createShotPreparation({
+        shot_id,
+        dose_grams,
+        grind_setting,
+        basket_type,
+        basket_size_grams,
+        distribution_method,
+        tamp_type,
+        tamp_pressure_category,
       });
-
-      const result = await this.preparationRepository.save(preparation);
       response.status(201).json(result);
     } catch (error) {
       console.error('Error creating shot preparation:', error);
+      if (error instanceof Error && error.message.includes('required')) {
+        return response.status(400).json({ message: error.message });
+      }
       response.status(500).json({ message: 'Error creating shot preparation' });
     }
   }
@@ -75,49 +80,35 @@ export class ShotPreparationController {
         tamp_pressure_category,
       } = request.body;
 
-      const preparation = await this.preparationRepository.findOne({
-        where: { shot_id: request.params.id } as FindOptionsWhere<ShotPreparation>,
+      const result = await this.shotPreparationService.updateShotPreparation(request.params.id, {
+        dose_grams,
+        grind_setting,
+        basket_type,
+        basket_size_grams,
+        distribution_method,
+        tamp_type,
+        tamp_pressure_category,
       });
-
-      if (!preparation) {
-        return response.status(404).json({ message: 'Shot preparation not found' });
-      }
-
-      if (dose_grams !== undefined)
-        preparation.dose_grams = dose_grams ? parseFloat(dose_grams) : null;
-      if (grind_setting !== undefined)
-        preparation.grind_setting = grind_setting ? parseFloat(grind_setting) : null;
-      if (basket_type !== undefined) preparation.basket_type = basket_type || null;
-      if (basket_size_grams !== undefined)
-        preparation.basket_size_grams = basket_size_grams ? parseInt(basket_size_grams) : null;
-      if (distribution_method !== undefined)
-        preparation.distribution_method = distribution_method || null;
-      if (tamp_type !== undefined) preparation.tamp_type = tamp_type || null;
-      if (tamp_pressure_category !== undefined)
-        preparation.tamp_pressure_category = tamp_pressure_category || null;
-
-      const result = await this.preparationRepository.save(preparation);
       response.json(result);
     } catch (error) {
       console.error('Error updating shot preparation:', error);
+      if (error instanceof Error && error.message.includes('not found')) {
+        return response.status(404).json({ message: 'Shot preparation not found' });
+      }
       response.status(500).json({ message: 'Error updating shot preparation' });
     }
   }
 
   async remove(request: Request, response: Response) {
     try {
-      const preparation = await this.preparationRepository.findOne({
-        where: { shot_id: request.params.id } as FindOptionsWhere<ShotPreparation>,
-      });
-
-      if (!preparation) {
-        return response.status(404).json({ message: 'Shot preparation not found' });
-      }
-
-      await this.preparationRepository.remove(preparation);
+      await this.shotPreparationService.deleteShotPreparation(request.params.id);
+      
       response.status(204).send();
     } catch (error) {
       console.error('Error deleting shot preparation:', error);
+      if (error instanceof Error && error.message.includes('not found')) {
+        return response.status(404).json({ message: 'Shot preparation not found' });
+      }
       response.status(500).json({ message: 'Error deleting shot preparation' });
     }
   }
