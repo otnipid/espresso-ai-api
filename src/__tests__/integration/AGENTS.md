@@ -214,6 +214,192 @@ beforeEach(async () => {
 });
 ```
 
+### **Rule: Entity Primary Key Verification**
+
+**Problem**: Tests fail when accessing primary keys with wrong property names.
+
+**Solution**: Always verify entity primary column names before writing tests.
+
+```typescript
+// ❌ WRONG - Assuming standard 'id' property
+expect(result.id).toBeDefined();
+
+// ✅ CORRECT - Check actual entity primary column
+@PrimaryColumn({ name: 'shot_id' })
+shot_id!: string;
+
+expect(result.shot_id).toBeDefined();
+```
+
+### **Rule: Valid UUID Format in Tests**
+
+**Problem**: Invalid UUIDs cause database validation errors instead of business logic errors.
+
+**Solution**: Use valid UUID format for all UUID parameters in tests.
+
+```typescript
+// ❌ WRONG - Invalid UUID format
+const invalidId = 'non-existent-id';
+
+// ✅ CORRECT - Valid UUID format
+const invalidId = '550e8400-e29b-41d4-a716-446655440001';
+```
+
+### **Rule: Service Return Type Verification**
+
+**Problem**: Tests expect numbers but service returns formatted strings.
+
+**Solution**: Verify actual service return types before writing assertions.
+
+```typescript
+// ❌ WRONG - Assuming number return type
+expect(result.dose_grams).toBe(18.5);
+
+// ✅ CORRECT - Matching actual string return type
+expect(result.dose_grams).toBe('18.50');
+```
+
+### **Rule: Entity Relationship Understanding**
+
+**Problem**: Tests fail when violating entity relationship constraints.
+
+**Solution**: Understand entity relationships (1:1, 1:M, M:M) before creating test data.
+
+```typescript
+// ❌ WRONG - Multiple preparations for same shot (1:1 relationship)
+await shotPreparationService.createShotPreparation({ shot_id: shot.id });
+await shotPreparationService.createShotPreparation({ shot_id: shot.id }); // Overwrites first
+
+// ✅ CORRECT - Separate shots for separate preparations
+await shotPreparationService.createShotPreparation({ shot_id: shot1.id });
+await shotPreparationService.createShotPreparation({ shot_id: shot2.id });
+```
+
+### **Rule: Test Actual Service Behavior**
+
+**Problem**: Tests expect null returns but service throws errors for not found cases.
+
+**Solution**: Test actual service behavior, not expected behavior.
+
+```typescript
+// ❌ WRONG - Expecting null when service throws error
+const result = await service.getById('invalid-id');
+expect(result).toBeNull();
+
+// ✅ CORRECT - Expecting error when service throws error
+await expect(service.getById('invalid-id')).rejects.toThrow('not found');
+```
+
+### **Rule: Unique Test Data Creation**
+
+**Problem**: Tests share data or use conflicting entity relationships.
+
+**Solution**: Create unique, isolated test data for each test scenario.
+
+```typescript
+// ❌ WRONG - Shared test data
+let sharedShot: Shot;
+
+beforeEach(async () => {
+  sharedShot = await createShot();
+});
+
+// ✅ CORRECT - Fresh test data per test
+describe('Service Method', () => {
+  it('should handle scenario 1', async () => {
+    const shot1 = await createShot();
+    // Test with shot1
+  });
+
+  it('should handle scenario 2', async () => {
+    const shot2 = await createShot();
+    // Test with shot2
+  });
+});
+```
+
+### **Rule: Database Column Type Verification**
+
+**Problem**: Tests fail when providing data types that don't match database column types.
+
+**Solution**: Always verify database column types before creating test data.
+
+```typescript
+// ❌ WRONG - Decimal value for integer column
+@Column({ name: 'roast_degree', type: 'integer' })
+roastDegree!: number;
+
+const testData = { roastDegree: 85.5 }; // Database error!
+
+// ✅ CORRECT - Integer value for integer column
+const testData = { roastDegree: 85 };
+```
+
+### **Rule: Service Data Transformation Understanding**
+
+**Problem**: Tests expect original input types but services transform data.
+
+**Solution**: Understand how services transform input data before writing assertions.
+
+```typescript
+// ❌ WRONG - Expecting original decimal input
+const result = await service.create({ roastDegree: 85.5 });
+expect(result.roastDegree).toBe(85.5); // Service converted to integer!
+
+// ✅ CORRECT - Expecting transformed output
+const result = await service.create({ roastDegree: 85.5 });
+expect(result.roastDegree).toBe(85); // Service converts decimal to integer
+```
+
+### **Rule: Date Return Type Verification**
+
+**Problem**: Services may return date strings instead of Date objects.
+
+**Solution**: Verify actual service return types for date fields.
+
+```typescript
+// ❌ WRONG - Expecting Date object
+const result = await service.getById(id);
+expect(result.roastDate).toBeInstanceOf(Date);
+
+// ✅ CORRECT - Expecting date string
+const result = await service.getById(id);
+expect(result.roastDate).toBe('2024-01-15'); // Service returns string
+```
+
+### **Rule: Foreign Key Dependency Creation**
+
+**Problem**: Tests fail when foreign key validation fails for non-existent entities.
+
+**Solution**: Create dependent entities before testing foreign key relationships.
+
+```typescript
+// ❌ WRONG - Non-existent foreign key
+const batchData = { beanId: 'non-existent-bean-id' };
+await service.create(batchData); // Foreign key violation!
+
+// ✅ CORRECT - Create dependent entity first
+const bean = await beanService.create(beanData);
+const batchData = { beanId: bean.id };
+await service.create(batchData); // Success!
+```
+
+### **Rule: Date Format Validation Compliance**
+
+**Problem**: Services validate date string formats strictly.
+
+**Solution**: Use proper date formats in test data.
+
+```typescript
+// ❌ WRONG - Invalid date format
+const testData = { roastDate: 'invalid-date' };
+await service.create(testData); // Date validation error!
+
+// ✅ CORRECT - Valid date format
+const testData = { roastDate: '2024-01-15' };
+await service.create(testData); // Success!
+```
+
 ### **Rule: Complete Repository Mocking for Hybrid Tests**
 
 **Problem**: Integration tests that partially mock repositories cause inconsistent behavior.
@@ -252,6 +438,17 @@ const mockRepo = {
 | **Variable Scope Issues**      | Global test variables     | Each describe block manages its own data   |
 | **Missing DTO Properties**     | Incomplete test data      | Include all required fields (userId, etc.) |
 | **Vitest Worker Crashes**      | Memory limits exceeded    | Configure pool options and timeouts        |
+| **Entity Primary Key Errors**  | Wrong property names      | Verify entity `@PrimaryColumn` names       |
+| **UUID Validation Failures**   | Invalid UUID format       | Use valid UUID format in all test data     |
+| **Service Return Type Mismatches** | Assumed types          | Verify actual service return types         |
+| **Entity Relationship Violations** | Ignoring constraints    | Understand 1:1, 1:M, M:M relationships    |
+| **Error Handling Mismatches** | Expected vs actual behavior | Test actual service error handling        |
+| **Test Data Conflicts**        | Shared or conflicting data | Create unique data per test scenario       |
+| **Database Column Type Mismatches** | Wrong data types      | Verify database column types before tests |
+| **Service Data Transformations** | Unexpected conversions | Understand service data transformations   |
+| **Date Return Type Issues**   | Date objects vs strings  | Verify actual date return types             |
+| **Foreign Key Violations**    | Missing dependent entities | Create dependent entities first           |
+| **Date Format Validation Errors** | Invalid date formats  | Use proper date format strings             |
 
 ## 📋 Integration Test Checklist
 
@@ -273,6 +470,17 @@ const mockRepo = {
 - [ ] Complete DTO property inclusion
 - [ ] Vitest timeout configurations
 - [ ] Memory limit configurations
+- [ ] **Entity primary key verification** before writing tests
+- [ ] **Valid UUID format** for all UUID parameters
+- [ ] **Service return type verification** before assertions
+- [ ] **Entity relationship understanding** before test data creation
+- [ ] **Actual service behavior testing** vs expected behavior
+- [ ] **Unique test data creation** per test scenario
+- [ ] **Database column type verification** before creating test data
+- [ ] **Service data transformation understanding** before writing assertions
+- [ ] **Date return type verification** for date field assertions
+- [ ] **Foreign key dependency creation** before testing relationships
+- [ ] **Date format validation compliance** for date field test data
 
 ## Test Structure
 
