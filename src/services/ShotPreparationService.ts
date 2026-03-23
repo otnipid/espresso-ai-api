@@ -238,9 +238,27 @@ export class ShotPreparationService {
   }
 
   /**
+   * Get all shot preparations for a specific shot
+   * @param shotId - Shot UUID
+   * @returns Promise<ShotPreparation[]> Array of shot preparations with relations
+   * @throws Error when database error occurs
+   */
+  async getShotPreparationsByShotId(shotId: string): Promise<ShotPreparation[]> {
+    try {
+      return await this.preparationRepository.find({
+        where: { shot: { id: shotId } },
+        relations: ['shot'],
+      });
+    } catch (error) {
+      throw new Error(`Error fetching shot preparations: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
    * Delete a shot preparation
    * @param shotId - Shot UUID
    * @returns Promise<boolean> True if deleted, false if not found
+   * @throws Error when shot preparation not found
    */
   async deleteShotPreparation(shotId: string): Promise<boolean> {
     try {
