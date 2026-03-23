@@ -22,7 +22,7 @@ export class BeanBatchController {
   async one(request: Request, response: Response) {
     try {
       const batch = await this.beanBatchService.getBeanBatchById(request.params.id);
-      
+
       if (!batch) {
         return response.status(404).json({ message: 'Bean batch not found' });
       }
@@ -48,7 +48,12 @@ export class BeanBatchController {
       response.status(201).json(result);
     } catch (error) {
       console.error('Error creating bean batch:', error);
-      if (error instanceof Error && (error.message.includes('required') || error.message.includes('not found') || error.message.includes('Invalid'))) {
+      if (
+        error instanceof Error &&
+        (error.message.includes('required') ||
+          error.message.includes('not found') ||
+          error.message.includes('Invalid'))
+      ) {
         return response.status(400).json({ message: error.message });
       }
       response.status(500).json({ message: 'Error creating bean batch' });

@@ -42,7 +42,9 @@ export class ShotFeedbackService {
         relations: ['shot'],
       });
     } catch (error) {
-      throw new Error(`Error fetching shot feedbacks: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching shot feedbacks: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -68,7 +70,9 @@ export class ShotFeedbackService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error fetching shot feedback: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching shot feedback: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -112,7 +116,9 @@ export class ShotFeedbackService {
       if (error instanceof Error && error.message.includes('required')) {
         throw error;
       }
-      throw new Error(`Error creating shot feedback: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error creating shot feedback: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -123,7 +129,10 @@ export class ShotFeedbackService {
    * @returns Promise<ShotFeedback> Updated feedback
    * @throws Error when feedback not found
    */
-  async updateShotFeedback(shot_id: string, updateData: ShotFeedbackUpdateData): Promise<ShotFeedback> {
+  async updateShotFeedback(
+    shot_id: string,
+    updateData: ShotFeedbackUpdateData
+  ): Promise<ShotFeedback> {
     try {
       const existingFeedback = await this.feedbackRepository.findOne({
         where: { shot_id },
@@ -161,7 +170,9 @@ export class ShotFeedbackService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error updating shot feedback: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error updating shot feedback: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -186,7 +197,9 @@ export class ShotFeedbackService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error deleting shot feedback: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error deleting shot feedback: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -200,12 +213,14 @@ export class ShotFeedbackService {
     try {
       return await this.feedbackRepository.find({
         where: {
-          overall_score: Between(minScore, maxScore)
+          overall_score: Between(minScore, maxScore),
         },
         relations: ['shot'],
       });
     } catch (error) {
-      throw new Error(`Error fetching shot feedbacks by score: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching shot feedbacks by score: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 

@@ -30,7 +30,7 @@ describe('ShotExtractionService', () => {
 
   beforeEach(() => {
     mockDataSource = createMockDataSource();
-    
+
     // Setup mock repositories
     mockExtractionRepository = {
       find: jest.fn(),
@@ -40,19 +40,19 @@ describe('ShotExtractionService', () => {
       remove: jest.fn(),
       findAndCount: jest.fn(),
     };
-    
+
     mockShotRepository = {
       findOne: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
     };
-    
-    mockDataSource.getRepository = jest.fn().mockImplementation((entity) => {
+
+    mockDataSource.getRepository = jest.fn().mockImplementation(entity => {
       if (entity === ShotExtraction) return mockExtractionRepository;
       if (entity === Shot) return mockShotRepository;
       return mockExtractionRepository;
     });
-    
+
     shotExtractionService = new ShotExtractionService(mockDataSource);
   });
 
@@ -60,14 +60,14 @@ describe('ShotExtractionService', () => {
     it('should return all shot extractions with relations', async () => {
       // Arrange
       const expectedExtractions = [
-        { 
+        {
           shot_id: '1',
           yield_grams: 36.0,
           shot_time_seconds: 25,
           avg_pressure_bar: 9.0,
           shot: mockShotData,
         },
-        { 
+        {
           shot_id: '2',
           yield_grams: 35.5,
           shot_time_seconds: 24,
@@ -101,7 +101,7 @@ describe('ShotExtractionService', () => {
     it('should return shot extraction by ID with relations', async () => {
       // Arrange
       const shotId = 'test-shot-id';
-      const expectedExtraction = { 
+      const expectedExtraction = {
         shot_id: shotId,
         yield_grams: 36.0,
         shot_time_seconds: 25,
@@ -139,7 +139,9 @@ describe('ShotExtractionService', () => {
       mockExtractionRepository.findOne.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotExtractionService.getShotExtractionById(shotId)).rejects.toThrow('Database error');
+      await expect(shotExtractionService.getShotExtractionById(shotId)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 
@@ -147,11 +149,11 @@ describe('ShotExtractionService', () => {
     it('should create shot extraction with valid data', async () => {
       // Arrange
       const mockShot = { id: mockShotData.id, shot_type: mockShotData.shot_type };
-      const expectedExtraction = { 
+      const expectedExtraction = {
         ...mockExtractionData,
-        shot: mockShot
+        shot: mockShot,
       };
-      
+
       mockShotRepository.findOne.mockResolvedValue(mockShot);
       mockExtractionRepository.create.mockReturnValue(mockExtractionData);
       mockExtractionRepository.save.mockResolvedValue(expectedExtraction);
@@ -211,7 +213,7 @@ describe('ShotExtractionService', () => {
         preinfusion_seconds: '3', // String that should be converted to number
         peak_pressure_bar: '9.5', // String that should be converted to number
       };
-      
+
       mockShotRepository.findOne.mockResolvedValue(mockShot);
       mockExtractionRepository.create.mockReturnValue(extractionDataWithStrings);
       mockExtractionRepository.save.mockResolvedValue({ ...extractionDataWithStrings });
@@ -244,13 +246,15 @@ describe('ShotExtractionService', () => {
         preinfusion_seconds: 'invalid-number', // Invalid string that can't be parsed
         peak_pressure_bar: 'invalid-number', // Invalid string that can't be parsed
       };
-      
+
       mockShotRepository.findOne.mockResolvedValue(mockShot);
       mockExtractionRepository.create.mockReturnValue(extractionDataWithInvalidNumbers);
       mockExtractionRepository.save.mockResolvedValue({ ...extractionDataWithInvalidNumbers });
 
       // Act
-      const result = await shotExtractionService.createShotExtraction(extractionDataWithInvalidNumbers);
+      const result = await shotExtractionService.createShotExtraction(
+        extractionDataWithInvalidNumbers
+      );
 
       // Assert
       expect(mockExtractionRepository.create).toHaveBeenCalledWith({
@@ -273,7 +277,9 @@ describe('ShotExtractionService', () => {
       mockExtractionRepository.save.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotExtractionService.createShotExtraction(mockExtractionData)).rejects.toThrow('Database error');
+      await expect(shotExtractionService.createShotExtraction(mockExtractionData)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 
@@ -295,7 +301,7 @@ describe('ShotExtractionService', () => {
         shot_time_seconds: 24,
       };
       const updatedExtraction = { ...existingExtraction, ...updateData };
-      
+
       mockExtractionRepository.findOne.mockResolvedValue(existingExtraction);
       mockExtractionRepository.save.mockResolvedValue(updatedExtraction);
 
@@ -336,7 +342,7 @@ describe('ShotExtractionService', () => {
       };
       const partialUpdate = { yield_grams: 35.5 }; // Only updating yield
       const updatedExtraction = { ...existingExtraction, yield_grams: 35.5 };
-      
+
       mockExtractionRepository.findOne.mockResolvedValue(existingExtraction);
       mockExtractionRepository.save.mockResolvedValue(updatedExtraction);
 
@@ -358,7 +364,9 @@ describe('ShotExtractionService', () => {
       mockExtractionRepository.save.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotExtractionService.updateShotExtraction(shotId, updateData)).rejects.toThrow('Database error');
+      await expect(shotExtractionService.updateShotExtraction(shotId, updateData)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 
@@ -366,11 +374,11 @@ describe('ShotExtractionService', () => {
     it('should delete existing shot extraction', async () => {
       // Arrange
       const shotId = 'test-shot-id';
-      const existingExtraction = { 
+      const existingExtraction = {
         shot_id: shotId,
         yield_grams: 36.0,
         shot_time_seconds: 25,
-        shot: mockShotData
+        shot: mockShotData,
       };
       mockExtractionRepository.findOne.mockResolvedValue(existingExtraction);
       mockExtractionRepository.remove.mockResolvedValue(existingExtraction);
@@ -405,7 +413,9 @@ describe('ShotExtractionService', () => {
       mockExtractionRepository.remove.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotExtractionService.deleteShotExtraction(shotId)).rejects.toThrow('Database error');
+      await expect(shotExtractionService.deleteShotExtraction(shotId)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 });

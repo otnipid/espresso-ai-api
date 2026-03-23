@@ -22,7 +22,7 @@ export class ShotFeedbackController {
   async one(request: Request, response: Response) {
     try {
       const feedback = await this.shotFeedbackService.getShotFeedbackById(request.params.id);
-      
+
       if (!feedback) {
         return response.status(404).json({ message: 'Shot feedback not found' });
       }

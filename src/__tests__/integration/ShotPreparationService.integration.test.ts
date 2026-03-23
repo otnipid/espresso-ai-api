@@ -128,10 +128,10 @@ describe('ShotPreparationService Integration Tests', () => {
 
       const preparationData = {
         shot_id: savedShot.id,
-        dose_grams: "18.5", // String that should be converted to number
-        grind_setting: "15.0", // String that should be converted to number
+        dose_grams: '18.5', // String that should be converted to number
+        grind_setting: '15.0', // String that should be converted to number
         basket_type: 'bottomless',
-        basket_size_grams: "18", // String that should be converted to number
+        basket_size_grams: '18', // String that should be converted to number
         distribution_method: 'WDT',
         tamp_type: 'flat',
         tamp_pressure_category: 'medium',
@@ -167,7 +167,9 @@ describe('ShotPreparationService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for non-existent shot
-      await expect(shotPreparationService.createShotPreparation(preparationData)).rejects.toThrow('Shot with ID 550e8400-e29b-41d4-a716-446655440001 not found');
+      await expect(shotPreparationService.createShotPreparation(preparationData)).rejects.toThrow(
+        'Shot with ID 550e8400-e29b-41d4-a716-446655440001 not found'
+      );
     });
   });
 
@@ -202,7 +204,9 @@ describe('ShotPreparationService Integration Tests', () => {
 
     it('should throw error when preparation not found', async () => {
       // Act & Assert: Should throw error for non-existent preparation
-      await expect(shotPreparationService.getShotPreparationById('550e8400-e29b-41d4-a716-446655440002')).rejects.toThrow('Shot preparation with ID 550e8400-e29b-41d4-a716-446655440002 not found');
+      await expect(
+        shotPreparationService.getShotPreparationById('550e8400-e29b-41d4-a716-446655440002')
+      ).rejects.toThrow('Shot preparation with ID 550e8400-e29b-41d4-a716-446655440002 not found');
     });
   });
 
@@ -297,7 +301,10 @@ describe('ShotPreparationService Integration Tests', () => {
       };
 
       // Act: Update preparation
-      const result = await shotPreparationService.updateShotPreparation(preparation.shot_id, updateData);
+      const result = await shotPreparationService.updateShotPreparation(
+        preparation.shot_id,
+        updateData
+      );
 
       // Assert: Verify preparation was updated
       expect(result).toBeDefined();
@@ -315,7 +322,12 @@ describe('ShotPreparationService Integration Tests', () => {
       const updateData = {
         dose_grams: 19.0,
       };
-      await expect(shotPreparationService.updateShotPreparation('550e8400-e29b-41d4-a716-446655440003', updateData)).rejects.toThrow('Shot preparation with ID 550e8400-e29b-41d4-a716-446655440003 not found');
+      await expect(
+        shotPreparationService.updateShotPreparation(
+          '550e8400-e29b-41d4-a716-446655440003',
+          updateData
+        )
+      ).rejects.toThrow('Shot preparation with ID 550e8400-e29b-41d4-a716-446655440003 not found');
     });
   });
 
@@ -348,7 +360,9 @@ describe('ShotPreparationService Integration Tests', () => {
 
     it('should throw error when deleting non-existent preparation', async () => {
       // Act & Assert: Should throw error for non-existent preparation
-      await expect(shotPreparationService.deleteShotPreparation('550e8400-e29b-41d4-a716-446655440004')).rejects.toThrow('Shot preparation with ID 550e8400-e29b-41d4-a716-446655440004 not found');
+      await expect(
+        shotPreparationService.deleteShotPreparation('550e8400-e29b-41d4-a716-446655440004')
+      ).rejects.toThrow('Shot preparation with ID 550e8400-e29b-41d4-a716-446655440004 not found');
     });
   });
 });

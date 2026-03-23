@@ -30,7 +30,7 @@ describe('BeanService', () => {
       save: jest.fn(),
       remove: jest.fn(),
     };
-    
+
     mockDataSource.getRepository = jest.fn().mockReturnValue(mockBeanRepository);
     beanService = new BeanService(mockDataSource);
   });
@@ -125,9 +125,7 @@ describe('BeanService', () => {
       const invalidData = { ...mockBeanData, name: '' };
 
       // Act & Assert
-      await expect(beanService.createBean(invalidData)).rejects.toThrow(
-        'Bean name is required'
-      );
+      await expect(beanService.createBean(invalidData)).rejects.toThrow('Bean name is required');
     });
 
     it('should convert altitude_m to number when provided as string', async () => {
@@ -166,7 +164,7 @@ describe('BeanService', () => {
       const existingBean = { id: beanId, name: 'Old Name' };
       const updateData = { name: 'New Name' };
       const updatedBean = { ...existingBean, ...updateData };
-      
+
       mockBeanRepository.findOne.mockResolvedValue(existingBean);
       mockBeanRepository.save.mockResolvedValue(updatedBean);
 
@@ -204,7 +202,7 @@ describe('BeanService', () => {
       };
       const partialUpdate = { name: 'Updated Name' }; // Only updating name
       const updatedBean = { ...existingBean, name: 'Updated Name' };
-      
+
       mockBeanRepository.findOne.mockResolvedValue(existingBean);
       mockBeanRepository.save.mockResolvedValue(updatedBean);
 

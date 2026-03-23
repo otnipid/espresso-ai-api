@@ -31,7 +31,7 @@ describe('ShotPreparationService', () => {
 
   beforeEach(() => {
     mockDataSource = createMockDataSource();
-    
+
     // Setup mock repositories
     mockPreparationRepository = {
       find: jest.fn(),
@@ -41,19 +41,19 @@ describe('ShotPreparationService', () => {
       remove: jest.fn(),
       findAndCount: jest.fn(),
     };
-    
+
     mockShotRepository = {
       findOne: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
     };
-    
-    mockDataSource.getRepository = jest.fn().mockImplementation((entity) => {
+
+    mockDataSource.getRepository = jest.fn().mockImplementation(entity => {
       if (entity === ShotPreparation) return mockPreparationRepository;
       if (entity === Shot) return mockShotRepository;
       return mockPreparationRepository;
     });
-    
+
     shotPreparationService = new ShotPreparationService(mockDataSource);
   });
 
@@ -61,13 +61,13 @@ describe('ShotPreparationService', () => {
     it('should return all shot preparations with relations', async () => {
       // Arrange
       const expectedPreparations = [
-        { 
+        {
           shot_id: '1',
           dose_grams: 18.5,
           grind_setting: 15,
           shot: mockShotData,
         },
-        { 
+        {
           shot_id: '2',
           dose_grams: 18.0,
           grind_setting: 14,
@@ -92,7 +92,9 @@ describe('ShotPreparationService', () => {
       mockPreparationRepository.find.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotPreparationService.getAllShotPreparations()).rejects.toThrow('Database error');
+      await expect(shotPreparationService.getAllShotPreparations()).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 
@@ -100,7 +102,7 @@ describe('ShotPreparationService', () => {
     it('should return shot preparation by ID with relations', async () => {
       // Arrange
       const shotId = 'test-shot-id';
-      const expectedPreparation = { 
+      const expectedPreparation = {
         shot_id: shotId,
         dose_grams: 18.5,
         grind_setting: 15,
@@ -137,7 +139,9 @@ describe('ShotPreparationService', () => {
       mockPreparationRepository.findOne.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotPreparationService.getShotPreparationById(shotId)).rejects.toThrow('Database error');
+      await expect(shotPreparationService.getShotPreparationById(shotId)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 
@@ -145,11 +149,11 @@ describe('ShotPreparationService', () => {
     it('should create shot preparation with valid data', async () => {
       // Arrange
       const mockShot = { id: mockShotData.id, shot_type: mockShotData.shot_type };
-      const expectedPreparation = { 
+      const expectedPreparation = {
         ...mockPreparationData,
-        shot: mockShot
+        shot: mockShot,
       };
-      
+
       mockShotRepository.findOne.mockResolvedValue(mockShot);
       mockPreparationRepository.create.mockReturnValue(mockPreparationData);
       mockPreparationRepository.save.mockResolvedValue(expectedPreparation);
@@ -193,9 +197,9 @@ describe('ShotPreparationService', () => {
       mockShotRepository.findOne.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(shotPreparationService.createShotPreparation(mockPreparationData)).rejects.toThrow(
-        `Shot with ID ${mockPreparationData.shot_id} not found`
-      );
+      await expect(
+        shotPreparationService.createShotPreparation(mockPreparationData)
+      ).rejects.toThrow(`Shot with ID ${mockPreparationData.shot_id} not found`);
     });
 
     it('should handle numeric conversions', async () => {
@@ -207,7 +211,7 @@ describe('ShotPreparationService', () => {
         grind_setting: '15', // String that should be converted to number
         basket_size_grams: '18', // String that should be converted to number
       };
-      
+
       mockShotRepository.findOne.mockResolvedValue(mockShot);
       mockPreparationRepository.create.mockReturnValue(preparationDataWithStrings);
       mockPreparationRepository.save.mockResolvedValue({ ...preparationDataWithStrings });
@@ -238,13 +242,15 @@ describe('ShotPreparationService', () => {
         grind_setting: 'invalid-number', // Invalid string that can't be parsed
         basket_size_grams: 'invalid-number', // Invalid string that can't be parsed
       };
-      
+
       mockShotRepository.findOne.mockResolvedValue(mockShot);
       mockPreparationRepository.create.mockReturnValue(preparationDataWithInvalidNumbers);
       mockPreparationRepository.save.mockResolvedValue({ ...preparationDataWithInvalidNumbers });
 
       // Act
-      const result = await shotPreparationService.createShotPreparation(preparationDataWithInvalidNumbers);
+      const result = await shotPreparationService.createShotPreparation(
+        preparationDataWithInvalidNumbers
+      );
 
       // Assert
       expect(mockPreparationRepository.create).toHaveBeenCalledWith({
@@ -268,7 +274,9 @@ describe('ShotPreparationService', () => {
       mockPreparationRepository.save.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotPreparationService.createShotPreparation(mockPreparationData)).rejects.toThrow('Database error');
+      await expect(
+        shotPreparationService.createShotPreparation(mockPreparationData)
+      ).rejects.toThrow('Database error');
     });
   });
 
@@ -291,7 +299,7 @@ describe('ShotPreparationService', () => {
         grind_setting: 14,
       };
       const updatedPreparation = { ...existingPreparation, ...updateData };
-      
+
       mockPreparationRepository.findOne.mockResolvedValue(existingPreparation);
       mockPreparationRepository.save.mockResolvedValue(updatedPreparation);
 
@@ -313,9 +321,9 @@ describe('ShotPreparationService', () => {
       mockPreparationRepository.findOne.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(shotPreparationService.updateShotPreparation(shotId, updateData)).rejects.toThrow(
-        `Shot preparation with ID ${shotId} not found`
-      );
+      await expect(
+        shotPreparationService.updateShotPreparation(shotId, updateData)
+      ).rejects.toThrow(`Shot preparation with ID ${shotId} not found`);
     });
 
     it('should handle partial updates correctly', async () => {
@@ -333,7 +341,7 @@ describe('ShotPreparationService', () => {
       };
       const partialUpdate = { dose_grams: 18.0 }; // Only updating dose
       const updatedPreparation = { ...existingPreparation, dose_grams: 18.0 };
-      
+
       mockPreparationRepository.findOne.mockResolvedValue(existingPreparation);
       mockPreparationRepository.save.mockResolvedValue(updatedPreparation);
 
@@ -355,7 +363,9 @@ describe('ShotPreparationService', () => {
       mockPreparationRepository.save.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotPreparationService.updateShotPreparation(shotId, updateData)).rejects.toThrow('Database error');
+      await expect(
+        shotPreparationService.updateShotPreparation(shotId, updateData)
+      ).rejects.toThrow('Database error');
     });
   });
 
@@ -363,11 +373,11 @@ describe('ShotPreparationService', () => {
     it('should delete existing shot preparation', async () => {
       // Arrange
       const shotId = 'test-shot-id';
-      const existingPreparation = { 
+      const existingPreparation = {
         shot_id: shotId,
         dose_grams: 18.5,
         grind_setting: 15,
-        shot: mockShotData
+        shot: mockShotData,
       };
       mockPreparationRepository.findOne.mockResolvedValue(existingPreparation);
       mockPreparationRepository.remove.mockResolvedValue(existingPreparation);
@@ -402,7 +412,9 @@ describe('ShotPreparationService', () => {
       mockPreparationRepository.remove.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotPreparationService.deleteShotPreparation(shotId)).rejects.toThrow('Database error');
+      await expect(shotPreparationService.deleteShotPreparation(shotId)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 });

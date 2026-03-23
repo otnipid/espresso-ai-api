@@ -190,7 +190,9 @@ describe('ShotExtractionService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for non-existent shot
-      await expect(shotExtractionService.createShotExtraction(extractionData)).rejects.toThrow('Shot with ID 550e8400-e29b-41d4-a716-446655440001 not found');
+      await expect(shotExtractionService.createShotExtraction(extractionData)).rejects.toThrow(
+        'Shot with ID 550e8400-e29b-41d4-a716-446655440001 not found'
+      );
     });
 
     it('should throw error when shot ID is missing', async () => {
@@ -206,7 +208,9 @@ describe('ShotExtractionService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for missing shot ID
-      await expect(shotExtractionService.createShotExtraction(extractionData)).rejects.toThrow('Shot ID is required');
+      await expect(shotExtractionService.createShotExtraction(extractionData)).rejects.toThrow(
+        'Shot ID is required'
+      );
     });
   });
 
@@ -247,7 +251,9 @@ describe('ShotExtractionService Integration Tests', () => {
 
     it('should throw error when extraction not found', async () => {
       // Act & Assert: Should throw error for non-existent extraction
-      await expect(shotExtractionService.getShotExtractionById('550e8400-e29b-41d4-a716-446655440002')).rejects.toThrow('Shot extraction with ID 550e8400-e29b-41d4-a716-446655440002 not found');
+      await expect(
+        shotExtractionService.getShotExtractionById('550e8400-e29b-41d4-a716-446655440002')
+      ).rejects.toThrow('Shot extraction with ID 550e8400-e29b-41d4-a716-446655440002 not found');
     });
   });
 
@@ -337,7 +343,10 @@ describe('ShotExtractionService Integration Tests', () => {
       };
 
       // Act: Update extraction
-      const result = await shotExtractionService.updateShotExtraction(extraction.shot_id, updateData);
+      const result = await shotExtractionService.updateShotExtraction(
+        extraction.shot_id,
+        updateData
+      );
 
       // Assert: Verify extraction was updated
       expect(result).toBeDefined();
@@ -375,7 +384,10 @@ describe('ShotExtractionService Integration Tests', () => {
       };
 
       // Act: Update extraction partially
-      const result = await shotExtractionService.updateShotExtraction(extraction.shot_id, updateData);
+      const result = await shotExtractionService.updateShotExtraction(
+        extraction.shot_id,
+        updateData
+      );
 
       // Assert: Verify only specified fields were updated
       expect(result).toBeDefined();
@@ -418,7 +430,10 @@ describe('ShotExtractionService Integration Tests', () => {
       };
 
       // Act: Update extraction with null values
-      const result = await shotExtractionService.updateShotExtraction(extraction.shot_id, updateData);
+      const result = await shotExtractionService.updateShotExtraction(
+        extraction.shot_id,
+        updateData
+      );
 
       // Assert: Verify null values are handled correctly
       expect(result).toBeDefined();
@@ -461,7 +476,10 @@ describe('ShotExtractionService Integration Tests', () => {
       };
 
       // Act: Update extraction with string numeric values
-      const result = await shotExtractionService.updateShotExtraction(extraction.shot_id, updateData);
+      const result = await shotExtractionService.updateShotExtraction(
+        extraction.shot_id,
+        updateData
+      );
 
       // Assert: Verify string numeric values are converted to numbers
       expect(result).toBeDefined();
@@ -501,7 +519,10 @@ describe('ShotExtractionService Integration Tests', () => {
       };
 
       // Act: Update extraction with invalid numeric values
-      const result = await shotExtractionService.updateShotExtraction(extraction.shot_id, updateData);
+      const result = await shotExtractionService.updateShotExtraction(
+        extraction.shot_id,
+        updateData
+      );
 
       // Assert: Verify invalid numeric values are set to null
       expect(result).toBeDefined();
@@ -519,7 +540,12 @@ describe('ShotExtractionService Integration Tests', () => {
       const updateData = {
         yield_grams: 38.0,
       };
-      await expect(shotExtractionService.updateShotExtraction('550e8400-e29b-41d4-a716-446655440003', updateData)).rejects.toThrow('Shot extraction with ID 550e8400-e29b-41d4-a716-446655440003 not found');
+      await expect(
+        shotExtractionService.updateShotExtraction(
+          '550e8400-e29b-41d4-a716-446655440003',
+          updateData
+        )
+      ).rejects.toThrow('Shot extraction with ID 550e8400-e29b-41d4-a716-446655440003 not found');
     });
   });
 
@@ -553,7 +579,9 @@ describe('ShotExtractionService Integration Tests', () => {
 
     it('should throw error when deleting non-existent extraction', async () => {
       // Act & Assert: Should throw error for non-existent extraction
-      await expect(shotExtractionService.deleteShotExtraction('550e8400-e29b-41d4-a716-446655440004')).rejects.toThrow('Shot extraction with ID 550e8400-e29b-41d4-a716-446655440004 not found');
+      await expect(
+        shotExtractionService.deleteShotExtraction('550e8400-e29b-41d4-a716-446655440004')
+      ).rejects.toThrow('Shot extraction with ID 550e8400-e29b-41d4-a716-446655440004 not found');
     });
   });
 });

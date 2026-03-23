@@ -42,7 +42,9 @@ export class BeanService {
         relations: ['beanBatches'],
       });
     } catch (error) {
-      throw new Error(`Error fetching beans: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching beans: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -68,7 +70,9 @@ export class BeanService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error fetching bean: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching bean: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -88,10 +92,11 @@ export class BeanService {
       // Process altitude_m - convert string to number if needed
       let processedAltitude: number | null = null;
       if (beanData.altitude_m !== null && beanData.altitude_m !== undefined) {
-        processedAltitude = typeof beanData.altitude_m === 'string' 
-          ? parseFloat(beanData.altitude_m) 
-          : beanData.altitude_m;
-        
+        processedAltitude =
+          typeof beanData.altitude_m === 'string'
+            ? parseFloat(beanData.altitude_m)
+            : beanData.altitude_m;
+
         // Validate altitude is a valid number
         if (isNaN(processedAltitude)) {
           processedAltitude = null;
@@ -115,7 +120,9 @@ export class BeanService {
       if (error instanceof Error && error.message.includes('required')) {
         throw error;
       }
-      throw new Error(`Error creating bean: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error creating bean: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -139,10 +146,11 @@ export class BeanService {
       // Process altitude_m if provided
       let processedAltitude: number | null | undefined = undefined;
       if (updateData.altitude_m !== null && updateData.altitude_m !== undefined) {
-        processedAltitude = typeof updateData.altitude_m === 'string' 
-          ? parseFloat(updateData.altitude_m) 
-          : updateData.altitude_m;
-        
+        processedAltitude =
+          typeof updateData.altitude_m === 'string'
+            ? parseFloat(updateData.altitude_m)
+            : updateData.altitude_m;
+
         // Validate altitude is a valid number
         if (isNaN(processedAltitude)) {
           processedAltitude = null;
@@ -169,13 +177,15 @@ export class BeanService {
         existingBean.varietal = updateData.varietal?.trim() || existingBean.varietal;
       }
       if (updateData.processing_method !== undefined) {
-        existingBean.processing_method = updateData.processing_method?.trim() || existingBean.processing_method;
+        existingBean.processing_method =
+          updateData.processing_method?.trim() || existingBean.processing_method;
       }
       if (processedAltitude !== undefined) {
         existingBean.altitude_m = processedAltitude;
       }
       if (updateData.density_category !== undefined) {
-        existingBean.density_category = updateData.density_category?.trim() || existingBean.density_category;
+        existingBean.density_category =
+          updateData.density_category?.trim() || existingBean.density_category;
       }
 
       return await this.beanRepository.save(existingBean);
@@ -183,7 +193,9 @@ export class BeanService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error updating bean: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error updating bean: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -208,7 +220,9 @@ export class BeanService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error deleting bean: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error deleting bean: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 }

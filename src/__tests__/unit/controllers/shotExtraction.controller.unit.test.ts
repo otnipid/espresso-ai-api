@@ -19,7 +19,9 @@ describe('ShotExtractionController', () => {
     };
 
     // Mock the service constructor
-    (ShotExtractionService as jest.MockedClass<any>) = jest.fn().mockImplementation(() => mockShotExtractionService);
+    (ShotExtractionService as jest.MockedClass<any>) = jest
+      .fn()
+      .mockImplementation(() => mockShotExtractionService);
 
     mockRequest = {} as Request;
     mockResponse = {
@@ -145,10 +147,10 @@ describe('ShotExtractionController', () => {
 
     it('should handle null values correctly', async () => {
       // Test: Controller should pass null values to service and return HTTP response
-      const newExtraction = { 
+      const newExtraction = {
         shot_id: '550e8400-e29b-41d4-a716-446655440002',
-        yield_grams: null, 
-        shot_time_seconds: null 
+        yield_grams: null,
+        shot_time_seconds: null,
       };
       const createdExtraction = { id: '1', ...newExtraction };
 
@@ -202,9 +204,9 @@ describe('ShotExtractionController', () => {
 
       // Assert: Test HTTP interface, not repository calls
       expect(mockShotExtractionService.updateShotExtraction).toHaveBeenCalledWith('1', {
-        yield_grams: "38.0",
-        shot_time_seconds: "27",
-        avg_pressure_bar: "8.5",
+        yield_grams: '38.0',
+        shot_time_seconds: '27',
+        avg_pressure_bar: '8.5',
         peak_pressure_bar: undefined,
         preinfusion_seconds: undefined,
         water_temp_c: undefined,
@@ -245,9 +247,9 @@ describe('ShotExtractionController', () => {
 
       mockRequest.params = { id: '1' };
       mockRequest.body = { yield_grams: '38.0' }; // Only updating one field
-      mockShotExtractionService.updateShotExtraction.mockResolvedValue({ 
-        ...existingExtraction, 
-        yield_grams: 38.0 
+      mockShotExtractionService.updateShotExtraction.mockResolvedValue({
+        ...existingExtraction,
+        yield_grams: 38.0,
       });
 
       const ShotExtractionController = (
@@ -264,7 +266,7 @@ describe('ShotExtractionController', () => {
         preinfusion_seconds: undefined,
         shot_time_seconds: undefined,
         water_temp_c: undefined,
-        yield_grams: "38.0",
+        yield_grams: '38.0',
       });
       expect(mockResponse.json).toHaveBeenCalledWith({
         ...existingExtraction,

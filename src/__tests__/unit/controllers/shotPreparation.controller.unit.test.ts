@@ -73,7 +73,9 @@ describe('ShotPreparationController', () => {
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error fetching shot preparations' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Error fetching shot preparations',
+      });
     });
   });
 
@@ -116,7 +118,9 @@ describe('ShotPreparationController', () => {
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error fetching shot preparation' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Error fetching shot preparation',
+      });
     });
   });
 
@@ -132,7 +136,7 @@ describe('ShotPreparationController', () => {
 
       mockRequest.params = { id: '1' };
       mockRequest.body = { shot_id: '1', ...preparationData };
-      
+
       const createdPreparation = { shot_id: '1', ...preparationData, shot: { id: '1' } } as any;
       mockShotPreparationService.createShotPreparation.mockResolvedValue(createdPreparation);
 
@@ -140,7 +144,10 @@ describe('ShotPreparationController', () => {
       await shotPreparationController.save(mockRequest as Request, mockResponse as Response);
 
       // Assert - Controller passes data as-is from request body
-      expect(mockShotPreparationService.createShotPreparation).toHaveBeenCalledWith({ shot_id: '1', ...preparationData });
+      expect(mockShotPreparationService.createShotPreparation).toHaveBeenCalledWith({
+        shot_id: '1',
+        ...preparationData,
+      });
       expect(mockResponse.status).toHaveBeenCalledWith(201);
       expect(mockResponse.json).toHaveBeenCalledWith(createdPreparation);
     });
@@ -159,7 +166,7 @@ describe('ShotPreparationController', () => {
 
       mockRequest.params = { id: '1' };
       mockRequest.body = { shot_id: '1', ...preparationData };
-      
+
       const createdPreparation = { shot_id: '1', ...preparationData, shot: { id: '1' } } as any;
       mockShotPreparationService.createShotPreparation.mockResolvedValue(createdPreparation);
 
@@ -167,7 +174,10 @@ describe('ShotPreparationController', () => {
       await shotPreparationController.save(mockRequest as Request, mockResponse as Response);
 
       // Assert - Controller passes data as-is from request body
-      expect(mockShotPreparationService.createShotPreparation).toHaveBeenCalledWith({ shot_id: '1', ...preparationData });
+      expect(mockShotPreparationService.createShotPreparation).toHaveBeenCalledWith({
+        shot_id: '1',
+        ...preparationData,
+      });
       expect(mockResponse.status).toHaveBeenCalledWith(201);
       expect(mockResponse.json).toHaveBeenCalledWith(createdPreparation);
     });
@@ -182,15 +192,26 @@ describe('ShotPreparationController', () => {
 
       mockRequest.params = { id: '1' };
       mockRequest.body = { shot_id: '1', ...preparationData };
-      
-      const createdPreparation = { shot_id: '1', dose_grams: 18.5, grind_setting: 15.0, basket_size_grams: 18, shot: { id: '1' } } as any;
+
+      const createdPreparation = {
+        shot_id: '1',
+        dose_grams: 18.5,
+        grind_setting: 15.0,
+        basket_size_grams: 18,
+        shot: { id: '1' },
+      } as any;
       mockShotPreparationService.createShotPreparation.mockResolvedValue(createdPreparation);
 
       // Act
       await shotPreparationController.save(mockRequest as Request, mockResponse as Response);
 
       // Assert - Controller passes data as-is from request body
-      expect(mockShotPreparationService.createShotPreparation).toHaveBeenCalledWith({ shot_id: '1', dose_grams: '18.5', grind_setting: '15.0', basket_size_grams: '18' });
+      expect(mockShotPreparationService.createShotPreparation).toHaveBeenCalledWith({
+        shot_id: '1',
+        dose_grams: '18.5',
+        grind_setting: '15.0',
+        basket_size_grams: '18',
+      });
       expect(mockResponse.status).toHaveBeenCalledWith(201);
       expect(mockResponse.json).toHaveBeenCalledWith(createdPreparation);
     });
@@ -207,7 +228,9 @@ describe('ShotPreparationController', () => {
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error creating shot preparation' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Error creating shot preparation',
+      });
     });
 
     it('should handle errors without message', async () => {
@@ -222,7 +245,9 @@ describe('ShotPreparationController', () => {
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error creating shot preparation' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Error creating shot preparation',
+      });
     });
   });
 
@@ -244,7 +269,10 @@ describe('ShotPreparationController', () => {
       await shotPreparationController.update(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(mockShotPreparationService.updateShotPreparation).toHaveBeenCalledWith('1', updateData);
+      expect(mockShotPreparationService.updateShotPreparation).toHaveBeenCalledWith(
+        '1',
+        updateData
+      );
       expect(mockResponse.json).toHaveBeenCalledWith(updatedPreparation);
     });
 
@@ -263,7 +291,10 @@ describe('ShotPreparationController', () => {
       await shotPreparationController.update(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(mockShotPreparationService.updateShotPreparation).toHaveBeenCalledWith('1', updateData);
+      expect(mockShotPreparationService.updateShotPreparation).toHaveBeenCalledWith(
+        '1',
+        updateData
+      );
       expect(mockResponse.json).toHaveBeenCalledWith(updatedPreparation);
     });
 
@@ -282,7 +313,9 @@ describe('ShotPreparationController', () => {
       await shotPreparationController.update(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(mockShotPreparationService.updateShotPreparation).toHaveBeenCalledWith('1', { basket_size_grams: '20' });
+      expect(mockShotPreparationService.updateShotPreparation).toHaveBeenCalledWith('1', {
+        basket_size_grams: '20',
+      });
       expect(mockResponse.json).toHaveBeenCalledWith(updatedPreparation);
     });
 
@@ -301,7 +334,9 @@ describe('ShotPreparationController', () => {
       await shotPreparationController.update(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(mockShotPreparationService.updateShotPreparation).toHaveBeenCalledWith('1', { distribution_method: null });
+      expect(mockShotPreparationService.updateShotPreparation).toHaveBeenCalledWith('1', {
+        distribution_method: null,
+      });
       expect(mockResponse.json).toHaveBeenCalledWith(updatedPreparation);
     });
 
@@ -320,7 +355,9 @@ describe('ShotPreparationController', () => {
       await shotPreparationController.update(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(mockShotPreparationService.updateShotPreparation).toHaveBeenCalledWith('1', { tamp_type: null });
+      expect(mockShotPreparationService.updateShotPreparation).toHaveBeenCalledWith('1', {
+        tamp_type: null,
+      });
       expect(mockResponse.json).toHaveBeenCalledWith(updatedPreparation);
     });
 
@@ -339,7 +376,9 @@ describe('ShotPreparationController', () => {
       await shotPreparationController.update(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(mockShotPreparationService.updateShotPreparation).toHaveBeenCalledWith('1', { tamp_pressure_category: null });
+      expect(mockShotPreparationService.updateShotPreparation).toHaveBeenCalledWith('1', {
+        tamp_pressure_category: null,
+      });
       expect(mockResponse.json).toHaveBeenCalledWith(updatedPreparation);
     });
 
@@ -369,7 +408,9 @@ describe('ShotPreparationController', () => {
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error updating shot preparation' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Error updating shot preparation',
+      });
     });
 
     it('should handle errors without message', async () => {
@@ -385,7 +426,9 @@ describe('ShotPreparationController', () => {
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error updating shot preparation' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Error updating shot preparation',
+      });
     });
   });
 
@@ -429,7 +472,9 @@ describe('ShotPreparationController', () => {
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error deleting shot preparation' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Error deleting shot preparation',
+      });
     });
   });
 });

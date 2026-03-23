@@ -141,7 +141,9 @@ describe('MachineService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for missing model
-      await expect(machineService.createMachine(machineData)).rejects.toThrow('Machine model is required');
+      await expect(machineService.createMachine(machineData)).rejects.toThrow(
+        'Machine model is required'
+      );
     });
 
     it('should throw error when model is only whitespace', async () => {
@@ -152,7 +154,9 @@ describe('MachineService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for empty model after trimming
-      await expect(machineService.createMachine(machineData)).rejects.toThrow('Machine model is required');
+      await expect(machineService.createMachine(machineData)).rejects.toThrow(
+        'Machine model is required'
+      );
     });
   });
 
@@ -179,7 +183,9 @@ describe('MachineService Integration Tests', () => {
 
     it('should throw error when machine not found', async () => {
       // Act & Assert: Should throw error for non-existent machine
-      await expect(machineService.getMachineById('550e8400-e29b-41d4-a716-446655440002')).rejects.toThrow('Machine with ID 550e8400-e29b-41d4-a716-446655440002 not found');
+      await expect(
+        machineService.getMachineById('550e8400-e29b-41d4-a716-446655440002')
+      ).rejects.toThrow('Machine with ID 550e8400-e29b-41d4-a716-446655440002 not found');
     });
   });
 
@@ -429,7 +435,9 @@ describe('MachineService Integration Tests', () => {
       const updateData = {
         model: 'Updated Machine',
       };
-      await expect(machineService.updateMachine('550e8400-e29b-41d4-a716-446655440003', updateData)).rejects.toThrow('Machine with ID 550e8400-e29b-41d4-a716-446655440003 not found');
+      await expect(
+        machineService.updateMachine('550e8400-e29b-41d4-a716-446655440003', updateData)
+      ).rejects.toThrow('Machine with ID 550e8400-e29b-41d4-a716-446655440003 not found');
     });
 
     it('should throw error when model in update is empty', async () => {
@@ -446,7 +454,9 @@ describe('MachineService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for empty model
-      await expect(machineService.updateMachine(machine.id, updateData)).rejects.toThrow('Machine model cannot be empty');
+      await expect(machineService.updateMachine(machine.id, updateData)).rejects.toThrow(
+        'Machine model cannot be empty'
+      );
     });
 
     it('should throw error when model in update is only whitespace', async () => {
@@ -463,7 +473,9 @@ describe('MachineService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for empty model after trimming
-      await expect(machineService.updateMachine(machine.id, updateData)).rejects.toThrow('Machine model cannot be empty');
+      await expect(machineService.updateMachine(machine.id, updateData)).rejects.toThrow(
+        'Machine model cannot be empty'
+      );
     });
   });
 
@@ -486,7 +498,9 @@ describe('MachineService Integration Tests', () => {
 
     it('should throw error when deleting non-existent machine', async () => {
       // Act & Assert: Should throw error for non-existent machine
-      await expect(machineService.deleteMachine('550e8400-e29b-41d4-a716-446655440004')).rejects.toThrow('Machine with ID 550e8400-e29b-41d4-a716-446655440004 not found');
+      await expect(
+        machineService.deleteMachine('550e8400-e29b-41d4-a716-446655440004')
+      ).rejects.toThrow('Machine with ID 550e8400-e29b-41d4-a716-446655440004 not found');
     });
   });
 });

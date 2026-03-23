@@ -36,7 +36,9 @@ export class BeanBatchService {
         relations: ['bean', 'shots'],
       });
     } catch (error) {
-      throw new Error(`Error fetching bean batches: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching bean batches: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -62,7 +64,9 @@ export class BeanBatchService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error fetching bean batch: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching bean batch: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -92,15 +96,17 @@ export class BeanBatchService {
       }
 
       // Process date fields
-      const processedRoastDate = typeof beanBatchData.roastDate === 'string' 
-        ? new Date(beanBatchData.roastDate) 
-        : beanBatchData.roastDate;
+      const processedRoastDate =
+        typeof beanBatchData.roastDate === 'string'
+          ? new Date(beanBatchData.roastDate)
+          : beanBatchData.roastDate;
 
       let processedBagOpenDate: Date | null | undefined;
       if (beanBatchData.bagOpenDate !== undefined && beanBatchData.bagOpenDate !== null) {
-        processedBagOpenDate = typeof beanBatchData.bagOpenDate === 'string' 
-          ? new Date(beanBatchData.bagOpenDate) 
-          : beanBatchData.bagOpenDate;
+        processedBagOpenDate =
+          typeof beanBatchData.bagOpenDate === 'string'
+            ? new Date(beanBatchData.bagOpenDate)
+            : beanBatchData.bagOpenDate;
       }
 
       // Validate dates
@@ -115,10 +121,11 @@ export class BeanBatchService {
       // Validate roast degree if provided
       let processedRoastDegree: number | null | undefined = undefined;
       if (beanBatchData.roastDegree !== undefined && beanBatchData.roastDegree !== null) {
-        processedRoastDegree = typeof beanBatchData.roastDegree === 'string' 
-          ? parseFloat(beanBatchData.roastDegree) 
-          : beanBatchData.roastDegree;
-        
+        processedRoastDegree =
+          typeof beanBatchData.roastDegree === 'string'
+            ? parseFloat(beanBatchData.roastDegree)
+            : beanBatchData.roastDegree;
+
         if (isNaN(processedRoastDegree)) {
           processedRoastDegree = null;
         }
@@ -134,10 +141,17 @@ export class BeanBatchService {
 
       return await this.beanBatchRepository.save(beanBatch);
     } catch (error) {
-      if (error instanceof Error && (error.message.includes('required') || error.message.includes('not found') || error.message.includes('Invalid'))) {
+      if (
+        error instanceof Error &&
+        (error.message.includes('required') ||
+          error.message.includes('not found') ||
+          error.message.includes('Invalid'))
+      ) {
         throw error;
       }
-      throw new Error(`Error creating bean batch: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error creating bean batch: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -161,10 +175,11 @@ export class BeanBatchService {
       // Process date fields if provided
       let processedRoastDate: Date | undefined = undefined;
       if (updateData.roastDate !== undefined) {
-        processedRoastDate = typeof updateData.roastDate === 'string' 
-          ? new Date(updateData.roastDate) 
-          : updateData.roastDate;
-        
+        processedRoastDate =
+          typeof updateData.roastDate === 'string'
+            ? new Date(updateData.roastDate)
+            : updateData.roastDate;
+
         if (isNaN(processedRoastDate.getTime())) {
           throw new Error('Invalid roast date format');
         }
@@ -172,12 +187,13 @@ export class BeanBatchService {
 
       let processedBagOpenDate: Date | null | undefined = undefined;
       if (updateData.bagOpenDate !== undefined) {
-        processedBagOpenDate = updateData.bagOpenDate === null 
-          ? null 
-          : (typeof updateData.bagOpenDate === 'string' 
-            ? new Date(updateData.bagOpenDate) 
-            : updateData.bagOpenDate);
-        
+        processedBagOpenDate =
+          updateData.bagOpenDate === null
+            ? null
+            : typeof updateData.bagOpenDate === 'string'
+              ? new Date(updateData.bagOpenDate)
+              : updateData.bagOpenDate;
+
         if (processedBagOpenDate !== null && isNaN(processedBagOpenDate.getTime())) {
           throw new Error('Invalid bag open date format');
         }
@@ -186,12 +202,13 @@ export class BeanBatchService {
       // Process roast degree if provided
       let processedRoastDegree: number | null | undefined = undefined;
       if (updateData.roastDegree !== undefined) {
-        processedRoastDegree = updateData.roastDegree === null 
-          ? null 
-          : (typeof updateData.roastDegree === 'string' 
-            ? parseFloat(updateData.roastDegree) 
-            : updateData.roastDegree);
-        
+        processedRoastDegree =
+          updateData.roastDegree === null
+            ? null
+            : typeof updateData.roastDegree === 'string'
+              ? parseFloat(updateData.roastDegree)
+              : updateData.roastDegree;
+
         if (processedRoastDegree !== null && isNaN(processedRoastDegree)) {
           processedRoastDegree = null;
         }
@@ -216,7 +233,9 @@ export class BeanBatchService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error updating bean batch: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error updating bean batch: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -241,7 +260,9 @@ export class BeanBatchService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error deleting bean batch: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error deleting bean batch: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -257,7 +278,9 @@ export class BeanBatchService {
         relations: ['bean', 'shots'],
       });
     } catch (error) {
-      throw new Error(`Error fetching bean batches for bean: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching bean batches for bean: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 }

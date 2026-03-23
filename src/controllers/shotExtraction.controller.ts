@@ -83,7 +83,7 @@ export class ShotExtractionController {
         preinfusion_seconds,
         peak_pressure_bar,
       });
-      
+
       response.json(result);
     } catch (error) {
       console.error('Error updating shot extraction:', error);

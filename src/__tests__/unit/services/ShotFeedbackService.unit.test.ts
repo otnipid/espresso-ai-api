@@ -31,7 +31,7 @@ describe('ShotFeedbackService', () => {
 
   beforeEach(() => {
     mockDataSource = createMockDataSource();
-    
+
     // Setup mock repositories
     mockFeedbackRepository = {
       find: jest.fn(),
@@ -41,19 +41,19 @@ describe('ShotFeedbackService', () => {
       remove: jest.fn(),
       findAndCount: jest.fn(),
     };
-    
+
     mockShotRepository = {
       findOne: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
     };
-    
-    mockDataSource.getRepository = jest.fn().mockImplementation((entity) => {
+
+    mockDataSource.getRepository = jest.fn().mockImplementation(entity => {
       if (entity === ShotFeedback) return mockFeedbackRepository;
       if (entity === Shot) return mockShotRepository;
       return mockFeedbackRepository;
     });
-    
+
     shotFeedbackService = new ShotFeedbackService(mockDataSource);
   });
 
@@ -61,13 +61,13 @@ describe('ShotFeedbackService', () => {
     it('should return all shot feedbacks with relations', async () => {
       // Arrange
       const expectedFeedbacks = [
-        { 
+        {
           shot_id: '1',
           overall_score: 8,
           acidity: 7,
           shot: mockShotData,
         },
-        { 
+        {
           shot_id: '2',
           overall_score: 9,
           acidity: 8,
@@ -100,7 +100,7 @@ describe('ShotFeedbackService', () => {
     it('should return shot feedback by ID with relations', async () => {
       // Arrange
       const shotId = 'test-shot-id';
-      const expectedFeedback = { 
+      const expectedFeedback = {
         shot_id: shotId,
         overall_score: 8,
         acidity: 7,
@@ -137,7 +137,9 @@ describe('ShotFeedbackService', () => {
       mockFeedbackRepository.findOne.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotFeedbackService.getShotFeedbackById(shotId)).rejects.toThrow('Database error');
+      await expect(shotFeedbackService.getShotFeedbackById(shotId)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 
@@ -145,7 +147,7 @@ describe('ShotFeedbackService', () => {
     it('should create shot feedback with valid data', async () => {
       // Arrange
       const mockShot = { id: mockShotData.id, shot_type: mockShotData.shot_type };
-      const expectedFeedback = { 
+      const expectedFeedback = {
         shot_id: mockShotData.id,
         overall_score: 8,
         acidity: 7,
@@ -154,9 +156,9 @@ describe('ShotFeedbackService', () => {
         body: 7,
         extraction_assessment: 'Good extraction',
         notes: 'Well balanced shot',
-        shot: mockShot
+        shot: mockShot,
       };
-      
+
       mockShotRepository.findOne.mockResolvedValue(mockShot);
       mockFeedbackRepository.create.mockReturnValue(mockFeedbackData);
       mockFeedbackRepository.save.mockResolvedValue(expectedFeedback);
@@ -216,10 +218,10 @@ describe('ShotFeedbackService', () => {
         bitterness: '5', // String that should be converted to number
         body: '7', // String that should be converted to number
       };
-      
+
       mockShotRepository.findOne.mockResolvedValue(mockShot);
       mockFeedbackRepository.create.mockReturnValue(feedbackDataWithStrings);
-      mockFeedbackRepository.save.mockResolvedValue({ 
+      mockFeedbackRepository.save.mockResolvedValue({
         shot_id: mockShotData.id,
         overall_score: 8,
         acidity: 7,
@@ -258,10 +260,10 @@ describe('ShotFeedbackService', () => {
         bitterness: 'invalid-number', // Invalid string that can't be parsed
         body: 'invalid-number', // Invalid string that can't be parsed
       };
-      
+
       mockShotRepository.findOne.mockResolvedValue(mockShot);
       mockFeedbackRepository.create.mockReturnValue(feedbackDataWithInvalidNumbers);
-      mockFeedbackRepository.save.mockResolvedValue({ 
+      mockFeedbackRepository.save.mockResolvedValue({
         shot_id: mockShotData.id,
         overall_score: null,
         acidity: null,
@@ -297,7 +299,9 @@ describe('ShotFeedbackService', () => {
       mockFeedbackRepository.save.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotFeedbackService.createShotFeedback(mockFeedbackData)).rejects.toThrow('Database error');
+      await expect(shotFeedbackService.createShotFeedback(mockFeedbackData)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 
@@ -320,7 +324,7 @@ describe('ShotFeedbackService', () => {
         acidity: 8,
       };
       const updatedFeedback = { ...existingFeedback, ...updateData };
-      
+
       mockFeedbackRepository.findOne.mockResolvedValue(existingFeedback);
       mockFeedbackRepository.save.mockResolvedValue(updatedFeedback);
 
@@ -362,7 +366,7 @@ describe('ShotFeedbackService', () => {
       };
       const partialUpdate = { overall_score: 9 }; // Only updating score
       const updatedFeedback = { ...existingFeedback, overall_score: 9 };
-      
+
       mockFeedbackRepository.findOne.mockResolvedValue(existingFeedback);
       mockFeedbackRepository.save.mockResolvedValue(updatedFeedback);
 
@@ -389,11 +393,11 @@ describe('ShotFeedbackService', () => {
         notes: 'Well balanced shot',
       };
       const updateData = { overall_score: '9' }; // String that should be converted
-      const updatedFeedback = { 
-        ...existingFeedback, 
-        overall_score: 9
+      const updatedFeedback = {
+        ...existingFeedback,
+        overall_score: 9,
       };
-      
+
       mockFeedbackRepository.findOne.mockResolvedValue(existingFeedback);
       mockFeedbackRepository.save.mockResolvedValue(updatedFeedback);
 
@@ -413,7 +417,9 @@ describe('ShotFeedbackService', () => {
       mockFeedbackRepository.save.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotFeedbackService.updateShotFeedback(shotId, updateData)).rejects.toThrow('Database error');
+      await expect(shotFeedbackService.updateShotFeedback(shotId, updateData)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 
@@ -421,11 +427,11 @@ describe('ShotFeedbackService', () => {
     it('should delete existing shot feedback', async () => {
       // Arrange
       const shotId = 'test-shot-id';
-      const existingFeedback = { 
+      const existingFeedback = {
         shot_id: shotId,
         overall_score: 8,
         acidity: 7,
-        shot: mockShotData
+        shot: mockShotData,
       };
       mockFeedbackRepository.findOne.mockResolvedValue(existingFeedback);
       mockFeedbackRepository.remove.mockResolvedValue(existingFeedback);
@@ -460,7 +466,9 @@ describe('ShotFeedbackService', () => {
       mockFeedbackRepository.remove.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotFeedbackService.deleteShotFeedback(shotId)).rejects.toThrow('Database error');
+      await expect(shotFeedbackService.deleteShotFeedback(shotId)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 
@@ -470,14 +478,14 @@ describe('ShotFeedbackService', () => {
       const minScore = 7;
       const maxScore = 9;
       const expectedFeedbacks = [
-        { 
-          shot_id: '1', 
+        {
+          shot_id: '1',
           overall_score: 8,
           acidity: 7,
           shot: mockShotData,
         },
-        { 
-          shot_id: '2', 
+        {
+          shot_id: '2',
           overall_score: 9,
           acidity: 8,
           shot: mockShotData,
@@ -493,8 +501,8 @@ describe('ShotFeedbackService', () => {
         where: {
           overall_score: expect.objectContaining({
             _type: 'between',
-            _value: [minScore, maxScore]
-          })
+            _value: [minScore, maxScore],
+          }),
         },
         relations: ['shot'],
       });
@@ -516,8 +524,8 @@ describe('ShotFeedbackService', () => {
         where: {
           overall_score: expect.objectContaining({
             _type: 'between',
-            _value: [minScore, maxScore]
-          })
+            _value: [minScore, maxScore],
+          }),
         },
         relations: ['shot'],
       });
@@ -531,7 +539,9 @@ describe('ShotFeedbackService', () => {
       mockFeedbackRepository.find.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotFeedbackService.getShotFeedbacksByScore(minScore, maxScore)).rejects.toThrow('Database error');
+      await expect(shotFeedbackService.getShotFeedbacksByScore(minScore, maxScore)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 });

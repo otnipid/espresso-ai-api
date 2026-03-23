@@ -34,7 +34,9 @@ export class GrinderService {
         relations: ['shots'],
       });
     } catch (error) {
-      throw new Error(`Error fetching grinders: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching grinders: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -60,7 +62,9 @@ export class GrinderService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error fetching grinder: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching grinder: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -80,10 +84,11 @@ export class GrinderService {
       // Process burrInstallDate
       let processedBurrInstallDate: Date | null = null;
       if (grinderData.burrInstallDate !== undefined && grinderData.burrInstallDate !== null) {
-        processedBurrInstallDate = typeof grinderData.burrInstallDate === 'string' 
-          ? new Date(grinderData.burrInstallDate) 
-          : grinderData.burrInstallDate;
-        
+        processedBurrInstallDate =
+          typeof grinderData.burrInstallDate === 'string'
+            ? new Date(grinderData.burrInstallDate)
+            : grinderData.burrInstallDate;
+
         // Check if the date is invalid
         if (isNaN(processedBurrInstallDate.getTime())) {
           processedBurrInstallDate = null;
@@ -103,7 +108,9 @@ export class GrinderService {
       if (error instanceof Error && error.message.includes('required')) {
         throw error;
       }
-      throw new Error(`Error creating grinder: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error creating grinder: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -144,10 +151,11 @@ export class GrinderService {
         if (updateData.burrInstallDate === null) {
           existingGrinder.burrInstallDate = null;
         } else {
-          const processedDate = typeof updateData.burrInstallDate === 'string' 
-            ? new Date(updateData.burrInstallDate) 
-            : updateData.burrInstallDate;
-          
+          const processedDate =
+            typeof updateData.burrInstallDate === 'string'
+              ? new Date(updateData.burrInstallDate)
+              : updateData.burrInstallDate;
+
           if (isNaN(processedDate.getTime())) {
             existingGrinder.burrInstallDate = null;
           } else {
@@ -165,7 +173,9 @@ export class GrinderService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error updating grinder: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error updating grinder: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -190,7 +200,9 @@ export class GrinderService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error deleting grinder: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error deleting grinder: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -206,7 +218,9 @@ export class GrinderService {
         relations: ['shots'],
       });
     } catch (error) {
-      throw new Error(`Error fetching grinders by manufacturer: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching grinders by manufacturer: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 }

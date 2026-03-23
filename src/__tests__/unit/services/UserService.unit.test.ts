@@ -24,7 +24,7 @@ describe('UserService', () => {
       remove: jest.fn(),
       findAndCount: jest.fn(),
     };
-    
+
     mockDataSource.getRepository = jest.fn().mockReturnValue(mockUserRepository);
     userService = new UserService(mockDataSource);
   });
@@ -33,25 +33,25 @@ describe('UserService', () => {
     it('should return all users with relations', async () => {
       // Arrange
       const expectedUsers = [
-        { 
-          id: '1', 
+        {
+          id: '1',
           name: 'User 1',
           email: 'user1@example.com',
           created_at: new Date(),
           updated_at: new Date(),
           shots: [],
           createdShots: [],
-          updatedShots: []
+          updatedShots: [],
         },
-        { 
-          id: '2', 
+        {
+          id: '2',
           name: 'User 2',
           email: 'user2@example.com',
           created_at: new Date(),
           updated_at: new Date(),
           shots: [],
           createdShots: [],
-          updatedShots: []
+          updatedShots: [],
         },
       ];
       mockUserRepository.find.mockResolvedValue(expectedUsers);
@@ -80,15 +80,15 @@ describe('UserService', () => {
     it('should return user by ID with relations', async () => {
       // Arrange
       const userId = 'test-id';
-      const expectedUser = { 
-        id: userId, 
+      const expectedUser = {
+        id: userId,
         name: 'Test User',
         email: 'test@example.com',
         created_at: new Date(),
         updated_at: new Date(),
         shots: [],
         createdShots: [],
-        updatedShots: []
+        updatedShots: [],
       };
       mockUserRepository.findOne.mockResolvedValue(expectedUser);
 
@@ -128,15 +128,15 @@ describe('UserService', () => {
   describe('createUser', () => {
     it('should create user with valid data', async () => {
       // Arrange
-      const expectedUser = { 
-        id: 'new-id', 
+      const expectedUser = {
+        id: 'new-id',
         name: 'John Doe',
         email: 'john.doe@example.com',
         created_at: new Date(),
         updated_at: new Date(),
         shots: [],
         createdShots: [],
-        updatedShots: []
+        updatedShots: [],
       };
       mockUserRepository.create.mockReturnValue(mockUserData);
       mockUserRepository.save.mockResolvedValue(expectedUser);
@@ -158,9 +158,7 @@ describe('UserService', () => {
       };
 
       // Act & Assert
-      await expect(userService.createUser(invalidData)).rejects.toThrow(
-        'User name is required'
-      );
+      await expect(userService.createUser(invalidData)).rejects.toThrow('User name is required');
     });
 
     it('should throw error when name is empty string', async () => {
@@ -171,9 +169,7 @@ describe('UserService', () => {
       };
 
       // Act & Assert
-      await expect(userService.createUser(invalidData)).rejects.toThrow(
-        'User name is required'
-      );
+      await expect(userService.createUser(invalidData)).rejects.toThrow('User name is required');
     });
 
     it('should handle null email', async () => {
@@ -182,15 +178,15 @@ describe('UserService', () => {
         name: 'Test User',
         email: null,
       };
-      const expectedUser = { 
-        id: 'new-id', 
+      const expectedUser = {
+        id: 'new-id',
         name: 'Test User',
         email: null,
         created_at: new Date(),
         updated_at: new Date(),
         shots: [],
         createdShots: [],
-        updatedShots: []
+        updatedShots: [],
       };
       mockUserRepository.create.mockReturnValue(userDataWithNullEmail);
       mockUserRepository.save.mockResolvedValue(expectedUser);
@@ -209,15 +205,15 @@ describe('UserService', () => {
         name: 'Test User',
         // email is undefined
       };
-      const expectedUser = { 
-        id: 'new-id', 
+      const expectedUser = {
+        id: 'new-id',
         name: 'Test User',
         email: null,
         created_at: new Date(),
         updated_at: new Date(),
         shots: [],
         createdShots: [],
-        updatedShots: []
+        updatedShots: [],
       };
       mockUserRepository.create.mockReturnValue({
         name: 'Test User',
@@ -262,11 +258,11 @@ describe('UserService', () => {
         name: 'New Name',
         email: 'new@example.com',
       };
-      const updatedUser = { 
-        ...existingUser, 
-        ...updateData
+      const updatedUser = {
+        ...existingUser,
+        ...updateData,
       };
-      
+
       mockUserRepository.findOne.mockResolvedValue(existingUser);
       mockUserRepository.save.mockResolvedValue(updatedUser);
 
@@ -305,7 +301,7 @@ describe('UserService', () => {
       };
       const partialUpdate = { name: 'Updated Name' }; // Only updating name
       const updatedUser = { ...existingUser, name: 'Updated Name' };
-      
+
       mockUserRepository.findOne.mockResolvedValue(existingUser);
       mockUserRepository.save.mockResolvedValue(updatedUser);
 
@@ -328,11 +324,11 @@ describe('UserService', () => {
         updated_at: new Date(),
       };
       const updateData = { email: null };
-      const updatedUser = { 
-        ...existingUser, 
-        email: null
+      const updatedUser = {
+        ...existingUser,
+        email: null,
       };
-      
+
       mockUserRepository.findOne.mockResolvedValue(existingUser);
       mockUserRepository.save.mockResolvedValue(updatedUser);
 
@@ -360,15 +356,15 @@ describe('UserService', () => {
     it('should delete existing user', async () => {
       // Arrange
       const userId = 'test-id';
-      const existingUser = { 
-        id: userId, 
+      const existingUser = {
+        id: userId,
         name: 'Test User',
         email: 'test@example.com',
         created_at: new Date(),
         updated_at: new Date(),
         shots: [],
         createdShots: [],
-        updatedShots: []
+        updatedShots: [],
       };
       mockUserRepository.findOne.mockResolvedValue(existingUser);
       mockUserRepository.remove.mockResolvedValue(existingUser);
@@ -412,25 +408,25 @@ describe('UserService', () => {
       // Arrange
       const email = 'test@example.com';
       const expectedUsers = [
-        { 
-          id: '1', 
+        {
+          id: '1',
           name: 'User 1',
           email: 'test@example.com',
           created_at: new Date(),
           updated_at: new Date(),
           shots: [],
           createdShots: [],
-          updatedShots: []
+          updatedShots: [],
         },
-        { 
-          id: '2', 
+        {
+          id: '2',
           name: 'User 2',
           email: 'test@example.com',
           created_at: new Date(),
           updated_at: new Date(),
           shots: [],
           createdShots: [],
-          updatedShots: []
+          updatedShots: [],
         },
       ];
       mockUserRepository.find.mockResolvedValue(expectedUsers);

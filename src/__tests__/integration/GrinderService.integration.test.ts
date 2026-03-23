@@ -168,7 +168,9 @@ describe('GrinderService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for missing model
-      await expect(grinderService.createGrinder(grinderData)).rejects.toThrow('Grinder model is required');
+      await expect(grinderService.createGrinder(grinderData)).rejects.toThrow(
+        'Grinder model is required'
+      );
     });
 
     it('should throw error when model is only whitespace', async () => {
@@ -182,7 +184,9 @@ describe('GrinderService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for empty model after trimming
-      await expect(grinderService.createGrinder(grinderData)).rejects.toThrow('Grinder model is required');
+      await expect(grinderService.createGrinder(grinderData)).rejects.toThrow(
+        'Grinder model is required'
+      );
     });
   });
 
@@ -213,7 +217,9 @@ describe('GrinderService Integration Tests', () => {
 
     it('should throw error when grinder not found', async () => {
       // Act & Assert: Should throw error for non-existent grinder
-      await expect(grinderService.getGrinderById('550e8400-e29b-41d4-a716-446655440002')).rejects.toThrow('Grinder with ID 550e8400-e29b-41d4-a716-446655440002 not found');
+      await expect(
+        grinderService.getGrinderById('550e8400-e29b-41d4-a716-446655440002')
+      ).rejects.toThrow('Grinder with ID 550e8400-e29b-41d4-a716-446655440002 not found');
     });
   });
 
@@ -483,7 +489,9 @@ describe('GrinderService Integration Tests', () => {
       const updateData = {
         model: 'Updated Grinder',
       };
-      await expect(grinderService.updateGrinder('550e8400-e29b-41d4-a716-446655440003', updateData)).rejects.toThrow('Grinder with ID 550e8400-e29b-41d4-a716-446655440003 not found');
+      await expect(
+        grinderService.updateGrinder('550e8400-e29b-41d4-a716-446655440003', updateData)
+      ).rejects.toThrow('Grinder with ID 550e8400-e29b-41d4-a716-446655440003 not found');
     });
 
     it('should throw error when model in update is empty', async () => {
@@ -503,7 +511,9 @@ describe('GrinderService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for empty model
-      await expect(grinderService.updateGrinder(grinder.id, updateData)).rejects.toThrow('Grinder model cannot be empty');
+      await expect(grinderService.updateGrinder(grinder.id, updateData)).rejects.toThrow(
+        'Grinder model cannot be empty'
+      );
     });
   });
 
@@ -529,7 +539,9 @@ describe('GrinderService Integration Tests', () => {
 
     it('should throw error when deleting non-existent grinder', async () => {
       // Act & Assert: Should throw error for non-existent grinder
-      await expect(grinderService.deleteGrinder('550e8400-e29b-41d4-a716-446655440004')).rejects.toThrow('Grinder with ID 550e8400-e29b-41d4-a716-446655440004 not found');
+      await expect(
+        grinderService.deleteGrinder('550e8400-e29b-41d4-a716-446655440004')
+      ).rejects.toThrow('Grinder with ID 550e8400-e29b-41d4-a716-446655440004 not found');
     });
   });
 });

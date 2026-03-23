@@ -257,7 +257,9 @@ describe('ShotFeedbackService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for non-existent shot
-      await expect(shotFeedbackService.createShotFeedback(feedbackData)).rejects.toThrow('Shot with ID 550e8400-e29b-41d4-a716-446655440001 not found');
+      await expect(shotFeedbackService.createShotFeedback(feedbackData)).rejects.toThrow(
+        'Shot with ID 550e8400-e29b-41d4-a716-446655440001 not found'
+      );
     });
 
     it('should throw error when shot ID is missing', async () => {
@@ -274,7 +276,9 @@ describe('ShotFeedbackService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for missing shot ID
-      await expect(shotFeedbackService.createShotFeedback(feedbackData)).rejects.toThrow('Shot ID is required');
+      await expect(shotFeedbackService.createShotFeedback(feedbackData)).rejects.toThrow(
+        'Shot ID is required'
+      );
     });
   });
 
@@ -317,7 +321,9 @@ describe('ShotFeedbackService Integration Tests', () => {
 
     it('should throw error when feedback not found', async () => {
       // Act & Assert: Should throw error for non-existent feedback
-      await expect(shotFeedbackService.getShotFeedbackById('550e8400-e29b-41d4-a716-446655440002')).rejects.toThrow('Shot feedback with ID 550e8400-e29b-41d4-a716-446655440002 not found');
+      await expect(
+        shotFeedbackService.getShotFeedbackById('550e8400-e29b-41d4-a716-446655440002')
+      ).rejects.toThrow('Shot feedback with ID 550e8400-e29b-41d4-a716-446655440002 not found');
     });
   });
 
@@ -780,7 +786,9 @@ describe('ShotFeedbackService Integration Tests', () => {
       const updateData = {
         overall_score: 9,
       };
-      await expect(shotFeedbackService.updateShotFeedback('550e8400-e29b-41d4-a716-446655440003', updateData)).rejects.toThrow('Shot feedback with ID 550e8400-e29b-41d4-a716-446655440003 not found');
+      await expect(
+        shotFeedbackService.updateShotFeedback('550e8400-e29b-41d4-a716-446655440003', updateData)
+      ).rejects.toThrow('Shot feedback with ID 550e8400-e29b-41d4-a716-446655440003 not found');
     });
   });
 
@@ -815,7 +823,9 @@ describe('ShotFeedbackService Integration Tests', () => {
 
     it('should throw error when deleting non-existent feedback', async () => {
       // Act & Assert: Should throw error for non-existent feedback
-      await expect(shotFeedbackService.deleteShotFeedback('550e8400-e29b-41d4-a716-446655440004')).rejects.toThrow('Shot feedback with ID 550e8400-e29b-41d4-a716-446655440004 not found');
+      await expect(
+        shotFeedbackService.deleteShotFeedback('550e8400-e29b-41d4-a716-446655440004')
+      ).rejects.toThrow('Shot feedback with ID 550e8400-e29b-41d4-a716-446655440004 not found');
     });
   });
 });

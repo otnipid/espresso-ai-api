@@ -28,7 +28,9 @@ export class MachineService {
         relations: ['shots'],
       });
     } catch (error) {
-      throw new Error(`Error fetching machines: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching machines: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -54,7 +56,9 @@ export class MachineService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error fetching machine: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching machine: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -87,7 +91,9 @@ export class MachineService {
       if (error instanceof Error && error.message.includes('required')) {
         throw error;
       }
-      throw new Error(`Error creating machine: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error creating machine: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -117,9 +123,8 @@ export class MachineService {
       }
 
       if (updateData.firmware_version !== undefined) {
-        existingMachine.firmware_version = updateData.firmware_version === null 
-          ? null 
-          : (updateData.firmware_version?.trim() || null);
+        existingMachine.firmware_version =
+          updateData.firmware_version === null ? null : updateData.firmware_version?.trim() || null;
       }
 
       return await this.machineRepository.save(existingMachine);
@@ -127,7 +132,9 @@ export class MachineService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error updating machine: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error updating machine: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -152,7 +159,9 @@ export class MachineService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error deleting machine: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error deleting machine: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -170,7 +179,9 @@ export class MachineService {
         relations: ['shots'],
       });
     } catch (error) {
-      throw new Error(`Error fetching machines by model: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching machines by model: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 }

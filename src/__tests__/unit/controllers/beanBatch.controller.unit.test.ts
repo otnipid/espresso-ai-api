@@ -49,8 +49,22 @@ describe('BeanBatchController', () => {
     it('should return all bean batches', async () => {
       // Arrange
       const mockBatches = [
-        { id: '1', roastDate: new Date('2023-01-01'), bean: { id: '1' }, shots: [], createdAt: new Date(), updatedAt: new Date() } as any,
-        { id: '2', roastDate: new Date('2023-01-02'), bean: { id: '2' }, shots: [], createdAt: new Date(), updatedAt: new Date() } as any,
+        {
+          id: '1',
+          roastDate: new Date('2023-01-01'),
+          bean: { id: '1' },
+          shots: [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as any,
+        {
+          id: '2',
+          roastDate: new Date('2023-01-02'),
+          bean: { id: '2' },
+          shots: [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as any,
       ];
 
       mockBeanBatchService.getAllBeanBatches.mockResolvedValue(mockBatches);
@@ -80,7 +94,14 @@ describe('BeanBatchController', () => {
   describe('one', () => {
     it('should return bean batch when found', async () => {
       // Arrange
-      const mockBatch = { id: '1', roastDate: new Date('2023-01-01'), bean: { id: '1' }, shots: [], createdAt: new Date(), updatedAt: new Date() } as any;
+      const mockBatch = {
+        id: '1',
+        roastDate: new Date('2023-01-01'),
+        bean: { id: '1' },
+        shots: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
       mockRequest.params = { id: '1' };
       mockBeanBatchService.getBeanBatchById.mockResolvedValue(mockBatch);
 
@@ -132,7 +153,15 @@ describe('BeanBatchController', () => {
       };
 
       mockRequest.body = batchData;
-      const createdBatch = { id: '1', bean: { id: '1' }, roastDate: new Date('2023-01-01'), bagOpenDate: new Date('2023-06-01'), shots: [], createdAt: new Date(), updatedAt: new Date() } as any;
+      const createdBatch = {
+        id: '1',
+        bean: { id: '1' },
+        roastDate: new Date('2023-01-01'),
+        bagOpenDate: new Date('2023-06-01'),
+        shots: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any;
       mockBeanBatchService.createBeanBatch.mockResolvedValue(createdBatch);
 
       // Act
@@ -156,7 +185,9 @@ describe('BeanBatchController', () => {
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Bean ID and roast date are required' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Bean ID and roast date are required',
+      });
     });
 
     it('should handle missing roastDate validation', async () => {
@@ -171,7 +202,9 @@ describe('BeanBatchController', () => {
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Bean ID and roast date are required' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Bean ID and roast date are required',
+      });
     });
 
     it('should handle service errors', async () => {

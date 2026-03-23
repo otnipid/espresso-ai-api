@@ -22,7 +22,7 @@ export class MachineController {
   async one(request: Request, response: Response) {
     try {
       const machine = await this.machineService.getMachineById(request.params.id);
-      
+
       if (!machine) {
         return response.status(404).json({ message: 'Machine not found' });
       }
@@ -56,15 +56,15 @@ export class MachineController {
     try {
       const updateData: MachineUpdateData = {
         model: request.body.model,
-        firmware_version: request.body.firmware_version
-      }
+        firmware_version: request.body.firmware_version,
+      };
 
-      const machine = await this.machineService.updateMachine(request.params.id, updateData)
-  
-      if(!machine) {
+      const machine = await this.machineService.updateMachine(request.params.id, updateData);
+
+      if (!machine) {
         return response.status(404).json({ message: 'Machine not found' });
       }
-      
+
       response.json(machine);
     } catch (error) {
       console.error('Error updating machine:', error);
@@ -74,7 +74,7 @@ export class MachineController {
 
   async remove(request: Request, response: Response) {
     try {
-      const success  = await this.machineService.deleteMachine(request.params.id);
+      const success = await this.machineService.deleteMachine(request.params.id);
       response.status(204).send();
 
       if (!success) {

@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { MachineController } from '../../../controllers/machine.controller';
 import { MachineService } from '../../../services/MachineService';
 
-
 // Mock MachineService and data source
 jest.mock('../../../services/MachineService');
 
@@ -23,11 +22,13 @@ describe('MachineController', () => {
     } as any;
 
     // Mock the constructor to return our mock service
-    (MachineService as jest.MockedClass<any>) = jest.fn().mockImplementation(() => mockMachineService);
+    (MachineService as jest.MockedClass<any>) = jest
+      .fn()
+      .mockImplementation(() => mockMachineService);
 
     // Initialize the controller
     machineController = new MachineController();
-    
+
     // Setup mock request
     mockRequest = {
       body: {},

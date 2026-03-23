@@ -27,7 +27,7 @@ describe('GrinderService', () => {
       remove: jest.fn(),
       findAndCount: jest.fn(),
     };
-    
+
     mockDataSource.getRepository = jest.fn().mockReturnValue(mockGrinderRepository);
     grinderService = new GrinderService(mockDataSource);
   });
@@ -36,21 +36,21 @@ describe('GrinderService', () => {
     it('should return all grinders with relations', async () => {
       // Arrange
       const expectedGrinders = [
-        { 
-          id: '1', 
+        {
+          id: '1',
           model: 'Grinder 1',
           manufacturer: 'Manufacturer 1',
           created_at: new Date(),
           updated_at: new Date(),
-          shots: []
+          shots: [],
         },
-        { 
-          id: '2', 
+        {
+          id: '2',
           model: 'Grinder 2',
           manufacturer: 'Manufacturer 2',
           created_at: new Date(),
           updated_at: new Date(),
-          shots: []
+          shots: [],
         },
       ];
       mockGrinderRepository.find.mockResolvedValue(expectedGrinders);
@@ -79,13 +79,13 @@ describe('GrinderService', () => {
     it('should return grinder by ID with relations', async () => {
       // Arrange
       const grinderId = 'test-id';
-      const expectedGrinder = { 
-        id: grinderId, 
+      const expectedGrinder = {
+        id: grinderId,
         model: 'Test Grinder',
         manufacturer: 'Test Manufacturer',
         created_at: new Date(),
         updated_at: new Date(),
-        shots: []
+        shots: [],
       };
       mockGrinderRepository.findOne.mockResolvedValue(expectedGrinder);
 
@@ -125,8 +125,8 @@ describe('GrinderService', () => {
   describe('createGrinder', () => {
     it('should create grinder with valid data', async () => {
       // Arrange
-      const expectedGrinder = { 
-        id: 'new-id', 
+      const expectedGrinder = {
+        id: 'new-id',
         model: 'Baratza Sette 270Wi',
         manufacturer: 'Baratza',
         burrType: 'Conical',
@@ -134,7 +134,7 @@ describe('GrinderService', () => {
         serialNumber: 'SETTE270-12345',
         created_at: new Date(),
         updated_at: new Date(),
-        shots: []
+        shots: [],
       };
       mockGrinderRepository.create.mockReturnValue({
         model: 'Baratza Sette 270Wi',
@@ -198,8 +198,8 @@ describe('GrinderService', () => {
         ...mockGrinderData,
         burrInstallDate: '2023-01-15T00:00:00.000Z', // ISO string
       };
-      const expectedGrinder = { 
-        id: 'new-id', 
+      const expectedGrinder = {
+        id: 'new-id',
         model: 'Baratza Sette 270Wi',
         manufacturer: 'Baratza',
         burrType: 'Conical',
@@ -207,7 +207,7 @@ describe('GrinderService', () => {
         serialNumber: 'SETTE270-12345',
         created_at: new Date(),
         updated_at: new Date(),
-        shots: []
+        shots: [],
       };
       mockGrinderRepository.create.mockReturnValue(grinderDataWithStringDate);
       mockGrinderRepository.save.mockResolvedValue(expectedGrinder);
@@ -233,14 +233,14 @@ describe('GrinderService', () => {
         manufacturer: 'Test Manufacturer',
         // burrInstallDate is undefined
       };
-      const expectedGrinder = { 
-        id: 'new-id', 
+      const expectedGrinder = {
+        id: 'new-id',
         model: 'Test Grinder',
         manufacturer: 'Test Manufacturer',
         burrInstallDate: null,
         created_at: new Date(),
         updated_at: new Date(),
-        shots: []
+        shots: [],
       };
       mockGrinderRepository.create.mockReturnValue({
         model: 'Test Grinder',
@@ -270,14 +270,14 @@ describe('GrinderService', () => {
         manufacturer: 'Test Manufacturer',
         burrInstallDate: null,
       };
-      const expectedGrinder = { 
-        id: 'new-id', 
+      const expectedGrinder = {
+        id: 'new-id',
         model: 'Test Grinder',
         manufacturer: 'Test Manufacturer',
         burrInstallDate: null,
         created_at: new Date(),
         updated_at: new Date(),
-        shots: []
+        shots: [],
       };
       mockGrinderRepository.create.mockReturnValue(grinderDataWithNullDate);
       mockGrinderRepository.save.mockResolvedValue(expectedGrinder);
@@ -326,12 +326,12 @@ describe('GrinderService', () => {
         manufacturer: 'New Manufacturer',
         burrInstallDate: '2023-01-15',
       };
-      const updatedGrinder = { 
-        ...existingGrinder, 
+      const updatedGrinder = {
+        ...existingGrinder,
         ...updateData,
-        burrInstallDate: new Date('2023-01-15')
+        burrInstallDate: new Date('2023-01-15'),
       };
-      
+
       mockGrinderRepository.findOne.mockResolvedValue(existingGrinder);
       mockGrinderRepository.save.mockResolvedValue(updatedGrinder);
 
@@ -373,7 +373,7 @@ describe('GrinderService', () => {
       };
       const partialUpdate = { model: 'Updated Model' }; // Only updating model
       const updatedGrinder = { ...existingGrinder, model: 'Updated Model' };
-      
+
       mockGrinderRepository.findOne.mockResolvedValue(existingGrinder);
       mockGrinderRepository.save.mockResolvedValue(updatedGrinder);
 
@@ -400,11 +400,11 @@ describe('GrinderService', () => {
         updated_at: new Date(),
       };
       const updateData = { burrInstallDate: '2023-01-15' };
-      const updatedGrinder = { 
-        ...existingGrinder, 
-        burrInstallDate: new Date('2023-01-15')
+      const updatedGrinder = {
+        ...existingGrinder,
+        burrInstallDate: new Date('2023-01-15'),
       };
-      
+
       mockGrinderRepository.findOne.mockResolvedValue(existingGrinder);
       mockGrinderRepository.save.mockResolvedValue(updatedGrinder);
 
@@ -424,7 +424,9 @@ describe('GrinderService', () => {
       mockGrinderRepository.save.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(grinderService.updateGrinder(grinderId, updateData)).rejects.toThrow('Database error');
+      await expect(grinderService.updateGrinder(grinderId, updateData)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 
@@ -432,13 +434,13 @@ describe('GrinderService', () => {
     it('should delete existing grinder', async () => {
       // Arrange
       const grinderId = 'test-id';
-      const existingGrinder = { 
-        id: grinderId, 
+      const existingGrinder = {
+        id: grinderId,
         model: 'Test Grinder',
         manufacturer: 'Test Manufacturer',
         created_at: new Date(),
         updated_at: new Date(),
-        shots: []
+        shots: [],
       };
       mockGrinderRepository.findOne.mockResolvedValue(existingGrinder);
       mockGrinderRepository.remove.mockResolvedValue(existingGrinder);
@@ -482,21 +484,21 @@ describe('GrinderService', () => {
       // Arrange
       const manufacturerName = 'Baratza';
       const expectedGrinders = [
-        { 
-          id: '1', 
+        {
+          id: '1',
           model: 'Baratza Sette 270Wi',
           manufacturer: 'Baratza',
           created_at: new Date(),
           updated_at: new Date(),
-          shots: []
+          shots: [],
         },
-        { 
-          id: '2', 
+        {
+          id: '2',
           model: 'Baratza Vario',
           manufacturer: 'Baratza',
           created_at: new Date(),
           updated_at: new Date(),
-          shots: []
+          shots: [],
         },
       ];
       mockGrinderRepository.find.mockResolvedValue(expectedGrinders);
@@ -535,7 +537,9 @@ describe('GrinderService', () => {
       mockGrinderRepository.find.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(grinderService.getGrindersByManufacturer(manufacturerName)).rejects.toThrow('Database error');
+      await expect(grinderService.getGrindersByManufacturer(manufacturerName)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 });

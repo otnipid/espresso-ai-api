@@ -40,7 +40,9 @@ export class ShotEnvironmentService {
         relations: ['shot'],
       });
     } catch (error) {
-      throw new Error(`Error fetching shot environments: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching shot environments: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -66,7 +68,9 @@ export class ShotEnvironmentService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error fetching shot environment: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching shot environment: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -76,7 +80,9 @@ export class ShotEnvironmentService {
    * @returns Promise<ShotEnvironment> Created environment
    * @throws Error when validation fails or database error occurs
    */
-  async createShotEnvironment(environmentData: ShotEnvironmentCreateData): Promise<ShotEnvironment> {
+  async createShotEnvironment(
+    environmentData: ShotEnvironmentCreateData
+  ): Promise<ShotEnvironment> {
     try {
       // Validate required fields
       if (!environmentData.shot_id || environmentData.shot_id.trim() === '') {
@@ -98,7 +104,9 @@ export class ShotEnvironmentService {
         ambient_temp_c: this.processNumericField(environmentData.ambient_temp_c),
         humidity_percent: this.processNumericField(environmentData.humidity_percent),
         water_source: environmentData.water_source?.trim() || null,
-        estimated_water_hardness_ppm: this.processNumericField(environmentData.estimated_water_hardness_ppm),
+        estimated_water_hardness_ppm: this.processNumericField(
+          environmentData.estimated_water_hardness_ppm
+        ),
         machine_warmup_minutes: this.processNumericField(environmentData.machine_warmup_minutes),
         shots_since_clean: this.processNumericField(environmentData.shots_since_clean),
       };
@@ -109,7 +117,9 @@ export class ShotEnvironmentService {
       if (error instanceof Error && error.message.includes('required')) {
         throw error;
       }
-      throw new Error(`Error creating shot environment: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error creating shot environment: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -120,7 +130,10 @@ export class ShotEnvironmentService {
    * @returns Promise<ShotEnvironment> Updated environment
    * @throws Error when environment not found
    */
-  async updateShotEnvironment(shot_id: string, updateData: ShotEnvironmentUpdateData): Promise<ShotEnvironment> {
+  async updateShotEnvironment(
+    shot_id: string,
+    updateData: ShotEnvironmentUpdateData
+  ): Promise<ShotEnvironment> {
     try {
       const existingEnvironment = await this.environmentRepository.findOne({
         where: { shot_id },
@@ -135,19 +148,27 @@ export class ShotEnvironmentService {
         existingEnvironment.ambient_temp_c = this.processNumericField(updateData.ambient_temp_c);
       }
       if (updateData.humidity_percent !== undefined) {
-        existingEnvironment.humidity_percent = this.processNumericField(updateData.humidity_percent);
+        existingEnvironment.humidity_percent = this.processNumericField(
+          updateData.humidity_percent
+        );
       }
       if (updateData.water_source !== undefined) {
         existingEnvironment.water_source = updateData.water_source?.trim() || null;
       }
       if (updateData.estimated_water_hardness_ppm !== undefined) {
-        existingEnvironment.estimated_water_hardness_ppm = this.processNumericField(updateData.estimated_water_hardness_ppm);
+        existingEnvironment.estimated_water_hardness_ppm = this.processNumericField(
+          updateData.estimated_water_hardness_ppm
+        );
       }
       if (updateData.machine_warmup_minutes !== undefined) {
-        existingEnvironment.machine_warmup_minutes = this.processNumericField(updateData.machine_warmup_minutes);
+        existingEnvironment.machine_warmup_minutes = this.processNumericField(
+          updateData.machine_warmup_minutes
+        );
       }
       if (updateData.shots_since_clean !== undefined) {
-        existingEnvironment.shots_since_clean = this.processNumericField(updateData.shots_since_clean);
+        existingEnvironment.shots_since_clean = this.processNumericField(
+          updateData.shots_since_clean
+        );
       }
 
       return await this.environmentRepository.save(existingEnvironment);
@@ -155,7 +176,9 @@ export class ShotEnvironmentService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error updating shot environment: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error updating shot environment: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -180,7 +203,9 @@ export class ShotEnvironmentService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error deleting shot environment: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error deleting shot environment: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -190,16 +215,21 @@ export class ShotEnvironmentService {
    * @param maxTemp - Maximum temperature (Celsius)
    * @returns Promise<ShotEnvironment[]> Array of matching environments
    */
-  async getShotEnvironmentsByTemperature(minTemp: number, maxTemp: number): Promise<ShotEnvironment[]> {
+  async getShotEnvironmentsByTemperature(
+    minTemp: number,
+    maxTemp: number
+  ): Promise<ShotEnvironment[]> {
     try {
       return await this.environmentRepository.find({
         where: {
-          ambient_temp_c: Between(minTemp, maxTemp)
+          ambient_temp_c: Between(minTemp, maxTemp),
         },
         relations: ['shot'],
       });
     } catch (error) {
-      throw new Error(`Error fetching shot environments by temperature: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching shot environments by temperature: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 

@@ -426,29 +426,29 @@ const mockRepo = {
 
 ## 🐛 Common Pitfalls & Solutions
 
-| Issue                          | Cause                     | Solution                                   |
-| ------------------------------ | ------------------------- | ------------------------------------------ |
-| **PostgreSQL Type Conflicts**  | Multiple schema creation  | Initialize once, cleanup data              |
-| **Test Data Leaking**          | Insufficient cleanup      | Use `TRUNCATE TABLE` with `CASCADE`        |
-| **Connection Pool Exhaustion** | Parallel tests            | Use `singleThread: true` in Vitest         |
-| **Schema Creation Conflicts**  | Concurrent initialization | Shared initialization with state checking  |
-| **Multiple File Conflicts**    | Shared setup files        | Separate Vitest workspace projects         |
-| **Transaction Isolation**      | Direct repository access  | Test through service layer only            |
-| **Entity Not Found Errors**    | Wrong transaction context | Create data in same context as service     |
-| **Variable Scope Issues**      | Global test variables     | Each describe block manages its own data   |
-| **Missing DTO Properties**     | Incomplete test data      | Include all required fields (userId, etc.) |
-| **Vitest Worker Crashes**      | Memory limits exceeded    | Configure pool options and timeouts        |
-| **Entity Primary Key Errors**  | Wrong property names      | Verify entity `@PrimaryColumn` names       |
-| **UUID Validation Failures**   | Invalid UUID format       | Use valid UUID format in all test data     |
-| **Service Return Type Mismatches** | Assumed types          | Verify actual service return types         |
-| **Entity Relationship Violations** | Ignoring constraints    | Understand 1:1, 1:M, M:M relationships    |
-| **Error Handling Mismatches** | Expected vs actual behavior | Test actual service error handling        |
-| **Test Data Conflicts**        | Shared or conflicting data | Create unique data per test scenario       |
-| **Database Column Type Mismatches** | Wrong data types      | Verify database column types before tests |
-| **Service Data Transformations** | Unexpected conversions | Understand service data transformations   |
-| **Date Return Type Issues**   | Date objects vs strings  | Verify actual date return types             |
-| **Foreign Key Violations**    | Missing dependent entities | Create dependent entities first           |
-| **Date Format Validation Errors** | Invalid date formats  | Use proper date format strings             |
+| Issue                               | Cause                       | Solution                                   |
+| ----------------------------------- | --------------------------- | ------------------------------------------ |
+| **PostgreSQL Type Conflicts**       | Multiple schema creation    | Initialize once, cleanup data              |
+| **Test Data Leaking**               | Insufficient cleanup        | Use `TRUNCATE TABLE` with `CASCADE`        |
+| **Connection Pool Exhaustion**      | Parallel tests              | Use `singleThread: true` in Vitest         |
+| **Schema Creation Conflicts**       | Concurrent initialization   | Shared initialization with state checking  |
+| **Multiple File Conflicts**         | Shared setup files          | Separate Vitest workspace projects         |
+| **Transaction Isolation**           | Direct repository access    | Test through service layer only            |
+| **Entity Not Found Errors**         | Wrong transaction context   | Create data in same context as service     |
+| **Variable Scope Issues**           | Global test variables       | Each describe block manages its own data   |
+| **Missing DTO Properties**          | Incomplete test data        | Include all required fields (userId, etc.) |
+| **Vitest Worker Crashes**           | Memory limits exceeded      | Configure pool options and timeouts        |
+| **Entity Primary Key Errors**       | Wrong property names        | Verify entity `@PrimaryColumn` names       |
+| **UUID Validation Failures**        | Invalid UUID format         | Use valid UUID format in all test data     |
+| **Service Return Type Mismatches**  | Assumed types               | Verify actual service return types         |
+| **Entity Relationship Violations**  | Ignoring constraints        | Understand 1:1, 1:M, M:M relationships     |
+| **Error Handling Mismatches**       | Expected vs actual behavior | Test actual service error handling         |
+| **Test Data Conflicts**             | Shared or conflicting data  | Create unique data per test scenario       |
+| **Database Column Type Mismatches** | Wrong data types            | Verify database column types before tests  |
+| **Service Data Transformations**    | Unexpected conversions      | Understand service data transformations    |
+| **Date Return Type Issues**         | Date objects vs strings     | Verify actual date return types            |
+| **Foreign Key Violations**          | Missing dependent entities  | Create dependent entities first            |
+| **Date Format Validation Errors**   | Invalid date formats        | Use proper date format strings             |
 
 ## 📋 Integration Test Checklist
 

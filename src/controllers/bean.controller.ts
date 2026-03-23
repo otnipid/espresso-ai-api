@@ -26,7 +26,7 @@ export class BeanController {
       if (!bean) {
         return response.status(404).json({ message: 'Bean not found' });
       }
-      
+
       response.json(bean);
     } catch (error) {
       console.error('Error fetching bean:', error);

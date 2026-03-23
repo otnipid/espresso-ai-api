@@ -6,7 +6,9 @@ export class ShotEnvironmentController {
   private shotEnvironmentService: ShotEnvironmentService;
 
   constructor() {
-    this.shotEnvironmentService = new ShotEnvironmentService(require('../data-source').AppDataSource);
+    this.shotEnvironmentService = new ShotEnvironmentService(
+      require('../data-source').AppDataSource
+    );
   }
 
   async all(request: Request, response: Response) {
@@ -21,12 +23,14 @@ export class ShotEnvironmentController {
 
   async one(request: Request, response: Response) {
     try {
-      const environment = await this.shotEnvironmentService.getShotEnvironmentById(request.params.id);
-    
+      const environment = await this.shotEnvironmentService.getShotEnvironmentById(
+        request.params.id
+      );
+
       if (!environment) {
         return response.status(404).json({ message: 'Shot environment not found' });
       }
-      
+
       response.json(environment);
     } catch (error) {
       console.error('Error fetching shot environment:', error);

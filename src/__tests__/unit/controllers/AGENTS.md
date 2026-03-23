@@ -569,7 +569,7 @@ describe('service error handling', () => {
 
 **Rule**: Controller tests must mock service dependencies, not database repositories:
 
-```typescript
+````typescript
 // ❌ FORBIDDEN - Repository direct access
 jest.mock('../../../data-source', () => ({
   AppDataSource: {
@@ -616,7 +616,7 @@ describe('ShotController', () => {
     shotController = new ShotController(mockShotService as any);
   });
 });
-```
+````
 
 ### **Service Mocking Pattern**
 
@@ -951,6 +951,7 @@ mockRequest = {
 ## 🔄 **Service Mocking vs Repository Mocking**
 
 ### **❌ OLD PATTERN - Repository Direct Access**
+
 ```typescript
 // FORBIDDEN - Direct database access in controller
 jest.mock('../../../data-source', () => ({
@@ -973,6 +974,7 @@ describe('Controller', () => {
 ```
 
 ### **✅ NEW PATTERN - Service Layer Abstraction**
+
 ```typescript
 // REQUIRED - Service layer abstraction
 jest.mock('../../../services/ShotService');

@@ -168,7 +168,9 @@ describe('BeanBatchService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for non-existent bean
-      await expect(beanBatchService.createBeanBatch(beanBatchData)).rejects.toThrow('Bean with ID 550e8400-e29b-41d4-a716-446655440001 not found');
+      await expect(beanBatchService.createBeanBatch(beanBatchData)).rejects.toThrow(
+        'Bean with ID 550e8400-e29b-41d4-a716-446655440001 not found'
+      );
     });
 
     it('should throw error when required fields are missing', async () => {
@@ -182,7 +184,9 @@ describe('BeanBatchService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for missing required fields
-      await expect(beanBatchService.createBeanBatch(beanBatchData)).rejects.toThrow('Bean ID is required');
+      await expect(beanBatchService.createBeanBatch(beanBatchData)).rejects.toThrow(
+        'Bean ID is required'
+      );
     });
 
     it('should throw error when roast date is invalid', async () => {
@@ -209,7 +213,9 @@ describe('BeanBatchService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for invalid date
-      await expect(beanBatchService.createBeanBatch(beanBatchData)).rejects.toThrow('Invalid roast date format');
+      await expect(beanBatchService.createBeanBatch(beanBatchData)).rejects.toThrow(
+        'Invalid roast date format'
+      );
     });
   });
 
@@ -250,7 +256,9 @@ describe('BeanBatchService Integration Tests', () => {
 
     it('should throw error when bean batch not found', async () => {
       // Act & Assert: Should throw error for non-existent bean batch
-      await expect(beanBatchService.getBeanBatchById('550e8400-e29b-41d4-a716-446655440002')).rejects.toThrow('Bean batch with ID 550e8400-e29b-41d4-a716-446655440002 not found');
+      await expect(
+        beanBatchService.getBeanBatchById('550e8400-e29b-41d4-a716-446655440002')
+      ).rejects.toThrow('Bean batch with ID 550e8400-e29b-41d4-a716-446655440002 not found');
     });
   });
 
@@ -470,7 +478,9 @@ describe('BeanBatchService Integration Tests', () => {
       const updateData = {
         roastLevel: 'Dark',
       };
-      await expect(beanBatchService.updateBeanBatch('550e8400-e29b-41d4-a716-446655440003', updateData)).rejects.toThrow('Bean batch with ID 550e8400-e29b-41d4-a716-446655440003 not found');
+      await expect(
+        beanBatchService.updateBeanBatch('550e8400-e29b-41d4-a716-446655440003', updateData)
+      ).rejects.toThrow('Bean batch with ID 550e8400-e29b-41d4-a716-446655440003 not found');
     });
 
     it('should handle null values in updates', async () => {
@@ -548,7 +558,9 @@ describe('BeanBatchService Integration Tests', () => {
 
     it('should throw error when deleting non-existent bean batch', async () => {
       // Act & Assert: Should throw error for non-existent bean batch
-      await expect(beanBatchService.deleteBeanBatch('550e8400-e29b-41d4-a716-446655440004')).rejects.toThrow('Bean batch with ID 550e8400-e29b-41d4-a716-446655440004 not found');
+      await expect(
+        beanBatchService.deleteBeanBatch('550e8400-e29b-41d4-a716-446655440004')
+      ).rejects.toThrow('Bean batch with ID 550e8400-e29b-41d4-a716-446655440004 not found');
     });
   });
 });

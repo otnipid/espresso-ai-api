@@ -168,7 +168,9 @@ describe('UserService Integration Tests', () => {
 
     it('should throw error when user not found', async () => {
       // Act & Assert: Should throw error for non-existent user
-      await expect(userService.getUserById('550e8400-e29b-41d4-a716-446655440001')).rejects.toThrow('User with ID 550e8400-e29b-41d4-a716-446655440001 not found');
+      await expect(userService.getUserById('550e8400-e29b-41d4-a716-446655440001')).rejects.toThrow(
+        'User with ID 550e8400-e29b-41d4-a716-446655440001 not found'
+      );
     });
   });
 
@@ -399,7 +401,9 @@ describe('UserService Integration Tests', () => {
       const updateData = {
         name: 'John Smith',
       };
-      await expect(userService.updateUser('550e8400-e29b-41d4-a716-446655440002', updateData)).rejects.toThrow('User with ID 550e8400-e29b-41d4-a716-446655440002 not found');
+      await expect(
+        userService.updateUser('550e8400-e29b-41d4-a716-446655440002', updateData)
+      ).rejects.toThrow('User with ID 550e8400-e29b-41d4-a716-446655440002 not found');
     });
 
     it('should throw error when updating with empty name', async () => {
@@ -416,7 +420,9 @@ describe('UserService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for empty name
-      await expect(userService.updateUser(user.id, updateData)).rejects.toThrow('User name cannot be empty');
+      await expect(userService.updateUser(user.id, updateData)).rejects.toThrow(
+        'User name cannot be empty'
+      );
     });
 
     it('should throw error when updating with whitespace-only name', async () => {
@@ -433,7 +439,9 @@ describe('UserService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for whitespace-only name
-      await expect(userService.updateUser(user.id, updateData)).rejects.toThrow('User name cannot be empty');
+      await expect(userService.updateUser(user.id, updateData)).rejects.toThrow(
+        'User name cannot be empty'
+      );
     });
   });
 
@@ -456,7 +464,9 @@ describe('UserService Integration Tests', () => {
 
     it('should throw error when deleting non-existent user', async () => {
       // Act & Assert: Should throw error for non-existent user
-      await expect(userService.deleteUser('550e8400-e29b-41d4-a716-446655440003')).rejects.toThrow('User with ID 550e8400-e29b-41d4-a716-446655440003 not found');
+      await expect(userService.deleteUser('550e8400-e29b-41d4-a716-446655440003')).rejects.toThrow(
+        'User with ID 550e8400-e29b-41d4-a716-446655440003 not found'
+      );
     });
   });
 });

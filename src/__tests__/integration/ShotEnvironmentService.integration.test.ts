@@ -217,7 +217,9 @@ describe('ShotEnvironmentService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for non-existent shot
-      await expect(shotEnvironmentService.createShotEnvironment(environmentData)).rejects.toThrow('Shot with ID 550e8400-e29b-41d4-a716-446655440001 not found');
+      await expect(shotEnvironmentService.createShotEnvironment(environmentData)).rejects.toThrow(
+        'Shot with ID 550e8400-e29b-41d4-a716-446655440001 not found'
+      );
     });
 
     it('should throw error when shot ID is missing', async () => {
@@ -233,7 +235,9 @@ describe('ShotEnvironmentService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for missing shot ID
-      await expect(shotEnvironmentService.createShotEnvironment(environmentData)).rejects.toThrow('Shot ID is required');
+      await expect(shotEnvironmentService.createShotEnvironment(environmentData)).rejects.toThrow(
+        'Shot ID is required'
+      );
     });
   });
 
@@ -274,7 +278,9 @@ describe('ShotEnvironmentService Integration Tests', () => {
 
     it('should throw error when environment not found', async () => {
       // Act & Assert: Should throw error for non-existent environment
-      await expect(shotEnvironmentService.getShotEnvironmentById('550e8400-e29b-41d4-a716-446655440002')).rejects.toThrow('Shot environment with ID 550e8400-e29b-41d4-a716-446655440002 not found');
+      await expect(
+        shotEnvironmentService.getShotEnvironmentById('550e8400-e29b-41d4-a716-446655440002')
+      ).rejects.toThrow('Shot environment with ID 550e8400-e29b-41d4-a716-446655440002 not found');
     });
   });
 
@@ -466,7 +472,10 @@ describe('ShotEnvironmentService Integration Tests', () => {
       };
 
       // Act: Update environment
-      const result = await shotEnvironmentService.updateShotEnvironment(environment.shot_id, updateData);
+      const result = await shotEnvironmentService.updateShotEnvironment(
+        environment.shot_id,
+        updateData
+      );
 
       // Assert: Verify environment was updated
       expect(result).toBeDefined();
@@ -504,7 +513,10 @@ describe('ShotEnvironmentService Integration Tests', () => {
       };
 
       // Act: Update environment partially
-      const result = await shotEnvironmentService.updateShotEnvironment(environment.shot_id, updateData);
+      const result = await shotEnvironmentService.updateShotEnvironment(
+        environment.shot_id,
+        updateData
+      );
 
       // Assert: Verify only specified fields were updated
       expect(result).toBeDefined();
@@ -547,7 +559,10 @@ describe('ShotEnvironmentService Integration Tests', () => {
       };
 
       // Act: Update environment with null values
-      const result = await shotEnvironmentService.updateShotEnvironment(environment.shot_id, updateData);
+      const result = await shotEnvironmentService.updateShotEnvironment(
+        environment.shot_id,
+        updateData
+      );
 
       // Assert: Verify null values are handled correctly
       expect(result).toBeDefined();
@@ -589,7 +604,10 @@ describe('ShotEnvironmentService Integration Tests', () => {
       };
 
       // Act: Update environment with string numeric values
-      const result = await shotEnvironmentService.updateShotEnvironment(environment.shot_id, updateData);
+      const result = await shotEnvironmentService.updateShotEnvironment(
+        environment.shot_id,
+        updateData
+      );
 
       // Assert: Verify string numeric values are converted to numbers
       expect(result).toBeDefined();
@@ -629,7 +647,10 @@ describe('ShotEnvironmentService Integration Tests', () => {
       };
 
       // Act: Update environment with invalid numeric values
-      const result = await shotEnvironmentService.updateShotEnvironment(environment.shot_id, updateData);
+      const result = await shotEnvironmentService.updateShotEnvironment(
+        environment.shot_id,
+        updateData
+      );
 
       // Assert: Verify invalid numeric values are set to null
       expect(result).toBeDefined();
@@ -667,7 +688,10 @@ describe('ShotEnvironmentService Integration Tests', () => {
       };
 
       // Act: Update environment with whitespace
-      const result = await shotEnvironmentService.updateShotEnvironment(environment.shot_id, updateData);
+      const result = await shotEnvironmentService.updateShotEnvironment(
+        environment.shot_id,
+        updateData
+      );
 
       // Assert: Verify whitespace is trimmed
       expect(result).toBeDefined();
@@ -680,7 +704,12 @@ describe('ShotEnvironmentService Integration Tests', () => {
       const updateData = {
         ambient_temp_c: 23.0,
       };
-      await expect(shotEnvironmentService.updateShotEnvironment('550e8400-e29b-41d4-a716-446655440003', updateData)).rejects.toThrow('Shot environment with ID 550e8400-e29b-41d4-a716-446655440003 not found');
+      await expect(
+        shotEnvironmentService.updateShotEnvironment(
+          '550e8400-e29b-41d4-a716-446655440003',
+          updateData
+        )
+      ).rejects.toThrow('Shot environment with ID 550e8400-e29b-41d4-a716-446655440003 not found');
     });
   });
 
@@ -714,7 +743,9 @@ describe('ShotEnvironmentService Integration Tests', () => {
 
     it('should throw error when deleting non-existent environment', async () => {
       // Act & Assert: Should throw error for non-existent environment
-      await expect(shotEnvironmentService.deleteShotEnvironment('550e8400-e29b-41d4-a716-446655440004')).rejects.toThrow('Shot environment with ID 550e8400-e29b-41d4-a716-446655440004 not found');
+      await expect(
+        shotEnvironmentService.deleteShotEnvironment('550e8400-e29b-41d4-a716-446655440004')
+      ).rejects.toThrow('Shot environment with ID 550e8400-e29b-41d4-a716-446655440004 not found');
     });
   });
 });

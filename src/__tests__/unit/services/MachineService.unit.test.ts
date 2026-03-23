@@ -24,7 +24,7 @@ describe('MachineService', () => {
       remove: jest.fn(),
       findAndCount: jest.fn(),
     };
-    
+
     mockDataSource.getRepository = jest.fn().mockReturnValue(mockMachineRepository);
     machineService = new MachineService(mockDataSource);
   });
@@ -33,19 +33,19 @@ describe('MachineService', () => {
     it('should return all machines with relations', async () => {
       // Arrange
       const expectedMachines = [
-        { 
-          id: '1', 
+        {
+          id: '1',
           model: 'Machine 1',
           firmware_version: '1.0.0',
           created_at: new Date(),
-          shots: []
+          shots: [],
         },
-        { 
-          id: '2', 
+        {
+          id: '2',
           model: 'Machine 2',
           firmware_version: '1.1.0',
           created_at: new Date(),
-          shots: []
+          shots: [],
         },
       ];
       mockMachineRepository.find.mockResolvedValue(expectedMachines);
@@ -74,12 +74,12 @@ describe('MachineService', () => {
     it('should return machine by ID with relations', async () => {
       // Arrange
       const machineId = 'test-id';
-      const expectedMachine = { 
-        id: machineId, 
+      const expectedMachine = {
+        id: machineId,
         model: 'Test Machine',
         firmware_version: '1.0.0',
         created_at: new Date(),
-        shots: []
+        shots: [],
       };
       mockMachineRepository.findOne.mockResolvedValue(expectedMachine);
 
@@ -119,11 +119,11 @@ describe('MachineService', () => {
   describe('createMachine', () => {
     it('should create machine with valid data', async () => {
       // Arrange
-      const expectedMachine = { 
-        id: 'new-id', 
+      const expectedMachine = {
+        id: 'new-id',
         ...mockMachineData,
         created_at: new Date(),
-        shots: []
+        shots: [],
       };
       mockMachineRepository.create.mockReturnValue(mockMachineData);
       mockMachineRepository.save.mockResolvedValue(expectedMachine);
@@ -169,12 +169,12 @@ describe('MachineService', () => {
         model: 'Test Machine',
         // firmware_version is undefined
       };
-      const expectedMachine = { 
-        id: 'new-id', 
+      const expectedMachine = {
+        id: 'new-id',
         model: 'Test Machine',
         firmware_version: null,
         created_at: new Date(),
-        shots: []
+        shots: [],
       };
       mockMachineRepository.create.mockReturnValue({
         model: 'Test Machine',
@@ -199,12 +199,12 @@ describe('MachineService', () => {
         model: 'Test Machine',
         firmware_version: null,
       };
-      const expectedMachine = { 
-        id: 'new-id', 
+      const expectedMachine = {
+        id: 'new-id',
         model: 'Test Machine',
         firmware_version: null,
         created_at: new Date(),
-        shots: []
+        shots: [],
       };
       mockMachineRepository.create.mockReturnValue(machineDataWithNullFirmware);
       mockMachineRepository.save.mockResolvedValue(expectedMachine);
@@ -243,7 +243,7 @@ describe('MachineService', () => {
         firmware_version: '2.0.0',
       };
       const updatedMachine = { ...existingMachine, ...updateData };
-      
+
       mockMachineRepository.findOne.mockResolvedValue(existingMachine);
       mockMachineRepository.save.mockResolvedValue(updatedMachine);
 
@@ -281,7 +281,7 @@ describe('MachineService', () => {
       };
       const partialUpdate = { model: 'Updated Model' }; // Only updating model
       const updatedMachine = { ...existingMachine, model: 'Updated Model' };
-      
+
       mockMachineRepository.findOne.mockResolvedValue(existingMachine);
       mockMachineRepository.save.mockResolvedValue(updatedMachine);
 
@@ -304,7 +304,7 @@ describe('MachineService', () => {
       };
       const updateData = { firmware_version: null };
       const updatedMachine = { ...existingMachine, firmware_version: null };
-      
+
       mockMachineRepository.findOne.mockResolvedValue(existingMachine);
       mockMachineRepository.save.mockResolvedValue(updatedMachine);
 
@@ -324,7 +324,9 @@ describe('MachineService', () => {
       mockMachineRepository.save.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(machineService.updateMachine(machineId, updateData)).rejects.toThrow('Database error');
+      await expect(machineService.updateMachine(machineId, updateData)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 
@@ -332,8 +334,8 @@ describe('MachineService', () => {
     it('should delete existing machine', async () => {
       // Arrange
       const machineId = 'test-id';
-      const existingMachine = { 
-        id: machineId, 
+      const existingMachine = {
+        id: machineId,
         model: 'Test Machine',
         firmware_version: '1.0.0',
         created_at: new Date(),
@@ -380,19 +382,19 @@ describe('MachineService', () => {
       // Arrange
       const modelName = 'La Marzocco';
       const expectedMachines = [
-        { 
-          id: '1', 
+        {
+          id: '1',
           model: 'La Marzocco Linea Mini',
           firmware_version: '1.0.0',
           created_at: new Date(),
-          shots: []
+          shots: [],
         },
-        { 
-          id: '2', 
+        {
+          id: '2',
           model: 'La Marzocco GB5',
           firmware_version: '1.1.0',
           created_at: new Date(),
-          shots: []
+          shots: [],
         },
       ];
       mockMachineRepository.find.mockResolvedValue(expectedMachines);

@@ -7,7 +7,9 @@ export class ShotPreparationController {
   private shotPreparationService: ShotPreparationService;
 
   constructor() {
-    this.shotPreparationService = new ShotPreparationService(require('../data-source').AppDataSource);
+    this.shotPreparationService = new ShotPreparationService(
+      require('../data-source').AppDataSource
+    );
   }
 
   async all(request: Request, response: Response) {
@@ -22,12 +24,14 @@ export class ShotPreparationController {
 
   async one(request: Request, response: Response) {
     try {
-      const preparation = await this.shotPreparationService.getShotPreparationById(request.params.id);
-      
+      const preparation = await this.shotPreparationService.getShotPreparationById(
+        request.params.id
+      );
+
       if (!preparation) {
         return response.status(404).json({ message: 'Shot preparation not found' });
       }
-      
+
       response.json(preparation);
     } catch (error) {
       console.error('Error fetching shot preparation:', error);
@@ -102,7 +106,7 @@ export class ShotPreparationController {
   async remove(request: Request, response: Response) {
     try {
       await this.shotPreparationService.deleteShotPreparation(request.params.id);
-      
+
       response.status(204).send();
     } catch (error) {
       console.error('Error deleting shot preparation:', error);

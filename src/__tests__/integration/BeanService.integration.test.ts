@@ -47,7 +47,7 @@ describe('BeanService Integration Tests', () => {
 
   describe('createBean', () => {
     it('should create a bean with all fields', async () => {
-      // Arrange: Create test data using repositories      
+      // Arrange: Create test data using repositories
       const beanData = {
         name: 'Test Ethiopian Bean',
         roaster: 'Test Roaster Co',
@@ -135,7 +135,6 @@ describe('BeanService Integration Tests', () => {
 
   describe('getAllBeans', () => {
     it('should return all beans with relations', async () => {
-
       // Create some test beans
       const bean1 = await beanRepository.save({
         name: 'Bean 1',
@@ -276,7 +275,7 @@ describe('BeanService Integration Tests', () => {
 
       // Assert: Verify bean was deleted
       expect(result).toBe(true);
-      
+
       // Verify bean no longer exists
       const deletedBean = await beanRepository.findOne({
         where: { id: beanToDelete.id },

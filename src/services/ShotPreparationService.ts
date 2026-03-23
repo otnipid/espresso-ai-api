@@ -42,7 +42,9 @@ export class ShotPreparationService {
         relations: ['shot'],
       });
     } catch (error) {
-      throw new Error(`Error fetching shot preparations: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching shot preparations: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -68,7 +70,9 @@ export class ShotPreparationService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error fetching shot preparation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching shot preparation: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -78,7 +82,9 @@ export class ShotPreparationService {
    * @returns Promise<ShotPreparation> Created shot preparation
    * @throws Error when validation fails or database error occurs
    */
-  async createShotPreparation(preparationData: ShotPreparationCreateData): Promise<ShotPreparation> {
+  async createShotPreparation(
+    preparationData: ShotPreparationCreateData
+  ): Promise<ShotPreparation> {
     try {
       // Validate required fields
       if (!preparationData.shot_id || preparationData.shot_id.trim() === '') {
@@ -97,10 +103,11 @@ export class ShotPreparationService {
       // Process numeric fields
       let processedDoseGrams: number | null | undefined = undefined;
       if (preparationData.dose_grams !== undefined && preparationData.dose_grams !== null) {
-        processedDoseGrams = typeof preparationData.dose_grams === 'string' 
-          ? parseFloat(preparationData.dose_grams) 
-          : preparationData.dose_grams;
-        
+        processedDoseGrams =
+          typeof preparationData.dose_grams === 'string'
+            ? parseFloat(preparationData.dose_grams)
+            : preparationData.dose_grams;
+
         if (isNaN(processedDoseGrams)) {
           processedDoseGrams = null;
         }
@@ -108,21 +115,26 @@ export class ShotPreparationService {
 
       let processedGrindSetting: number | null | undefined = undefined;
       if (preparationData.grind_setting !== undefined && preparationData.grind_setting !== null) {
-        processedGrindSetting = typeof preparationData.grind_setting === 'string' 
-          ? parseFloat(preparationData.grind_setting) 
-          : preparationData.grind_setting;
-        
+        processedGrindSetting =
+          typeof preparationData.grind_setting === 'string'
+            ? parseFloat(preparationData.grind_setting)
+            : preparationData.grind_setting;
+
         if (isNaN(processedGrindSetting)) {
           processedGrindSetting = null;
         }
       }
 
       let processedBasketSizeGrams: number | null | undefined = undefined;
-      if (preparationData.basket_size_grams !== undefined && preparationData.basket_size_grams !== null) {
-        processedBasketSizeGrams = typeof preparationData.basket_size_grams === 'string' 
-          ? parseInt(preparationData.basket_size_grams) 
-          : preparationData.basket_size_grams;
-        
+      if (
+        preparationData.basket_size_grams !== undefined &&
+        preparationData.basket_size_grams !== null
+      ) {
+        processedBasketSizeGrams =
+          typeof preparationData.basket_size_grams === 'string'
+            ? parseInt(preparationData.basket_size_grams)
+            : preparationData.basket_size_grams;
+
         if (isNaN(processedBasketSizeGrams)) {
           processedBasketSizeGrams = null;
         }
@@ -141,10 +153,15 @@ export class ShotPreparationService {
 
       return await this.preparationRepository.save(preparation);
     } catch (error) {
-      if (error instanceof Error && (error.message.includes('required') || error.message.includes('not found'))) {
+      if (
+        error instanceof Error &&
+        (error.message.includes('required') || error.message.includes('not found'))
+      ) {
         throw error;
       }
-      throw new Error(`Error creating shot preparation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error creating shot preparation: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -155,7 +172,10 @@ export class ShotPreparationService {
    * @returns Promise<ShotPreparation> Updated shot preparation
    * @throws Error when shot preparation not found
    */
-  async updateShotPreparation(shotId: string, updateData: ShotPreparationUpdateData): Promise<ShotPreparation> {
+  async updateShotPreparation(
+    shotId: string,
+    updateData: ShotPreparationUpdateData
+  ): Promise<ShotPreparation> {
     try {
       const existingPreparation = await this.preparationRepository.findOne({
         where: { shot_id: shotId },
@@ -168,12 +188,13 @@ export class ShotPreparationService {
       // Process numeric fields if provided
       let processedDoseGrams: number | null | undefined = undefined;
       if (updateData.dose_grams !== undefined) {
-        processedDoseGrams = updateData.dose_grams === null 
-          ? null 
-          : (typeof updateData.dose_grams === 'string' 
-            ? parseFloat(updateData.dose_grams) 
-            : updateData.dose_grams);
-        
+        processedDoseGrams =
+          updateData.dose_grams === null
+            ? null
+            : typeof updateData.dose_grams === 'string'
+              ? parseFloat(updateData.dose_grams)
+              : updateData.dose_grams;
+
         if (processedDoseGrams !== null && isNaN(processedDoseGrams)) {
           processedDoseGrams = null;
         }
@@ -181,12 +202,13 @@ export class ShotPreparationService {
 
       let processedGrindSetting: number | null | undefined = undefined;
       if (updateData.grind_setting !== undefined) {
-        processedGrindSetting = updateData.grind_setting === null 
-          ? null 
-          : (typeof updateData.grind_setting === 'string' 
-            ? parseFloat(updateData.grind_setting) 
-            : updateData.grind_setting);
-        
+        processedGrindSetting =
+          updateData.grind_setting === null
+            ? null
+            : typeof updateData.grind_setting === 'string'
+              ? parseFloat(updateData.grind_setting)
+              : updateData.grind_setting;
+
         if (processedGrindSetting !== null && isNaN(processedGrindSetting)) {
           processedGrindSetting = null;
         }
@@ -194,12 +216,13 @@ export class ShotPreparationService {
 
       let processedBasketSizeGrams: number | null | undefined = undefined;
       if (updateData.basket_size_grams !== undefined) {
-        processedBasketSizeGrams = updateData.basket_size_grams === null 
-          ? null 
-          : (typeof updateData.basket_size_grams === 'string' 
-            ? parseInt(updateData.basket_size_grams) 
-            : updateData.basket_size_grams);
-        
+        processedBasketSizeGrams =
+          updateData.basket_size_grams === null
+            ? null
+            : typeof updateData.basket_size_grams === 'string'
+              ? parseInt(updateData.basket_size_grams)
+              : updateData.basket_size_grams;
+
         if (processedBasketSizeGrams !== null && isNaN(processedBasketSizeGrams)) {
           processedBasketSizeGrams = null;
         }
@@ -225,7 +248,8 @@ export class ShotPreparationService {
         existingPreparation.tamp_type = updateData.tamp_type?.trim() || null;
       }
       if (updateData.tamp_pressure_category !== undefined) {
-        existingPreparation.tamp_pressure_category = updateData.tamp_pressure_category?.trim() || null;
+        existingPreparation.tamp_pressure_category =
+          updateData.tamp_pressure_category?.trim() || null;
       }
 
       return await this.preparationRepository.save(existingPreparation);
@@ -233,7 +257,9 @@ export class ShotPreparationService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error updating shot preparation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error updating shot preparation: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -250,7 +276,9 @@ export class ShotPreparationService {
         relations: ['shot'],
       });
     } catch (error) {
-      throw new Error(`Error fetching shot preparations: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching shot preparations: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -276,7 +304,9 @@ export class ShotPreparationService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error deleting shot preparation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error deleting shot preparation: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 }

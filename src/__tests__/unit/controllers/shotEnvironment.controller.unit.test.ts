@@ -73,7 +73,9 @@ describe('ShotEnvironmentController', () => {
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error fetching shot environments' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Error fetching shot environments',
+      });
     });
   });
 
@@ -116,7 +118,9 @@ describe('ShotEnvironmentController', () => {
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error fetching shot environment' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Error fetching shot environment',
+      });
     });
   });
 
@@ -134,7 +138,7 @@ describe('ShotEnvironmentController', () => {
 
       mockRequest.params = { id: '1' };
       mockRequest.body = environmentData;
-      
+
       // Controller adds shot_id to the data before calling service
       const expectedServiceCall = { shot_id: '1', ...environmentData };
       const createdEnvironment = { shot_id: '1', ...environmentData, shot: { id: '1' } } as any;
@@ -144,7 +148,9 @@ describe('ShotEnvironmentController', () => {
       await shotEnvironmentController.save(mockRequest as Request, mockResponse as Response);
 
       // Assert - Controller adds shot_id before calling service
-      expect(mockShotEnvironmentService.createShotEnvironment).toHaveBeenCalledWith(expectedServiceCall);
+      expect(mockShotEnvironmentService.createShotEnvironment).toHaveBeenCalledWith(
+        expectedServiceCall
+      );
       expect(mockResponse.status).toHaveBeenCalledWith(201);
       expect(mockResponse.json).toHaveBeenCalledWith(createdEnvironment);
     });
@@ -162,7 +168,7 @@ describe('ShotEnvironmentController', () => {
 
       mockRequest.params = { id: '1' };
       mockRequest.body = environmentData;
-      
+
       // Controller adds shot_id to the data before calling service
       const expectedServiceCall = { shot_id: '1', ...environmentData };
       const createdEnvironment = { shot_id: '1', ...environmentData, shot: { id: '1' } } as any;
@@ -172,7 +178,9 @@ describe('ShotEnvironmentController', () => {
       await shotEnvironmentController.save(mockRequest as Request, mockResponse as Response);
 
       // Assert - Controller adds shot_id before calling service
-      expect(mockShotEnvironmentService.createShotEnvironment).toHaveBeenCalledWith(expectedServiceCall);
+      expect(mockShotEnvironmentService.createShotEnvironment).toHaveBeenCalledWith(
+        expectedServiceCall
+      );
       expect(mockResponse.status).toHaveBeenCalledWith(201);
       expect(mockResponse.json).toHaveBeenCalledWith(createdEnvironment);
     });
@@ -189,7 +197,15 @@ describe('ShotEnvironmentController', () => {
 
       mockRequest.params = { id: '1' };
       mockRequest.body = environmentData;
-      const createdEnvironment = { shot_id: '1', ambient_temp_c: 22.5, humidity_percent: 70, estimated_water_hardness_ppm: 200, machine_warmup_minutes: 15, shots_since_clean: 8, shot: { id: '1' } } as any;
+      const createdEnvironment = {
+        shot_id: '1',
+        ambient_temp_c: 22.5,
+        humidity_percent: 70,
+        estimated_water_hardness_ppm: 200,
+        machine_warmup_minutes: 15,
+        shots_since_clean: 8,
+        shot: { id: '1' },
+      } as any;
       mockShotEnvironmentService.createShotEnvironment.mockResolvedValue(createdEnvironment);
 
       // Act
@@ -197,7 +213,9 @@ describe('ShotEnvironmentController', () => {
 
       // Assert - Controller adds shot_id before calling service
       const expectedServiceCall = { shot_id: '1', ...environmentData };
-      expect(mockShotEnvironmentService.createShotEnvironment).toHaveBeenCalledWith(expectedServiceCall);
+      expect(mockShotEnvironmentService.createShotEnvironment).toHaveBeenCalledWith(
+        expectedServiceCall
+      );
       expect(mockResponse.status).toHaveBeenCalledWith(201);
       expect(mockResponse.json).toHaveBeenCalledWith(createdEnvironment);
     });
@@ -253,7 +271,10 @@ describe('ShotEnvironmentController', () => {
       await shotEnvironmentController.update(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(mockShotEnvironmentService.updateShotEnvironment).toHaveBeenCalledWith('1', updateData);
+      expect(mockShotEnvironmentService.updateShotEnvironment).toHaveBeenCalledWith(
+        '1',
+        updateData
+      );
       expect(mockResponse.json).toHaveBeenCalledWith(updatedEnvironment);
     });
 
@@ -272,7 +293,10 @@ describe('ShotEnvironmentController', () => {
       await shotEnvironmentController.update(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(mockShotEnvironmentService.updateShotEnvironment).toHaveBeenCalledWith('1', updateData);
+      expect(mockShotEnvironmentService.updateShotEnvironment).toHaveBeenCalledWith(
+        '1',
+        updateData
+      );
       expect(mockResponse.json).toHaveBeenCalledWith(updatedEnvironment);
     });
 
@@ -361,7 +385,9 @@ describe('ShotEnvironmentController', () => {
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error deleting shot environment' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Error deleting shot environment',
+      });
     });
   });
 });

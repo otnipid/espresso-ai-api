@@ -49,8 +49,34 @@ describe('BeanController', () => {
     it('should return all beans', async () => {
       // Arrange
       const mockBeans = [
-        { id: '1', name: 'Colombia Bean', country: 'Colombia', roaster: undefined, region: undefined, farm: undefined, varietal: undefined, processing_method: undefined, altitude_m: null, density_category: undefined, created_at: new Date(), beanBatches: [] } as any,
-        { id: '2', name: 'Brazil Bean', country: 'Brazil', roaster: undefined, region: undefined, farm: undefined, varietal: undefined, processing_method: undefined, altitude_m: null, density_category: undefined, created_at: new Date(), beanBatches: [] } as any,
+        {
+          id: '1',
+          name: 'Colombia Bean',
+          country: 'Colombia',
+          roaster: undefined,
+          region: undefined,
+          farm: undefined,
+          varietal: undefined,
+          processing_method: undefined,
+          altitude_m: null,
+          density_category: undefined,
+          created_at: new Date(),
+          beanBatches: [],
+        } as any,
+        {
+          id: '2',
+          name: 'Brazil Bean',
+          country: 'Brazil',
+          roaster: undefined,
+          region: undefined,
+          farm: undefined,
+          varietal: undefined,
+          processing_method: undefined,
+          altitude_m: null,
+          density_category: undefined,
+          created_at: new Date(),
+          beanBatches: [],
+        } as any,
       ];
 
       mockBeanService.getAllBeans.mockResolvedValue(mockBeans);
@@ -80,7 +106,20 @@ describe('BeanController', () => {
   describe('one', () => {
     it('should return bean when found', async () => {
       // Arrange
-      const mockBean = { id: '1', name: 'Test Bean', country: 'Colombia', roaster: undefined, region: undefined, farm: undefined, varietal: undefined, processing_method: undefined, altitude_m: null, density_category: undefined, created_at: new Date(), beanBatches: [] } as any;
+      const mockBean = {
+        id: '1',
+        name: 'Test Bean',
+        country: 'Colombia',
+        roaster: undefined,
+        region: undefined,
+        farm: undefined,
+        varietal: undefined,
+        processing_method: undefined,
+        altitude_m: null,
+        density_category: undefined,
+        created_at: new Date(),
+        beanBatches: [],
+      } as any;
       mockRequest.params = { id: '1' };
       mockBeanService.getBeanById.mockResolvedValue(mockBean);
 

@@ -40,7 +40,9 @@ export class ShotExtractionService {
         relations: ['shot'],
       });
     } catch (error) {
-      throw new Error(`Error fetching shot extractions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching shot extractions: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -66,7 +68,9 @@ export class ShotExtractionService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error fetching shot extraction: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching shot extraction: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -95,32 +99,41 @@ export class ShotExtractionService {
       // Process numeric fields
       let processedYieldGrams: number | null | undefined = undefined;
       if (extractionData.yield_grams !== undefined && extractionData.yield_grams !== null) {
-        processedYieldGrams = typeof extractionData.yield_grams === 'string' 
-          ? parseFloat(extractionData.yield_grams) 
-          : extractionData.yield_grams;
-        
+        processedYieldGrams =
+          typeof extractionData.yield_grams === 'string'
+            ? parseFloat(extractionData.yield_grams)
+            : extractionData.yield_grams;
+
         if (isNaN(processedYieldGrams)) {
           processedYieldGrams = null;
         }
       }
 
       let processedShotTimeSeconds: number | null | undefined = undefined;
-      if (extractionData.shot_time_seconds !== undefined && extractionData.shot_time_seconds !== null) {
-        processedShotTimeSeconds = typeof extractionData.shot_time_seconds === 'string' 
-          ? parseFloat(extractionData.shot_time_seconds) 
-          : extractionData.shot_time_seconds;
-        
+      if (
+        extractionData.shot_time_seconds !== undefined &&
+        extractionData.shot_time_seconds !== null
+      ) {
+        processedShotTimeSeconds =
+          typeof extractionData.shot_time_seconds === 'string'
+            ? parseFloat(extractionData.shot_time_seconds)
+            : extractionData.shot_time_seconds;
+
         if (isNaN(processedShotTimeSeconds)) {
           processedShotTimeSeconds = null;
         }
       }
 
       let processedAvgPressureBar: number | null | undefined = undefined;
-      if (extractionData.avg_pressure_bar !== undefined && extractionData.avg_pressure_bar !== null) {
-        processedAvgPressureBar = typeof extractionData.avg_pressure_bar === 'string' 
-          ? parseFloat(extractionData.avg_pressure_bar) 
-          : extractionData.avg_pressure_bar;
-        
+      if (
+        extractionData.avg_pressure_bar !== undefined &&
+        extractionData.avg_pressure_bar !== null
+      ) {
+        processedAvgPressureBar =
+          typeof extractionData.avg_pressure_bar === 'string'
+            ? parseFloat(extractionData.avg_pressure_bar)
+            : extractionData.avg_pressure_bar;
+
         if (isNaN(processedAvgPressureBar)) {
           processedAvgPressureBar = null;
         }
@@ -128,32 +141,41 @@ export class ShotExtractionService {
 
       let processedWaterTempC: number | null | undefined = undefined;
       if (extractionData.water_temp_c !== undefined && extractionData.water_temp_c !== null) {
-        processedWaterTempC = typeof extractionData.water_temp_c === 'string' 
-          ? parseFloat(extractionData.water_temp_c) 
-          : extractionData.water_temp_c;
-        
+        processedWaterTempC =
+          typeof extractionData.water_temp_c === 'string'
+            ? parseFloat(extractionData.water_temp_c)
+            : extractionData.water_temp_c;
+
         if (isNaN(processedWaterTempC)) {
           processedWaterTempC = null;
         }
       }
 
       let processedPreinfusionSeconds: number | null | undefined = undefined;
-      if (extractionData.preinfusion_seconds !== undefined && extractionData.preinfusion_seconds !== null) {
-        processedPreinfusionSeconds = typeof extractionData.preinfusion_seconds === 'string' 
-          ? parseFloat(extractionData.preinfusion_seconds) 
-          : extractionData.preinfusion_seconds;
-        
+      if (
+        extractionData.preinfusion_seconds !== undefined &&
+        extractionData.preinfusion_seconds !== null
+      ) {
+        processedPreinfusionSeconds =
+          typeof extractionData.preinfusion_seconds === 'string'
+            ? parseFloat(extractionData.preinfusion_seconds)
+            : extractionData.preinfusion_seconds;
+
         if (isNaN(processedPreinfusionSeconds)) {
           processedPreinfusionSeconds = null;
         }
       }
 
       let processedPeakPressureBar: number | null | undefined = undefined;
-      if (extractionData.peak_pressure_bar !== undefined && extractionData.peak_pressure_bar !== null) {
-        processedPeakPressureBar = typeof extractionData.peak_pressure_bar === 'string' 
-          ? parseFloat(extractionData.peak_pressure_bar) 
-          : extractionData.peak_pressure_bar;
-        
+      if (
+        extractionData.peak_pressure_bar !== undefined &&
+        extractionData.peak_pressure_bar !== null
+      ) {
+        processedPeakPressureBar =
+          typeof extractionData.peak_pressure_bar === 'string'
+            ? parseFloat(extractionData.peak_pressure_bar)
+            : extractionData.peak_pressure_bar;
+
         if (isNaN(processedPeakPressureBar)) {
           processedPeakPressureBar = null;
         }
@@ -171,10 +193,15 @@ export class ShotExtractionService {
 
       return await this.extractionRepository.save(extraction);
     } catch (error) {
-      if (error instanceof Error && (error.message.includes('required') || error.message.includes('not found'))) {
+      if (
+        error instanceof Error &&
+        (error.message.includes('required') || error.message.includes('not found'))
+      ) {
         throw error;
       }
-      throw new Error(`Error creating shot extraction: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error creating shot extraction: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -185,7 +212,10 @@ export class ShotExtractionService {
    * @returns Promise<ShotExtraction> Updated shot extraction
    * @throws Error when shot extraction not found
    */
-  async updateShotExtraction(shotId: string, updateData: ShotExtractionUpdateData): Promise<ShotExtraction> {
+  async updateShotExtraction(
+    shotId: string,
+    updateData: ShotExtractionUpdateData
+  ): Promise<ShotExtraction> {
     try {
       const existingExtraction = await this.extractionRepository.findOne({
         where: { shot_id: shotId },
@@ -198,12 +228,13 @@ export class ShotExtractionService {
       // Process numeric fields if provided
       let processedYieldGrams: number | null | undefined = undefined;
       if (updateData.yield_grams !== undefined) {
-        processedYieldGrams = updateData.yield_grams === null 
-          ? null 
-          : (typeof updateData.yield_grams === 'string' 
-            ? parseFloat(updateData.yield_grams) 
-            : updateData.yield_grams);
-        
+        processedYieldGrams =
+          updateData.yield_grams === null
+            ? null
+            : typeof updateData.yield_grams === 'string'
+              ? parseFloat(updateData.yield_grams)
+              : updateData.yield_grams;
+
         if (processedYieldGrams !== null && isNaN(processedYieldGrams)) {
           processedYieldGrams = null;
         }
@@ -211,12 +242,13 @@ export class ShotExtractionService {
 
       let processedShotTimeSeconds: number | null | undefined = undefined;
       if (updateData.shot_time_seconds !== undefined) {
-        processedShotTimeSeconds = updateData.shot_time_seconds === null 
-          ? null 
-          : (typeof updateData.shot_time_seconds === 'string' 
-            ? parseFloat(updateData.shot_time_seconds) 
-            : updateData.shot_time_seconds);
-        
+        processedShotTimeSeconds =
+          updateData.shot_time_seconds === null
+            ? null
+            : typeof updateData.shot_time_seconds === 'string'
+              ? parseFloat(updateData.shot_time_seconds)
+              : updateData.shot_time_seconds;
+
         if (processedShotTimeSeconds !== null && isNaN(processedShotTimeSeconds)) {
           processedShotTimeSeconds = null;
         }
@@ -224,12 +256,13 @@ export class ShotExtractionService {
 
       let processedAvgPressureBar: number | null | undefined = undefined;
       if (updateData.avg_pressure_bar !== undefined) {
-        processedAvgPressureBar = updateData.avg_pressure_bar === null 
-          ? null 
-          : (typeof updateData.avg_pressure_bar === 'string' 
-            ? parseFloat(updateData.avg_pressure_bar) 
-            : updateData.avg_pressure_bar);
-        
+        processedAvgPressureBar =
+          updateData.avg_pressure_bar === null
+            ? null
+            : typeof updateData.avg_pressure_bar === 'string'
+              ? parseFloat(updateData.avg_pressure_bar)
+              : updateData.avg_pressure_bar;
+
         if (processedAvgPressureBar !== null && isNaN(processedAvgPressureBar)) {
           processedAvgPressureBar = null;
         }
@@ -237,12 +270,13 @@ export class ShotExtractionService {
 
       let processedWaterTempC: number | null | undefined = undefined;
       if (updateData.water_temp_c !== undefined) {
-        processedWaterTempC = updateData.water_temp_c === null 
-          ? null 
-          : (typeof updateData.water_temp_c === 'string' 
-            ? parseFloat(updateData.water_temp_c) 
-            : updateData.water_temp_c);
-        
+        processedWaterTempC =
+          updateData.water_temp_c === null
+            ? null
+            : typeof updateData.water_temp_c === 'string'
+              ? parseFloat(updateData.water_temp_c)
+              : updateData.water_temp_c;
+
         if (processedWaterTempC !== null && isNaN(processedWaterTempC)) {
           processedWaterTempC = null;
         }
@@ -250,12 +284,13 @@ export class ShotExtractionService {
 
       let processedPreinfusionSeconds: number | null | undefined = undefined;
       if (updateData.preinfusion_seconds !== undefined) {
-        processedPreinfusionSeconds = updateData.preinfusion_seconds === null 
-          ? null 
-          : (typeof updateData.preinfusion_seconds === 'string' 
-            ? parseFloat(updateData.preinfusion_seconds) 
-            : updateData.preinfusion_seconds);
-        
+        processedPreinfusionSeconds =
+          updateData.preinfusion_seconds === null
+            ? null
+            : typeof updateData.preinfusion_seconds === 'string'
+              ? parseFloat(updateData.preinfusion_seconds)
+              : updateData.preinfusion_seconds;
+
         if (processedPreinfusionSeconds !== null && isNaN(processedPreinfusionSeconds)) {
           processedPreinfusionSeconds = null;
         }
@@ -263,12 +298,13 @@ export class ShotExtractionService {
 
       let processedPeakPressureBar: number | null | undefined = undefined;
       if (updateData.peak_pressure_bar !== undefined) {
-        processedPeakPressureBar = updateData.peak_pressure_bar === null 
-          ? null 
-          : (typeof updateData.peak_pressure_bar === 'string' 
-            ? parseFloat(updateData.peak_pressure_bar) 
-            : updateData.peak_pressure_bar);
-        
+        processedPeakPressureBar =
+          updateData.peak_pressure_bar === null
+            ? null
+            : typeof updateData.peak_pressure_bar === 'string'
+              ? parseFloat(updateData.peak_pressure_bar)
+              : updateData.peak_pressure_bar;
+
         if (processedPeakPressureBar !== null && isNaN(processedPeakPressureBar)) {
           processedPeakPressureBar = null;
         }
@@ -299,7 +335,9 @@ export class ShotExtractionService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error updating shot extraction: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error updating shot extraction: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -324,7 +362,9 @@ export class ShotExtractionService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error deleting shot extraction: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error deleting shot extraction: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 }

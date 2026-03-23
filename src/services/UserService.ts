@@ -28,7 +28,9 @@ export class UserService {
         relations: ['shots', 'createdShots', 'updatedShots'],
       });
     } catch (error) {
-      throw new Error(`Error fetching users: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching users: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -54,7 +56,9 @@ export class UserService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error fetching user: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching user: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -81,7 +85,9 @@ export class UserService {
       if (error instanceof Error && error.message.includes('required')) {
         throw error;
       }
-      throw new Error(`Error creating user: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error creating user: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -119,7 +125,9 @@ export class UserService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error updating user: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error updating user: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -144,7 +152,9 @@ export class UserService {
       if (error instanceof Error && error.message.includes('not found')) {
         throw error;
       }
-      throw new Error(`Error deleting user: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error deleting user: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -160,7 +170,9 @@ export class UserService {
         relations: ['shots', 'createdShots', 'updatedShots'],
       });
     } catch (error) {
-      throw new Error(`Error fetching users by email: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Error fetching users by email: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 }

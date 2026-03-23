@@ -27,7 +27,7 @@ describe('BeanBatchService', () => {
 
   beforeEach(() => {
     mockDataSource = createMockDataSource();
-    
+
     // Setup mock repositories
     mockBeanBatchRepository = {
       find: jest.fn(),
@@ -37,19 +37,19 @@ describe('BeanBatchService', () => {
       remove: jest.fn(),
       findAndCount: jest.fn(),
     };
-    
+
     mockBeanRepository = {
       findOne: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
     };
-    
-    mockDataSource.getRepository = jest.fn().mockImplementation((entity) => {
+
+    mockDataSource.getRepository = jest.fn().mockImplementation(entity => {
       if (entity === BeanBatch) return mockBeanBatchRepository;
       if (entity === Bean) return mockBeanRepository;
       return mockBeanBatchRepository;
     });
-    
+
     beanBatchService = new BeanBatchService(mockDataSource);
   });
 
@@ -57,17 +57,17 @@ describe('BeanBatchService', () => {
     it('should return all bean batches with relations', async () => {
       // Arrange
       const expectedBatches = [
-        { 
-          id: '1', 
+        {
+          id: '1',
           roastDate: new Date('2024-01-15'),
           bean: mockBeanData,
-          shots: []
+          shots: [],
         },
-        { 
-          id: '2', 
+        {
+          id: '2',
           roastDate: new Date('2024-01-16'),
           bean: mockBeanData,
-          shots: []
+          shots: [],
         },
       ];
       mockBeanBatchRepository.find.mockResolvedValue(expectedBatches);
@@ -96,11 +96,11 @@ describe('BeanBatchService', () => {
     it('should return bean batch by ID with relations', async () => {
       // Arrange
       const batchId = 'test-id';
-      const expectedBatch = { 
-        id: batchId, 
+      const expectedBatch = {
+        id: batchId,
         roastDate: new Date('2024-01-15'),
         bean: mockBeanData,
-        shots: []
+        shots: [],
       };
       mockBeanBatchRepository.findOne.mockResolvedValue(expectedBatch);
 
@@ -141,15 +141,15 @@ describe('BeanBatchService', () => {
     it('should create bean batch with valid data', async () => {
       // Arrange
       const mockBean = { id: mockBeanData.id, name: mockBeanData.name };
-      const expectedBatch = { 
-        id: 'new-id', 
+      const expectedBatch = {
+        id: 'new-id',
         roastDate: new Date('2024-01-15'),
         bagOpenDate: new Date('2024-01-20'),
         roastLevel: 'Medium',
         roastDegree: 3,
-        bean: mockBean
+        bean: mockBean,
       };
-      
+
       mockBeanRepository.findOne.mockResolvedValue(mockBean);
       mockBeanBatchRepository.create.mockReturnValue(mockBeanBatchData);
       mockBeanBatchRepository.save.mockResolvedValue(expectedBatch);
@@ -216,7 +216,7 @@ describe('BeanBatchService', () => {
         roastDate: '2024-01-15T00:00:00.000Z',
         bagOpenDate: '2024-01-20T00:00:00.000Z',
       };
-      
+
       mockBeanRepository.findOne.mockResolvedValue(mockBean);
       mockBeanBatchRepository.create.mockReturnValue(batchDataWithDateStrings);
       mockBeanBatchRepository.save.mockResolvedValue({ id: 'new-id', ...batchDataWithDateStrings });
@@ -244,7 +244,9 @@ describe('BeanBatchService', () => {
       mockBeanBatchRepository.save.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(beanBatchService.createBeanBatch(mockBeanBatchData)).rejects.toThrow('Database error');
+      await expect(beanBatchService.createBeanBatch(mockBeanBatchData)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 
@@ -264,7 +266,7 @@ describe('BeanBatchService', () => {
         roastDegree: 4,
       };
       const updatedBatch = { ...existingBatch, ...updateData };
-      
+
       mockBeanBatchRepository.findOne.mockResolvedValue(existingBatch);
       mockBeanBatchRepository.save.mockResolvedValue(updatedBatch);
 
@@ -303,7 +305,7 @@ describe('BeanBatchService', () => {
       };
       const partialUpdate = { roastLevel: 'Light' }; // Only updating roast level
       const updatedBatch = { ...existingBatch, roastLevel: 'Light' };
-      
+
       mockBeanBatchRepository.findOne.mockResolvedValue(existingBatch);
       mockBeanBatchRepository.save.mockResolvedValue(updatedBatch);
 
@@ -325,7 +327,9 @@ describe('BeanBatchService', () => {
       mockBeanBatchRepository.save.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(beanBatchService.updateBeanBatch(batchId, updateData)).rejects.toThrow('Database error');
+      await expect(beanBatchService.updateBeanBatch(batchId, updateData)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 
@@ -333,10 +337,10 @@ describe('BeanBatchService', () => {
     it('should delete existing bean batch', async () => {
       // Arrange
       const batchId = 'test-id';
-      const existingBatch = { 
-        id: batchId, 
+      const existingBatch = {
+        id: batchId,
         roastDate: new Date('2024-01-15'),
-        bean: mockBeanData
+        bean: mockBeanData,
       };
       mockBeanBatchRepository.findOne.mockResolvedValue(existingBatch);
       mockBeanBatchRepository.remove.mockResolvedValue(existingBatch);
@@ -380,17 +384,17 @@ describe('BeanBatchService', () => {
       // Arrange
       const beanId = '550e8400-e29b-41d4-a716-446655440001';
       const expectedBatches = [
-        { 
-          id: '1', 
+        {
+          id: '1',
           roastDate: new Date('2024-01-15'),
           bean: mockBeanData,
-          shots: []
+          shots: [],
         },
-        { 
-          id: '2', 
+        {
+          id: '2',
           roastDate: new Date('2024-01-16'),
           bean: mockBeanData,
-          shots: []
+          shots: [],
         },
       ];
       mockBeanBatchRepository.find.mockResolvedValue(expectedBatches);
@@ -429,7 +433,9 @@ describe('BeanBatchService', () => {
       mockBeanBatchRepository.find.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(beanBatchService.getBeanBatchesByBeanId(beanId)).rejects.toThrow('Database error');
+      await expect(beanBatchService.getBeanBatchesByBeanId(beanId)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 });

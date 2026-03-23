@@ -30,7 +30,7 @@ describe('ShotEnvironmentService', () => {
 
   beforeEach(() => {
     mockDataSource = createMockDataSource();
-    
+
     // Setup mock repositories
     mockEnvironmentRepository = {
       find: jest.fn(),
@@ -40,19 +40,19 @@ describe('ShotEnvironmentService', () => {
       remove: jest.fn(),
       findAndCount: jest.fn(),
     };
-    
+
     mockShotRepository = {
       findOne: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
     };
-    
-    mockDataSource.getRepository = jest.fn().mockImplementation((entity) => {
+
+    mockDataSource.getRepository = jest.fn().mockImplementation(entity => {
       if (entity === ShotEnvironment) return mockEnvironmentRepository;
       if (entity === Shot) return mockShotRepository;
       return mockEnvironmentRepository;
     });
-    
+
     shotEnvironmentService = new ShotEnvironmentService(mockDataSource);
   });
 
@@ -60,13 +60,13 @@ describe('ShotEnvironmentService', () => {
     it('should return all shot environments with relations', async () => {
       // Arrange
       const expectedEnvironments = [
-        { 
+        {
           shot_id: '1',
           ambient_temp_c: 22.5,
           humidity_percent: 65,
           shot: mockShotData,
         },
-        { 
+        {
           shot_id: '2',
           ambient_temp_c: 23.0,
           humidity_percent: 60,
@@ -91,7 +91,9 @@ describe('ShotEnvironmentService', () => {
       mockEnvironmentRepository.find.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotEnvironmentService.getAllShotEnvironments()).rejects.toThrow('Database error');
+      await expect(shotEnvironmentService.getAllShotEnvironments()).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 
@@ -99,7 +101,7 @@ describe('ShotEnvironmentService', () => {
     it('should return shot environment by ID with relations', async () => {
       // Arrange
       const shotId = 'test-shot-id';
-      const expectedEnvironment = { 
+      const expectedEnvironment = {
         shot_id: shotId,
         ambient_temp_c: 22.5,
         humidity_percent: 65,
@@ -136,7 +138,9 @@ describe('ShotEnvironmentService', () => {
       mockEnvironmentRepository.findOne.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotEnvironmentService.getShotEnvironmentById(shotId)).rejects.toThrow('Database error');
+      await expect(shotEnvironmentService.getShotEnvironmentById(shotId)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 
@@ -144,13 +148,13 @@ describe('ShotEnvironmentService', () => {
     it('should create shot environment with valid data', async () => {
       // Arrange
       const mockShot = { id: mockShotData.id, shot_type: mockShotData.shot_type };
-      const expectedEnvironment = { 
+      const expectedEnvironment = {
         shot_id: mockShotData.id,
         ambient_temp_c: 22.5,
         humidity_percent: 65,
-        shot: mockShot
+        shot: mockShot,
       };
-      
+
       mockShotRepository.findOne.mockResolvedValue(mockShot);
       mockEnvironmentRepository.create.mockReturnValue(mockEnvironmentData);
       mockEnvironmentRepository.save.mockResolvedValue(expectedEnvironment);
@@ -193,9 +197,9 @@ describe('ShotEnvironmentService', () => {
       mockShotRepository.findOne.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(shotEnvironmentService.createShotEnvironment(mockEnvironmentData)).rejects.toThrow(
-        `Shot with ID ${mockEnvironmentData.shot_id} not found`
-      );
+      await expect(
+        shotEnvironmentService.createShotEnvironment(mockEnvironmentData)
+      ).rejects.toThrow(`Shot with ID ${mockEnvironmentData.shot_id} not found`);
     });
 
     it('should handle numeric conversions', async () => {
@@ -209,10 +213,10 @@ describe('ShotEnvironmentService', () => {
         machine_warmup_minutes: '10', // String that should be converted to number
         shots_since_clean: '5', // String that should be converted to number
       };
-      
+
       mockShotRepository.findOne.mockResolvedValue(mockShot);
       mockEnvironmentRepository.create.mockReturnValue(environmentDataWithStrings);
-      mockEnvironmentRepository.save.mockResolvedValue({ 
+      mockEnvironmentRepository.save.mockResolvedValue({
         shot_id: mockShotData.id,
         ambient_temp_c: 22.5,
         humidity_percent: 65,
@@ -249,10 +253,10 @@ describe('ShotEnvironmentService', () => {
         machine_warmup_minutes: 'invalid-number', // Invalid string that can't be parsed
         shots_since_clean: 'invalid-number', // Invalid string that can't be parsed
       };
-      
+
       mockShotRepository.findOne.mockResolvedValue(mockShot);
       mockEnvironmentRepository.create.mockReturnValue(environmentDataWithInvalidNumbers);
-      mockEnvironmentRepository.save.mockResolvedValue({ 
+      mockEnvironmentRepository.save.mockResolvedValue({
         shot_id: mockShotData.id,
         ambient_temp_c: null,
         humidity_percent: null,
@@ -263,7 +267,9 @@ describe('ShotEnvironmentService', () => {
       });
 
       // Act
-      const result = await shotEnvironmentService.createShotEnvironment(environmentDataWithInvalidNumbers);
+      const result = await shotEnvironmentService.createShotEnvironment(
+        environmentDataWithInvalidNumbers
+      );
 
       // Assert
       expect(mockEnvironmentRepository.create).toHaveBeenCalledWith({
@@ -286,7 +292,9 @@ describe('ShotEnvironmentService', () => {
       mockEnvironmentRepository.save.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotEnvironmentService.createShotEnvironment(mockEnvironmentData)).rejects.toThrow('Database error');
+      await expect(
+        shotEnvironmentService.createShotEnvironment(mockEnvironmentData)
+      ).rejects.toThrow('Database error');
     });
   });
 
@@ -308,7 +316,7 @@ describe('ShotEnvironmentService', () => {
         humidity_percent: 70,
       };
       const updatedEnvironment = { ...existingEnvironment, ...updateData };
-      
+
       mockEnvironmentRepository.findOne.mockResolvedValue(existingEnvironment);
       mockEnvironmentRepository.save.mockResolvedValue(updatedEnvironment);
 
@@ -330,9 +338,9 @@ describe('ShotEnvironmentService', () => {
       mockEnvironmentRepository.findOne.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(shotEnvironmentService.updateShotEnvironment(shotId, updateData)).rejects.toThrow(
-        `Shot environment with ID ${shotId} not found`
-      );
+      await expect(
+        shotEnvironmentService.updateShotEnvironment(shotId, updateData)
+      ).rejects.toThrow(`Shot environment with ID ${shotId} not found`);
     });
 
     it('should handle partial updates correctly', async () => {
@@ -349,7 +357,7 @@ describe('ShotEnvironmentService', () => {
       };
       const partialUpdate = { ambient_temp_c: 23.0 }; // Only updating temperature
       const updatedEnvironment = { ...existingEnvironment, ambient_temp_c: 23.0 };
-      
+
       mockEnvironmentRepository.findOne.mockResolvedValue(existingEnvironment);
       mockEnvironmentRepository.save.mockResolvedValue(updatedEnvironment);
 
@@ -375,11 +383,11 @@ describe('ShotEnvironmentService', () => {
         shots_since_clean: 5,
       };
       const updateData = { ambient_temp_c: '23.0' }; // String that should be converted
-      const updatedEnvironment = { 
-        ...existingEnvironment, 
-        ambient_temp_c: 23.0
+      const updatedEnvironment = {
+        ...existingEnvironment,
+        ambient_temp_c: 23.0,
       };
-      
+
       mockEnvironmentRepository.findOne.mockResolvedValue(existingEnvironment);
       mockEnvironmentRepository.save.mockResolvedValue(updatedEnvironment);
 
@@ -399,7 +407,9 @@ describe('ShotEnvironmentService', () => {
       mockEnvironmentRepository.save.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotEnvironmentService.updateShotEnvironment(shotId, updateData)).rejects.toThrow('Database error');
+      await expect(
+        shotEnvironmentService.updateShotEnvironment(shotId, updateData)
+      ).rejects.toThrow('Database error');
     });
   });
 
@@ -407,11 +417,11 @@ describe('ShotEnvironmentService', () => {
     it('should delete existing shot environment', async () => {
       // Arrange
       const shotId = 'test-shot-id';
-      const existingEnvironment = { 
+      const existingEnvironment = {
         shot_id: shotId,
         ambient_temp_c: 22.5,
         humidity_percent: 65,
-        shot: mockShotData
+        shot: mockShotData,
       };
       mockEnvironmentRepository.findOne.mockResolvedValue(existingEnvironment);
       mockEnvironmentRepository.remove.mockResolvedValue(existingEnvironment);
@@ -446,7 +456,9 @@ describe('ShotEnvironmentService', () => {
       mockEnvironmentRepository.remove.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotEnvironmentService.deleteShotEnvironment(shotId)).rejects.toThrow('Database error');
+      await expect(shotEnvironmentService.deleteShotEnvironment(shotId)).rejects.toThrow(
+        'Database error'
+      );
     });
   });
 
@@ -456,14 +468,14 @@ describe('ShotEnvironmentService', () => {
       const minTemp = 20.0;
       const maxTemp = 25.0;
       const expectedEnvironments = [
-        { 
-          shot_id: '1', 
+        {
+          shot_id: '1',
           ambient_temp_c: 22.5,
           humidity_percent: 65,
           shot: mockShotData,
         },
-        { 
-          shot_id: '2', 
+        {
+          shot_id: '2',
           ambient_temp_c: 23.0,
           humidity_percent: 60,
           shot: mockShotData,
@@ -472,15 +484,18 @@ describe('ShotEnvironmentService', () => {
       mockEnvironmentRepository.find.mockResolvedValue(expectedEnvironments);
 
       // Act
-      const result = await shotEnvironmentService.getShotEnvironmentsByTemperature(minTemp, maxTemp);
+      const result = await shotEnvironmentService.getShotEnvironmentsByTemperature(
+        minTemp,
+        maxTemp
+      );
 
       // Assert
       expect(mockEnvironmentRepository.find).toHaveBeenCalledWith({
         where: {
           ambient_temp_c: expect.objectContaining({
             _type: 'between',
-            _value: [minTemp, maxTemp]
-          })
+            _value: [minTemp, maxTemp],
+          }),
         },
         relations: ['shot'],
       });
@@ -495,7 +510,9 @@ describe('ShotEnvironmentService', () => {
       mockEnvironmentRepository.find.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(shotEnvironmentService.getShotEnvironmentsByTemperature(minTemp, maxTemp)).rejects.toThrow('Database error');
+      await expect(
+        shotEnvironmentService.getShotEnvironmentsByTemperature(minTemp, maxTemp)
+      ).rejects.toThrow('Database error');
     });
   });
 });
