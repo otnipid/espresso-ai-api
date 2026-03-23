@@ -1,402 +1,339 @@
 import { Request, Response } from 'express';
-import { AppDataSource } from '../../../data-source';
+import { BeanBatchController } from '../../../controllers/beanBatch.controller';
+import { BeanBatchService } from '../../../services/BeanBatchService';
 
-// Mock the data source
-jest.mock('../../../data-source', () => ({
-  AppDataSource: {
-    getRepository: jest.fn(),
-  },
-}));
+// Mock BeanBatchService
+jest.mock('../../../services/BeanBatchService');
 
 describe('BeanBatchController', () => {
-  let mockRepository: any;
+  let beanBatchController: BeanBatchController;
+  let mockBeanBatchService: jest.Mocked<BeanBatchService>;
   let mockRequest: Partial<Request>;
-  let mockResponse: any;
+  let mockResponse: Partial<Response>;
 
   beforeEach(() => {
-    mockRepository = {
-      find: jest.fn(),
-      findOne: jest.fn(),
-      create: jest.fn(),
-      save: jest.fn(),
-      remove: jest.fn(),
+    // Create a fresh mock for each test
+    mockBeanBatchService = {
+      getAllBeanBatches: jest.fn(),
+      getBeanBatchById: jest.fn(),
+      createBeanBatch: jest.fn(),
+      updateBeanBatch: jest.fn(),
+      deleteBeanBatch: jest.fn(),
+    } as any;
+
+    // Mock the constructor to return our mock service
+    (BeanBatchService as jest.Mock).mockImplementation(() => mockBeanBatchService);
+
+    // Initialize controller
+    beanBatchController = new BeanBatchController();
+
+    // Setup mock request
+    mockRequest = {
+      body: {},
+      params: {},
+      query: {},
     };
 
-    (AppDataSource.getRepository as jest.Mock).mockReturnValue(mockRepository);
-
-    mockRequest = {} as Request;
+    // Setup mock response
     mockResponse = {
-      json: jest.fn(),
-      status: jest.fn().mockImplementation(() => ({
-        send: jest.fn(),
-        json: jest.fn(),
-      })),
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis(),
     };
+
+    // Clear all mocks
+    jest.clearAllMocks();
   });
 
   describe('all', () => {
     it('should return all bean batches', async () => {
+      // Arrange
       const mockBatches = [
-        { id: '1', roastDate: '2023-01-01' },
-        { id: '2', roastDate: '2023-01-02' },
+        { id: '1', roastDate: new Date('2023-01-01'), bean: { id: '1' }, shots: [], createdAt: new Date(), updatedAt: new Date() } as any,
+        { id: '2', roastDate: new Date('2023-01-02'), bean: { id: '2' }, shots: [], createdAt: new Date(), updatedAt: new Date() } as any,
       ];
 
-      mockRepository.find.mockResolvedValue(mockBatches);
+      mockBeanBatchService.getAllBeanBatches.mockResolvedValue(mockBatches);
 
-      const BeanBatchController = (await import('../../../controllers/beanBatch.controller'))
-        .BeanBatchController;
-      const controller = new BeanBatchController();
+      // Act
+      await beanBatchController.all(mockRequest as Request, mockResponse as Response);
 
-      await controller.all(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.find).toHaveBeenCalledWith({
-        relations: ['bean'],
-      });
+      // Assert
+      expect(mockBeanBatchService.getAllBeanBatches).toHaveBeenCalled();
       expect(mockResponse.json).toHaveBeenCalledWith(mockBatches);
     });
 
-    it('should handle errors', async () => {
+    it('should handle service errors', async () => {
+      // Arrange
       const error = new Error('Database error');
-      mockRepository.find.mockRejectedValue(error);
+      mockBeanBatchService.getAllBeanBatches.mockRejectedValue(error);
 
-      const BeanBatchController = (await import('../../../controllers/beanBatch.controller'))
-        .BeanBatchController;
-      const controller = new BeanBatchController();
+      // Act
+      await beanBatchController.all(mockRequest as Request, mockResponse as Response);
 
-      await controller.all(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Error fetching bean batches',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error fetching bean batches' });
     });
   });
 
   describe('one', () => {
-    it('should return a single bean batch by ID', async () => {
-      const mockBatch = { id: '1', roastDate: '2023-01-01' };
+    it('should return bean batch when found', async () => {
+      // Arrange
+      const mockBatch = { id: '1', roastDate: new Date('2023-01-01'), bean: { id: '1' }, shots: [], createdAt: new Date(), updatedAt: new Date() } as any;
       mockRequest.params = { id: '1' };
-      mockRepository.findOne.mockResolvedValue(mockBatch);
+      mockBeanBatchService.getBeanBatchById.mockResolvedValue(mockBatch);
 
-      const BeanBatchController = (await import('../../../controllers/beanBatch.controller'))
-        .BeanBatchController;
-      const controller = new BeanBatchController();
+      // Act
+      await beanBatchController.one(mockRequest as Request, mockResponse as Response);
 
-      await controller.one(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: '1' },
-        relations: ['bean'],
-      });
+      // Assert
+      expect(mockBeanBatchService.getBeanBatchById).toHaveBeenCalledWith('1');
       expect(mockResponse.json).toHaveBeenCalledWith(mockBatch);
     });
 
-    it('should handle bean batch not found', async () => {
+    it('should return 404 when bean batch not found', async () => {
+      // Arrange
       mockRequest.params = { id: '999' };
-      mockRepository.findOne.mockResolvedValue(null);
+      mockBeanBatchService.getBeanBatchById.mockResolvedValue(null as any);
 
-      const BeanBatchController = (await import('../../../controllers/beanBatch.controller'))
-        .BeanBatchController;
-      const controller = new BeanBatchController();
+      // Act
+      await beanBatchController.one(mockRequest as Request, mockResponse as Response);
 
-      await controller.one(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Bean batch not found',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Bean batch not found' });
     });
 
-    it('should handle database errors', async () => {
-      const error = new Error('Database connection failed');
+    it('should handle service errors', async () => {
+      // Arrange
       mockRequest.params = { id: '1' };
-      mockRepository.findOne.mockRejectedValue(error);
+      const error = new Error('Database error');
+      mockBeanBatchService.getBeanBatchById.mockRejectedValue(error);
 
-      const BeanBatchController = (await import('../../../controllers/beanBatch.controller'))
-        .BeanBatchController;
-      const controller = new BeanBatchController();
+      // Act
+      await beanBatchController.one(mockRequest as Request, mockResponse as Response);
 
-      await controller.one(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Error fetching bean batch',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error fetching bean batch' });
     });
   });
 
   describe('save', () => {
-    it('should create a new bean batch', async () => {
-      const newBatch = { beanId: '1', roastDate: '2023-01-01' };
-      const createdBatch = {
-        bean: { id: '1' },
-        roastDate: new Date('2023-01-01'),
-        bagOpenDate: null,
+    it('should create bean batch successfully', async () => {
+      // Arrange
+      const batchData = {
+        beanId: '1',
+        roastDate: '2023-01-01',
+        bagOpenDate: '2023-06-01',
+        roastLevel: 'Medium',
+        roastDegree: 2,
       };
-      const savedBatch = { id: '1', ...createdBatch };
 
-      mockRequest.body = newBatch;
-      mockRepository.create.mockReturnValue(createdBatch);
-      mockRepository.save.mockResolvedValue(savedBatch);
+      mockRequest.body = batchData;
+      const createdBatch = { id: '1', bean: { id: '1' }, roastDate: new Date('2023-01-01'), bagOpenDate: new Date('2023-06-01'), shots: [], createdAt: new Date(), updatedAt: new Date() } as any;
+      mockBeanBatchService.createBeanBatch.mockResolvedValue(createdBatch);
 
-      const BeanBatchController = (await import('../../../controllers/beanBatch.controller'))
-        .BeanBatchController;
-      const controller = new BeanBatchController();
+      // Act
+      await beanBatchController.save(mockRequest as Request, mockResponse as Response);
 
-      await controller.save(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.create).toHaveBeenCalledWith({
-        bean: { id: '1' },
-        roastDate: new Date('2023-01-01'),
-        bagOpenDate: null,
-      });
-      expect(mockRepository.save).toHaveBeenCalledWith(createdBatch);
-      expect((mockResponse.status as jest.Mock).mock.calls[0][0]).toBe(201);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith(
-        savedBatch
-      );
+      // Assert
+      expect(mockBeanBatchService.createBeanBatch).toHaveBeenCalledWith(batchData);
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith(createdBatch);
     });
 
     it('should handle missing beanId validation', async () => {
-      mockRequest.body = { roastDate: '2023-01-01' }; // Missing beanId
+      // Arrange
+      const invalidData = { roastDate: '2023-01-01' }; // Missing beanId
+      mockRequest.body = invalidData;
+      const error = new Error('Bean ID and roast date are required');
+      mockBeanBatchService.createBeanBatch.mockRejectedValue(error);
 
-      const BeanBatchController = (await import('../../../controllers/beanBatch.controller'))
-        .BeanBatchController;
-      const controller = new BeanBatchController();
+      // Act
+      await beanBatchController.save(mockRequest as Request, mockResponse as Response);
 
-      await controller.save(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Bean ID and roast date are required',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Bean ID and roast date are required' });
     });
 
     it('should handle missing roastDate validation', async () => {
-      mockRequest.body = { beanId: '1' }; // Missing roastDate
+      // Arrange
+      const invalidData = { beanId: '1' }; // Missing roastDate
+      mockRequest.body = invalidData;
+      const error = new Error('Bean ID and roast date are required');
+      mockBeanBatchService.createBeanBatch.mockRejectedValue(error);
 
-      const BeanBatchController = (await import('../../../controllers/beanBatch.controller'))
-        .BeanBatchController;
-      const controller = new BeanBatchController();
+      // Act
+      await beanBatchController.save(mockRequest as Request, mockResponse as Response);
 
-      await controller.save(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Bean ID and roast date are required',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Bean ID and roast date are required' });
     });
 
-    it('should handle bagOpenDate conversion', async () => {
-      const newBatch = { beanId: '1', roastDate: '2023-01-01', bagOpenDate: '2023-06-01' };
-      const createdBatch = {
-        bean: { id: '1' },
-        roastDate: new Date('2023-01-01'),
-        bagOpenDate: new Date('2023-06-01'),
-      };
-      const savedBatch = { id: '1', ...createdBatch };
+    it('should handle service errors', async () => {
+      // Arrange
+      const batchData = { beanId: '1', roastDate: '2023-01-01' };
+      mockRequest.body = batchData;
+      const error = new Error('Validation failed');
+      mockBeanBatchService.createBeanBatch.mockRejectedValue(error);
 
-      mockRequest.body = newBatch;
-      mockRepository.create.mockReturnValue(createdBatch);
-      mockRepository.save.mockResolvedValue(savedBatch);
+      // Act
+      await beanBatchController.save(mockRequest as Request, mockResponse as Response);
 
-      const BeanBatchController = (await import('../../../controllers/beanBatch.controller'))
-        .BeanBatchController;
-      const controller = new BeanBatchController();
-
-      await controller.save(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.create).toHaveBeenCalledWith({
-        bean: { id: '1' },
-        roastDate: new Date('2023-01-01'),
-        bagOpenDate: new Date('2023-06-01'),
-      });
-    });
-
-    it('should handle database errors during save', async () => {
-      const error = new Error('Database save failed');
-      mockRequest.body = { beanId: '1', roastDate: '2023-01-01' };
-      mockRepository.create.mockReturnValue({
-        bean: { id: '1' },
-        roastDate: new Date('2023-01-01'),
-      });
-      mockRepository.save.mockRejectedValue(error);
-
-      const BeanBatchController = (await import('../../../controllers/beanBatch.controller'))
-        .BeanBatchController;
-      const controller = new BeanBatchController();
-
-      await controller.save(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Error creating bean batch',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error creating bean batch' });
+    });
+
+    it('should handle errors without message', async () => {
+      // Arrange
+      const batchData = { beanId: '1', roastDate: '2023-01-01' };
+      mockRequest.body = batchData;
+      const error = new Error();
+      mockBeanBatchService.createBeanBatch.mockRejectedValue(error);
+
+      // Act
+      await beanBatchController.save(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error creating bean batch' });
     });
   });
 
   describe('update', () => {
-    it('should update an existing bean batch', async () => {
-      const existingBatch = {
-        id: '1',
-        bean: { id: '1' },
-        roastDate: new Date('2023-01-01'),
-      };
-      const updatedBatch = {
-        id: '1',
-        bean: { id: '2' },
-        roastDate: new Date('2023-01-02'),
+    it('should update bean batch successfully', async () => {
+      // Arrange
+      const updateData = {
+        roastDate: '2023-01-02',
+        bagOpenDate: '2023-06-02',
+        roastLevel: 'Dark',
+        roastDegree: 3,
       };
 
       mockRequest.params = { id: '1' };
-      mockRequest.body = { beanId: '2', roastDate: '2023-01-02' };
-      mockRepository.findOne.mockResolvedValue(existingBatch);
-      mockRepository.save.mockResolvedValue(updatedBatch);
+      mockRequest.body = updateData;
+      const updatedBatch = { id: '1', ...updateData } as any;
+      mockBeanBatchService.updateBeanBatch.mockResolvedValue(updatedBatch);
 
-      const BeanBatchController = (await import('../../../controllers/beanBatch.controller'))
-        .BeanBatchController;
-      const controller = new BeanBatchController();
+      // Act
+      await beanBatchController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
+      // Assert
+      expect(mockBeanBatchService.updateBeanBatch).toHaveBeenCalledWith('1', updateData);
+      expect(mockResponse.json).toHaveBeenCalledWith(updatedBatch);
+    });
 
-      expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: '1' },
-      });
-      expect(mockRepository.save).toHaveBeenCalledWith(updatedBatch);
+    it('should handle partial updates', async () => {
+      // Arrange
+      const updateData = {
+        roastDate: '2023-01-02', // Only update roastDate
+      };
+
+      mockRequest.params = { id: '1' };
+      mockRequest.body = updateData;
+      const updatedBatch = { id: '1', ...updateData } as any;
+      mockBeanBatchService.updateBeanBatch.mockResolvedValue(updatedBatch);
+
+      // Act
+      await beanBatchController.update(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(mockBeanBatchService.updateBeanBatch).toHaveBeenCalledWith('1', updateData);
       expect(mockResponse.json).toHaveBeenCalledWith(updatedBatch);
     });
 
     it('should handle bean batch not found on update', async () => {
+      // Arrange
       mockRequest.params = { id: '999' };
-      mockRequest.body = { beanId: '1', roastDate: '2023-01-01' };
-      mockRepository.findOne.mockResolvedValue(null);
+      mockRequest.body = { roastDate: '2023-01-01' };
+      mockBeanBatchService.updateBeanBatch.mockResolvedValue(null as any);
 
-      const BeanBatchController = (await import('../../../controllers/beanBatch.controller'))
-        .BeanBatchController;
-      const controller = new BeanBatchController();
+      // Act
+      await beanBatchController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Bean batch not found',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Bean batch not found' });
     });
 
-    it('should handle bagOpenDate null branch', async () => {
-      const existingBatch = {
-        id: '1',
-        bean: { id: '1' },
-        roastDate: new Date('2023-01-01'),
-        bagOpenDate: new Date('2023-06-01'),
-      };
-      const updatedBatch = {
-        id: '1',
-        bean: { id: '1' },
-        roastDate: new Date('2023-01-01'),
-        bagOpenDate: null, // Set to null
-      };
-
+    it('should handle service errors', async () => {
+      // Arrange
+      const updateData = { roastDate: '2023-01-01' };
       mockRequest.params = { id: '1' };
-      mockRequest.body = { bagOpenDate: null }; // Explicit null
-      mockRepository.findOne.mockResolvedValue(existingBatch);
-      mockRepository.save.mockResolvedValue(updatedBatch);
+      mockRequest.body = updateData;
+      const error = new Error('Update failed');
+      mockBeanBatchService.updateBeanBatch.mockRejectedValue(error);
 
-      const BeanBatchController = (await import('../../../controllers/beanBatch.controller'))
-        .BeanBatchController;
-      const controller = new BeanBatchController();
+      // Act
+      await beanBatchController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.save).toHaveBeenCalledWith(updatedBatch);
-      expect(mockResponse.json).toHaveBeenCalledWith(updatedBatch);
-    });
-
-    it('should handle database errors during update', async () => {
-      const error = new Error('Database update failed');
-      mockRequest.params = { id: '1' };
-      mockRequest.body = { beanId: '1', roastDate: '2023-01-01' };
-      mockRepository.findOne.mockResolvedValue({
-        id: '1',
-        bean: { id: '1' },
-        roastDate: new Date('2023-01-01'),
-      });
-      mockRepository.save.mockRejectedValue(error);
-
-      const BeanBatchController = (await import('../../../controllers/beanBatch.controller'))
-        .BeanBatchController;
-      const controller = new BeanBatchController();
-
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Error updating bean batch',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error updating bean batch' });
+    });
+
+    it('should handle errors without message', async () => {
+      // Arrange
+      const updateData = { roastDate: '2023-01-01' };
+      mockRequest.params = { id: '1' };
+      mockRequest.body = updateData;
+      const error = new Error();
+      mockBeanBatchService.updateBeanBatch.mockRejectedValue(error);
+
+      // Act
+      await beanBatchController.update(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error updating bean batch' });
     });
   });
 
   describe('remove', () => {
-    it('should delete a bean batch', async () => {
+    it('should delete bean batch successfully', async () => {
+      // Arrange
       mockRequest.params = { id: '1' };
-      mockRepository.findOne.mockResolvedValue({
-        id: '1',
-        bean: { id: '1' },
-        roastDate: new Date('2023-01-01'),
-      });
-      mockRepository.remove.mockResolvedValue({ affected: 1 });
+      mockBeanBatchService.deleteBeanBatch.mockResolvedValue(true);
 
-      const BeanBatchController = (await import('../../../controllers/beanBatch.controller'))
-        .BeanBatchController;
-      const controller = new BeanBatchController();
+      // Act
+      await beanBatchController.remove(mockRequest as Request, mockResponse as Response);
 
-      await controller.remove(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.remove).toHaveBeenCalledWith({
-        id: '1',
-        bean: { id: '1' },
-        roastDate: new Date('2023-01-01'),
-      });
+      // Assert
+      expect(mockBeanBatchService.deleteBeanBatch).toHaveBeenCalledWith('1');
       expect(mockResponse.status).toHaveBeenCalledWith(204);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.send).toHaveBeenCalled();
+      expect(mockResponse.send).toHaveBeenCalled();
     });
 
-    it('should handle bean batch not found on deletion', async () => {
-      mockRequest.params = { id: '999' };
-      mockRepository.findOne.mockResolvedValue(null);
+    it('should return 404 when bean batch not found', async () => {
+      // Arrange
+      mockRequest.params = { id: 'non-existent' };
+      mockBeanBatchService.deleteBeanBatch.mockResolvedValue(false);
 
-      const BeanBatchController = (await import('../../../controllers/beanBatch.controller'))
-        .BeanBatchController;
-      const controller = new BeanBatchController();
+      // Act
+      await beanBatchController.remove(mockRequest as Request, mockResponse as Response);
 
-      await controller.remove(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Bean batch not found',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Bean batch not found' });
     });
 
-    it('should handle database errors during deletion', async () => {
-      const error = new Error('Database delete failed');
+    it('should handle service errors', async () => {
+      // Arrange
       mockRequest.params = { id: '1' };
-      mockRepository.findOne.mockResolvedValue({
-        id: '1',
-        bean: { id: '1' },
-        roastDate: new Date('2023-01-01'),
-      });
-      mockRepository.remove.mockRejectedValue(error);
+      const error = new Error('Delete failed');
+      mockBeanBatchService.deleteBeanBatch.mockRejectedValue(error);
 
-      const BeanBatchController = (await import('../../../controllers/beanBatch.controller'))
-        .BeanBatchController;
-      const controller = new BeanBatchController();
+      // Act
+      await beanBatchController.remove(mockRequest as Request, mockResponse as Response);
 
-      await controller.remove(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Error deleting bean batch',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error deleting bean batch' });
     });
   });
 });

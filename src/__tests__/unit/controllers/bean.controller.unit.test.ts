@@ -1,508 +1,332 @@
 import { Request, Response } from 'express';
-import { AppDataSource } from '../../../data-source';
+import { BeanController } from '../../../controllers/bean.controller';
+import { BeanService } from '../../../services/BeanService';
 
-// Mock the data source
-jest.mock('../../../data-source', () => ({
-  AppDataSource: {
-    getRepository: jest.fn(),
-  },
-}));
+// Mock BeanService
+jest.mock('../../../services/BeanService');
 
 describe('BeanController', () => {
-  let mockRepository: any;
+  let beanController: BeanController;
+  let mockBeanService: jest.Mocked<BeanService>;
   let mockRequest: Partial<Request>;
-  let mockResponse: any;
+  let mockResponse: Partial<Response>;
 
   beforeEach(() => {
-    mockRepository = {
-      find: jest.fn(),
-      findOne: jest.fn(),
-      create: jest.fn(),
-      save: jest.fn(),
-      remove: jest.fn(),
+    // Create a fresh mock for each test
+    mockBeanService = {
+      getAllBeans: jest.fn(),
+      getBeanById: jest.fn(),
+      createBean: jest.fn(),
+      updateBean: jest.fn(),
+      deleteBean: jest.fn(),
+    } as any;
+
+    // Mock the constructor to return our mock service
+    (BeanService as jest.Mock).mockImplementation(() => mockBeanService);
+
+    // Initialize controller
+    beanController = new BeanController();
+
+    // Setup mock request
+    mockRequest = {
+      body: {},
+      params: {},
+      query: {},
     };
 
-    (AppDataSource.getRepository as jest.Mock).mockReturnValue(mockRepository);
-
-    mockRequest = {} as Request;
+    // Setup mock response
     mockResponse = {
-      json: jest.fn(),
-      status: jest.fn().mockImplementation(() => ({
-        send: jest.fn(),
-        json: jest.fn(),
-      })),
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis(),
     };
+
+    // Clear all mocks
+    jest.clearAllMocks();
   });
 
   describe('all', () => {
     it('should return all beans', async () => {
+      // Arrange
       const mockBeans = [
-        { id: '1', name: 'Bean1' },
-        { id: '2', name: 'Bean2' },
+        { id: '1', name: 'Colombia Bean', country: 'Colombia', roaster: undefined, region: undefined, farm: undefined, varietal: undefined, processing_method: undefined, altitude_m: null, density_category: undefined, created_at: new Date(), beanBatches: [] } as any,
+        { id: '2', name: 'Brazil Bean', country: 'Brazil', roaster: undefined, region: undefined, farm: undefined, varietal: undefined, processing_method: undefined, altitude_m: null, density_category: undefined, created_at: new Date(), beanBatches: [] } as any,
       ];
 
-      mockRepository.find.mockResolvedValue(mockBeans);
+      mockBeanService.getAllBeans.mockResolvedValue(mockBeans);
 
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
+      // Act
+      await beanController.all(mockRequest as Request, mockResponse as Response);
 
-      await controller.all(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.find).toHaveBeenCalledWith({
-        relations: ['beanBatches'],
-      });
+      // Assert
+      expect(mockBeanService.getAllBeans).toHaveBeenCalled();
       expect(mockResponse.json).toHaveBeenCalledWith(mockBeans);
     });
 
-    it('should handle errors', async () => {
+    it('should handle service errors', async () => {
+      // Arrange
       const error = new Error('Database error');
-      mockRepository.find.mockRejectedValue(error);
+      mockBeanService.getAllBeans.mockRejectedValue(error);
 
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
+      // Act
+      await beanController.all(mockRequest as Request, mockResponse as Response);
 
-      await controller.all(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Error fetching beans',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error fetching beans' });
     });
   });
 
   describe('one', () => {
-    it('should return a single bean by ID', async () => {
-      const mockBean = { id: '1', name: 'Test Bean' };
+    it('should return bean when found', async () => {
+      // Arrange
+      const mockBean = { id: '1', name: 'Test Bean', country: 'Colombia', roaster: undefined, region: undefined, farm: undefined, varietal: undefined, processing_method: undefined, altitude_m: null, density_category: undefined, created_at: new Date(), beanBatches: [] } as any;
       mockRequest.params = { id: '1' };
-      mockRepository.findOne.mockResolvedValue(mockBean);
+      mockBeanService.getBeanById.mockResolvedValue(mockBean);
 
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
+      // Act
+      await beanController.one(mockRequest as Request, mockResponse as Response);
 
-      await controller.one(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: '1' },
-        relations: ['beanBatches'],
-      });
+      // Assert
+      expect(mockBeanService.getBeanById).toHaveBeenCalledWith('1');
       expect(mockResponse.json).toHaveBeenCalledWith(mockBean);
     });
 
-    it('should handle bean not found', async () => {
+    it('should return 404 when bean not found', async () => {
+      // Arrange
       mockRequest.params = { id: '999' };
-      mockRepository.findOne.mockResolvedValue(null);
+      mockBeanService.getBeanById.mockResolvedValue(null as any);
 
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
+      // Act
+      await beanController.one(mockRequest as Request, mockResponse as Response);
 
-      await controller.one(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Bean not found',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Bean not found' });
     });
 
-    it('should handle database errors', async () => {
-      const error = new Error('Database connection failed');
+    it('should handle service errors', async () => {
+      // Arrange
       mockRequest.params = { id: '1' };
-      mockRepository.findOne.mockRejectedValue(error);
+      const error = new Error('Database error');
+      mockBeanService.getBeanById.mockRejectedValue(error);
 
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
+      // Act
+      await beanController.one(mockRequest as Request, mockResponse as Response);
 
-      await controller.one(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Error fetching bean',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error fetching bean' });
     });
   });
 
   describe('save', () => {
-    it('should create a new bean', async () => {
-      const newBean = { name: 'New Bean', country: 'Colombia' };
-      const createdBean = { name: 'New Bean', country: 'Colombia' };
-      const savedBean = { id: '1', ...createdBean };
-
-      mockRequest.body = newBean;
-      mockRepository.create.mockReturnValue(createdBean);
-      mockRepository.save.mockResolvedValue(savedBean);
-
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
-
-      await controller.save(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.create).toHaveBeenCalledWith({
+    it('should create bean successfully', async () => {
+      // Arrange
+      const beanData = {
         name: 'New Bean',
         country: 'Colombia',
-        roaster: undefined,
-        region: undefined,
-        farm: undefined,
-        varietal: undefined,
-        processing_method: undefined,
-        altitude_m: null,
-        density_category: undefined,
-      });
-      expect(mockRepository.save).toHaveBeenCalledWith(createdBean);
-      expect((mockResponse.status as jest.Mock).mock.calls[0][0]).toBe(201);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith(
-        savedBean
-      );
+        roaster: 'Test Roaster',
+        region: 'Test Region',
+        farm: 'Test Farm',
+        varietal: 'Test Varietal',
+        processing_method: 'Washed',
+        altitude_m: 1500,
+        density_category: 'Medium',
+      };
+
+      mockRequest.body = beanData;
+      const createdBean = { id: '1', ...beanData } as any;
+      mockBeanService.createBean.mockResolvedValue(createdBean);
+
+      // Act
+      await beanController.save(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(mockBeanService.createBean).toHaveBeenCalledWith(beanData);
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith(createdBean);
     });
 
     it('should handle missing name validation', async () => {
-      mockRequest.body = { country: 'Colombia' }; // Missing name
+      // Arrange
+      const invalidData = { country: 'Colombia' }; // Missing name
+      mockRequest.body = invalidData;
+      const error = new Error('Bean name is required');
+      mockBeanService.createBean.mockRejectedValue(error);
 
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
+      // Act
+      await beanController.save(mockRequest as Request, mockResponse as Response);
 
-      await controller.save(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(400);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Name is required',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Bean name is required' });
     });
 
     it('should handle altitude_m conversion', async () => {
-      const newBean = { name: 'New Bean', altitude_m: '1500' };
-      const createdBean = { name: 'New Bean', altitude_m: 1500 };
-      const savedBean = { id: '1', ...createdBean };
-
-      mockRequest.body = newBean;
-      mockRepository.create.mockReturnValue(createdBean);
-      mockRepository.save.mockResolvedValue(savedBean);
-
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
-
-      await controller.save(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.create).toHaveBeenCalledWith({
+      // Arrange
+      const beanData = {
         name: 'New Bean',
-        altitude_m: 1500,
-        roaster: undefined,
-        country: undefined,
-        region: undefined,
-        farm: undefined,
-        varietal: undefined,
-        processing_method: undefined,
-        density_category: undefined,
-      });
+        altitude_m: '1500', // String that should be converted
+      };
+
+      mockRequest.body = beanData;
+      const createdBean = { id: '1', ...beanData } as any;
+      mockBeanService.createBean.mockResolvedValue(createdBean);
+
+      // Act
+      await beanController.save(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(mockBeanService.createBean).toHaveBeenCalledWith(beanData);
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith(createdBean);
     });
 
-    it('should handle database errors during save', async () => {
-      const error = new Error('Database save failed');
-      mockRequest.body = { name: 'New Bean', country: 'Colombia' };
-      mockRepository.create.mockReturnValue({ name: 'New Bean', country: 'Colombia' });
-      mockRepository.save.mockRejectedValue(error);
+    it('should handle service errors', async () => {
+      // Arrange
+      const beanData = { name: 'New Bean', country: 'Colombia' };
+      mockRequest.body = beanData;
+      const error = new Error('Validation failed');
+      mockBeanService.createBean.mockRejectedValue(error);
 
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
+      // Act
+      await beanController.save(mockRequest as Request, mockResponse as Response);
 
-      await controller.save(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Error creating bean',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error creating bean' });
+    });
+
+    it('should handle errors without message', async () => {
+      // Arrange
+      const beanData = { name: 'New Bean' };
+      mockRequest.body = beanData;
+      const error = new Error();
+      mockBeanService.createBean.mockRejectedValue(error);
+
+      // Act
+      await beanController.save(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error creating bean' });
     });
   });
 
   describe('update', () => {
-    it('should update an existing bean', async () => {
-      const existingBean = { id: '1', name: 'Old Name', country: 'Brazil' };
-      const updatedBean = { id: '1', name: 'New Name', country: 'Colombia' };
+    it('should update bean successfully', async () => {
+      // Arrange
+      const updateData = {
+        name: 'Updated Bean',
+        country: 'Brazil',
+      };
 
       mockRequest.params = { id: '1' };
-      mockRequest.body = { name: 'New Name', country: 'Colombia' };
-      mockRepository.findOne.mockResolvedValue(existingBean);
-      mockRepository.save.mockResolvedValue(updatedBean);
+      mockRequest.body = updateData;
+      const updatedBean = { id: '1', ...updateData } as any;
+      mockBeanService.updateBean.mockResolvedValue(updatedBean);
 
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
+      // Act
+      await beanController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: '1' },
-      });
-      expect(mockRepository.save).toHaveBeenCalledWith(updatedBean);
+      // Assert
+      expect(mockBeanService.updateBean).toHaveBeenCalledWith('1', updateData);
       expect(mockResponse.json).toHaveBeenCalledWith(updatedBean);
     });
 
-    it('should handle bean not found on update', async () => {
-      mockRequest.params = { id: '999' };
-      mockRequest.body = { name: 'Updated Bean' };
-      mockRepository.findOne.mockResolvedValue(null);
+    it('should handle partial updates', async () => {
+      // Arrange
+      const updateData = {
+        name: 'New Name Only', // Only update name
+      };
 
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
+      mockRequest.params = { id: '1' };
+      mockRequest.body = updateData;
+      const updatedBean = { id: '1', ...updateData } as any;
+      mockBeanService.updateBean.mockResolvedValue(updatedBean);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
+      // Act
+      await beanController.update(mockRequest as Request, mockResponse as Response);
 
-      expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Bean not found',
-      });
+      // Assert
+      expect(mockBeanService.updateBean).toHaveBeenCalledWith('1', updateData);
+      expect(mockResponse.json).toHaveBeenCalledWith(updatedBean);
     });
 
-    it('should handle database errors during update', async () => {
-      const error = new Error('Database update failed');
+    it('should handle service errors', async () => {
+      // Arrange
+      const updateData = { name: 'Updated Bean' };
       mockRequest.params = { id: '1' };
-      mockRequest.body = { name: 'Updated Bean' };
-      mockRepository.findOne.mockResolvedValue({ id: '1', name: 'Old Bean' });
-      mockRepository.save.mockRejectedValue(error);
+      mockRequest.body = updateData;
+      const error = new Error('Update failed');
+      mockBeanService.updateBean.mockRejectedValue(error);
 
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
+      // Act
+      await beanController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Error updating bean',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error updating bean' });
     });
 
-    it('should handle partial field updates', async () => {
-      const existingBean = {
-        id: '1',
-        name: 'Old Name',
-        country: 'Brazil',
-        roaster: 'Old Roaster',
-        region: 'Old Region',
-        farm: 'Old Farm',
-        varietal: 'Old Varietal',
-        processing_method: 'Old Method',
-        altitude_m: 1000,
-        density_category: 'Old Category',
-      };
-      const updatedBean = {
-        id: '1',
-        name: 'New Name', // Only update name
-        country: 'Brazil', // Keep existing
-        roaster: 'Old Roaster', // Keep existing
-        region: 'Old Region', // Keep existing
-        farm: 'Old Farm', // Keep existing
-        varietal: 'Old Varietal', // Keep existing
-        processing_method: 'Old Method', // Keep existing
-        altitude_m: 1000, // Keep existing
-        density_category: 'Old Category', // Keep existing
-      };
-
+    it('should handle errors without message', async () => {
+      // Arrange
+      const updateData = { name: 'Updated Bean' };
       mockRequest.params = { id: '1' };
-      mockRequest.body = { name: 'New Name' }; // Only name provided
-      mockRepository.findOne.mockResolvedValue(existingBean);
-      mockRepository.save.mockResolvedValue(updatedBean);
+      mockRequest.body = updateData;
+      const error = new Error();
+      mockBeanService.updateBean.mockRejectedValue(error);
 
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
+      // Act
+      await beanController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: '1' },
-      });
-      expect(mockRepository.save).toHaveBeenCalledWith(updatedBean);
-      expect(mockResponse.json).toHaveBeenCalledWith(updatedBean);
-    });
-
-    it('should handle multiple field updates', async () => {
-      const existingBean = {
-        id: '1',
-        name: 'Old Name',
-        country: 'Brazil',
-        roaster: undefined,
-        region: undefined,
-        farm: undefined,
-        varietal: undefined,
-        processing_method: undefined,
-        altitude_m: null,
-        density_category: undefined,
-      };
-      const updatedBean = {
-        id: '1',
-        name: 'New Name',
-        country: 'Colombia',
-        roaster: 'New Roaster',
-        region: 'New Region',
-        farm: 'New Farm',
-        varietal: 'New Varietal',
-        processing_method: 'New Method',
-        altitude_m: 1500,
-        density_category: 'New Category',
-      };
-
-      mockRequest.params = { id: '1' };
-      mockRequest.body = {
-        name: 'New Name',
-        country: 'Colombia',
-        roaster: 'New Roaster',
-        region: 'New Region',
-        farm: 'New Farm',
-        varietal: 'New Varietal',
-        processing_method: 'New Method',
-        altitude_m: '1500',
-        density_category: 'New Category',
-      };
-      mockRepository.findOne.mockResolvedValue(existingBean);
-      mockRepository.save.mockResolvedValue(updatedBean);
-
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
-
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: '1' },
-      });
-      expect(mockRepository.save).toHaveBeenCalledWith(updatedBean);
-      expect(mockResponse.json).toHaveBeenCalledWith(updatedBean);
-    });
-
-    it('should handle name field update specifically', async () => {
-      const existingBean = {
-        id: '1',
-        name: 'Old Name',
-        country: 'Brazil',
-        roaster: undefined,
-        region: undefined,
-        farm: undefined,
-        varietal: undefined,
-        processing_method: undefined,
-        altitude_m: null,
-        density_category: undefined,
-      };
-      const updatedBean = {
-        id: '1',
-        name: 'Specific New Name',
-        country: 'Brazil',
-        roaster: undefined,
-        region: undefined,
-        farm: undefined,
-        varietal: undefined,
-        processing_method: undefined,
-        altitude_m: null,
-        density_category: undefined,
-      };
-
-      mockRequest.params = { id: '1' };
-      mockRequest.body = { name: 'Specific New Name' };
-      mockRepository.findOne.mockResolvedValue(existingBean);
-      mockRepository.save.mockResolvedValue(updatedBean);
-
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
-
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.save).toHaveBeenCalledWith(updatedBean);
-      expect(mockResponse.json).toHaveBeenCalledWith(updatedBean);
-    });
-
-    it('should handle altitude_m field update with null value', async () => {
-      const existingBean = {
-        id: '1',
-        name: 'Test Bean',
-        country: 'Brazil',
-        roaster: undefined,
-        region: undefined,
-        farm: undefined,
-        varietal: undefined,
-        processing_method: undefined,
-        altitude_m: 1000,
-        density_category: undefined,
-      };
-      const updatedBean = {
-        id: '1',
-        name: 'Test Bean',
-        country: 'Brazil',
-        roaster: undefined,
-        region: undefined,
-        farm: undefined,
-        varietal: undefined,
-        processing_method: undefined,
-        altitude_m: null, // Set to null explicitly
-        density_category: undefined,
-      };
-
-      mockRequest.params = { id: '1' };
-      mockRequest.body = { altitude_m: null }; // Explicit null
-      mockRepository.findOne.mockResolvedValue(existingBean);
-      mockRepository.save.mockResolvedValue(updatedBean);
-
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
-
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.save).toHaveBeenCalledWith(updatedBean);
-      expect(mockResponse.json).toHaveBeenCalledWith(updatedBean);
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error updating bean' });
     });
   });
 
   describe('remove', () => {
-    it('should delete a bean', async () => {
+    it('should delete bean successfully', async () => {
+      // Arrange
       mockRequest.params = { id: '1' };
-      mockRepository.findOne.mockResolvedValue({
-        id: '1',
-        name: 'Test Bean',
-        country: 'Colombia',
-      });
-      mockRepository.remove.mockResolvedValue({ affected: 1 });
+      mockBeanService.deleteBean.mockResolvedValue(true);
 
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
+      // Act
+      await beanController.remove(mockRequest as Request, mockResponse as Response);
 
-      await controller.remove(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.remove).toHaveBeenCalledWith({
-        id: '1',
-        name: 'Test Bean',
-        country: 'Colombia',
-      });
+      // Assert
+      expect(mockBeanService.deleteBean).toHaveBeenCalledWith('1');
       expect(mockResponse.status).toHaveBeenCalledWith(204);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.send).toHaveBeenCalled();
+      expect(mockResponse.send).toHaveBeenCalled();
     });
 
-    it('should handle bean not found on deletion', async () => {
-      mockRequest.params = { id: '999' };
-      mockRepository.findOne.mockResolvedValue(null);
+    it('should return 404 when bean not found', async () => {
+      // Arrange
+      mockRequest.params = { id: 'non-existent' };
+      mockBeanService.deleteBean.mockResolvedValue(false);
 
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
+      // Act
+      await beanController.remove(mockRequest as Request, mockResponse as Response);
 
-      await controller.remove(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Bean not found',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Bean not found' });
     });
 
-    it('should handle database errors during deletion', async () => {
-      const error = new Error('Database delete failed');
+    it('should handle service errors', async () => {
+      // Arrange
       mockRequest.params = { id: '1' };
-      mockRepository.findOne.mockResolvedValue({
-        id: '1',
-        name: 'Test Bean',
-        country: 'Colombia',
-      });
-      mockRepository.remove.mockRejectedValue(error);
+      const error = new Error('Delete failed');
+      mockBeanService.deleteBean.mockRejectedValue(error);
 
-      const BeanController = (await import('../../../controllers/bean.controller')).BeanController;
-      const controller = new BeanController();
+      // Act
+      await beanController.remove(mockRequest as Request, mockResponse as Response);
 
-      await controller.remove(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Error deleting bean',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error deleting bean' });
     });
   });
 });
