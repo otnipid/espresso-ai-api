@@ -368,6 +368,136 @@ describe('ShotExtractionService', () => {
         'Database error'
       );
     });
+
+    it('should handle string-to-number conversions in update', async () => {
+      // Arrange
+      const shotId = 'test-shot-id';
+      const existingExtraction = {
+        shot_id: shotId,
+        yield_grams: 36.0,
+        shot_time_seconds: 25.0,
+        avg_pressure_bar: 9.0,
+        water_temp_c: 92.0,
+        preinfusion_seconds: 5.0,
+        peak_pressure_bar: 10.0,
+      };
+      
+      const updateDataWithStringNumbers = {
+        yield_grams: '38.5', // String that should be converted
+        shot_time_seconds: '27', // String that should be converted
+        avg_pressure_bar: '8.5', // String that should be converted
+        water_temp_c: '94', // String that should be converted
+        preinfusion_seconds: '6', // String that should be converted
+        peak_pressure_bar: '11', // String that should be converted
+      };
+
+      mockExtractionRepository.findOne.mockResolvedValue(existingExtraction);
+      mockExtractionRepository.save.mockResolvedValue({
+        ...existingExtraction,
+        yield_grams: 38.5,
+        shot_time_seconds: 27,
+        avg_pressure_bar: 8.5,
+        water_temp_c: 94,
+        preinfusion_seconds: 6,
+        peak_pressure_bar: 11,
+      });
+
+      // Act
+      const result = await shotExtractionService.updateShotExtraction(shotId, updateDataWithStringNumbers);
+
+      // Assert
+      expect(result.yield_grams).toBe(38.5);
+      expect(result.shot_time_seconds).toBe(27);
+      expect(result.avg_pressure_bar).toBe(8.5);
+      expect(result.water_temp_c).toBe(94);
+      expect(result.preinfusion_seconds).toBe(6);
+      expect(result.peak_pressure_bar).toBe(11);
+    });
+
+    it('should handle invalid string-to-number conversions in update', async () => {
+      // Arrange
+      const shotId = 'test-shot-id';
+      const existingExtraction = {
+        shot_id: shotId,
+        yield_grams: 36.0,
+        shot_time_seconds: 25.0,
+        avg_pressure_bar: 9.0,
+        water_temp_c: 92.0,
+        preinfusion_seconds: 5.0,
+        peak_pressure_bar: 10.0,
+      };
+      
+      const updateDataWithInvalidNumbers = {
+        yield_grams: 'invalid-number', // Should become null
+        shot_time_seconds: 'invalid-number', // Should become null
+        avg_pressure_bar: 'invalid-number', // Should become null
+        water_temp_c: 'invalid-number', // Should become null
+        preinfusion_seconds: 'invalid-number', // Should become null
+        peak_pressure_bar: 'invalid-number', // Should become null
+      };
+
+      mockExtractionRepository.findOne.mockResolvedValue(existingExtraction);
+      mockExtractionRepository.save.mockResolvedValue({
+        ...existingExtraction,
+        yield_grams: null,
+        shot_time_seconds: null,
+        avg_pressure_bar: null,
+        water_temp_c: null,
+        preinfusion_seconds: null,
+        peak_pressure_bar: null,
+      });
+
+      // Act
+      const result = await shotExtractionService.updateShotExtraction(shotId, updateDataWithInvalidNumbers);
+
+      // Assert
+      expect(result.yield_grams).toBeNull();
+      expect(result.shot_time_seconds).toBeNull();
+      expect(result.avg_pressure_bar).toBeNull();
+      expect(result.water_temp_c).toBeNull();
+      expect(result.preinfusion_seconds).toBeNull();
+      expect(result.peak_pressure_bar).toBeNull();
+    });
+
+    it('should handle null assignments in update', async () => {
+      // Arrange
+      const shotId = 'test-shot-id';
+      const existingExtraction = {
+        shot_id: shotId,
+        yield_grams: 36.0,
+        shot_time_seconds: 25.0,
+        avg_pressure_bar: 9.0,
+        water_temp_c: 92.0,
+        preinfusion_seconds: 5.0,
+        peak_pressure_bar: 10.0,
+      };
+      
+      const updateDataWithNulls = {
+        yield_grams: null,
+        shot_time_seconds: null,
+        avg_pressure_bar: null,
+        water_temp_c: null,
+        preinfusion_seconds: null,
+        peak_pressure_bar: null,
+      };
+
+      mockExtractionRepository.findOne.mockResolvedValue(existingExtraction);
+      mockExtractionRepository.save.mockResolvedValue({
+        ...existingExtraction,
+        ...updateDataWithNulls,
+      });
+
+      // Act
+      const result = await shotExtractionService.updateShotExtraction(shotId, updateDataWithNulls);
+
+      // Assert
+      expect(result.yield_grams).toBeNull();
+      expect(result.shot_time_seconds).toBeNull();
+      expect(result.avg_pressure_bar).toBeNull();
+      expect(result.water_temp_c).toBeNull();
+      expect(result.preinfusion_seconds).toBeNull();
+      expect(result.peak_pressure_bar).toBeNull();
+    });
   });
 
   describe('deleteShotExtraction', () => {
