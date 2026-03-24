@@ -367,6 +367,153 @@ describe('ShotPreparationService', () => {
         shotPreparationService.updateShotPreparation(shotId, updateData)
       ).rejects.toThrow('Database error');
     });
+
+    it('should handle string-to-number conversions in update', async () => {
+      // Arrange
+      const shotId = 'test-shot-id';
+      const existingPreparation = {
+        shot_id: shotId,
+        dose_grams: 18.5,
+        grind_setting: 15,
+        basket_size_grams: 18,
+        basket_type: 'Portafilter',
+        distribution_method: 'WDT',
+        tamp_type: 'Leveler',
+        tamp_pressure_category: 'Medium',
+      };
+      
+      const updateDataWithStringNumbers = {
+        dose_grams: '20.5', // String that should be converted
+        grind_setting: '12', // String that should be converted
+        basket_size_grams: '20', // String that should be converted
+      };
+
+      mockPreparationRepository.findOne.mockResolvedValue(existingPreparation);
+      mockPreparationRepository.save.mockResolvedValue({
+        ...existingPreparation,
+        dose_grams: 20.5,
+        grind_setting: 12,
+        basket_size_grams: 20,
+      });
+
+      // Act
+      const result = await shotPreparationService.updateShotPreparation(shotId, updateDataWithStringNumbers);
+
+      // Assert
+      expect(result.dose_grams).toBe(20.5);
+      expect(result.grind_setting).toBe(12);
+      expect(result.basket_size_grams).toBe(20);
+    });
+
+    it('should handle invalid string-to-number conversions in update', async () => {
+      // Arrange
+      const shotId = 'test-shot-id';
+      const existingPreparation = {
+        shot_id: shotId,
+        dose_grams: 18.5,
+        grind_setting: 15,
+        basket_size_grams: 18,
+      };
+      
+      const updateDataWithInvalidNumbers = {
+        dose_grams: 'invalid-number', // Should become null
+        grind_setting: 'invalid-number', // Should become null
+        basket_size_grams: 'invalid-number', // Should become null
+      };
+
+      mockPreparationRepository.findOne.mockResolvedValue(existingPreparation);
+      mockPreparationRepository.save.mockResolvedValue({
+        ...existingPreparation,
+        dose_grams: null,
+        grind_setting: null,
+        basket_size_grams: null,
+      });
+
+      // Act
+      const result = await shotPreparationService.updateShotPreparation(shotId, updateDataWithInvalidNumbers);
+
+      // Assert
+      expect(result.dose_grams).toBeNull();
+      expect(result.grind_setting).toBeNull();
+      expect(result.basket_size_grams).toBeNull();
+    });
+
+    it('should handle null assignments in update', async () => {
+      // Arrange
+      const shotId = 'test-shot-id';
+      const existingPreparation = {
+        shot_id: shotId,
+        dose_grams: 18.5,
+        grind_setting: 15,
+        basket_type: 'Portafilter',
+        distribution_method: 'WDT',
+        tamp_type: 'Leveler',
+        tamp_pressure_category: 'Medium',
+      };
+      
+      const updateDataWithNulls = {
+        dose_grams: null,
+        grind_setting: null,
+        basket_type: null,
+        distribution_method: null,
+        tamp_type: null,
+        tamp_pressure_category: null,
+      };
+
+      mockPreparationRepository.findOne.mockResolvedValue(existingPreparation);
+      mockPreparationRepository.save.mockResolvedValue({
+        ...existingPreparation,
+        ...updateDataWithNulls,
+      });
+
+      // Act
+      const result = await shotPreparationService.updateShotPreparation(shotId, updateDataWithNulls);
+
+      // Assert
+      expect(result.dose_grams).toBeNull();
+      expect(result.grind_setting).toBeNull();
+      expect(result.basket_type).toBeNull();
+      expect(result.distribution_method).toBeNull();
+      expect(result.tamp_type).toBeNull();
+      expect(result.tamp_pressure_category).toBeNull();
+    });
+
+    it('should handle string field trimming in update', async () => {
+      // Arrange
+      const shotId = 'test-shot-id';
+      const existingPreparation = {
+        shot_id: shotId,
+        basket_type: 'Portafilter',
+        distribution_method: 'WDT',
+        tamp_type: 'Leveler',
+        tamp_pressure_category: 'Medium',
+      };
+      
+      const updateDataWithWhitespace = {
+        basket_type: '  Portafilter  ', // Should be trimmed
+        distribution_method: '  WDT  ', // Should be trimmed
+        tamp_type: '  Leveler  ', // Should be trimmed
+        tamp_pressure_category: '  Medium  ', // Should be trimmed
+      };
+
+      mockPreparationRepository.findOne.mockResolvedValue(existingPreparation);
+      mockPreparationRepository.save.mockResolvedValue({
+        ...existingPreparation,
+        basket_type: 'Portafilter',
+        distribution_method: 'WDT',
+        tamp_type: 'Leveler',
+        tamp_pressure_category: 'Medium',
+      });
+
+      // Act
+      const result = await shotPreparationService.updateShotPreparation(shotId, updateDataWithWhitespace);
+
+      // Assert
+      expect(result.basket_type).toBe('Portafilter');
+      expect(result.distribution_method).toBe('WDT');
+      expect(result.tamp_type).toBe('Leveler');
+      expect(result.tamp_pressure_category).toBe('Medium');
+    });
   });
 
   describe('deleteShotPreparation', () => {
