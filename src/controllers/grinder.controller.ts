@@ -12,7 +12,7 @@ export class GrinderController {
   async all(request: Request, response: Response) {
     try {
       const grinders = await this.grinderService.getAllGrinders();
-      response.json(grinders);
+      response.status(200).json(grinders);
     } catch (error) {
       console.error('Error fetching grinders:', error);
       response.status(500).json({ message: 'Error fetching grinders' });
@@ -22,7 +22,7 @@ export class GrinderController {
   async one(request: Request, response: Response) {
     try {
       const grinder = await this.grinderService.getGrinderById(request.params.id);
-      response.json(grinder);
+      response.status(200).json(grinder);
     } catch (error) {
       console.error('Error fetching grinder:', error);
       if (error instanceof Error && error.message.includes('not found')) {
@@ -64,11 +64,14 @@ export class GrinderController {
         burrInstallDate,
         serialNumber,
       });
-      response.json(result);
+      response.status(200).json(result);
     } catch (error) {
       console.error('Error updating grinder:', error);
       if (error instanceof Error && error.message.includes('not found')) {
         return response.status(404).json({ message: 'Grinder not found' });
+      }
+      if (error instanceof Error && error.message.includes('cannot be empty')) {
+        return response.status(400).json({ message: error.message });
       }
       response.status(500).json({ message: 'Error updating grinder' });
     }
@@ -84,6 +87,22 @@ export class GrinderController {
         return response.status(404).json({ message: 'Grinder not found' });
       }
       response.status(500).json({ message: 'Error deleting grinder' });
+    }
+  }
+
+  async getGrindersByManufacturer(request: Request, response: Response) {
+    try {
+      const { manufacturer } = request.query;
+      
+      if (!manufacturer || typeof manufacturer !== 'string') {
+        return response.status(400).json({ message: 'Manufacturer parameter is required' });
+      }
+
+      const grinders = await this.grinderService.getGrindersByManufacturer(manufacturer);
+      response.status(200).json(grinders);
+    } catch (error) {
+      console.error('Error fetching grinders by manufacturer:', error);
+      response.status(500).json({ message: 'Error fetching grinders by manufacturer' });
     }
   }
 }

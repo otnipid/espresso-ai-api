@@ -13,7 +13,7 @@ export class ShotExtractionController {
   async all(request: Request, response: Response) {
     try {
       const extractions = await this.shotExtractionService.getAllShotExtractions();
-      response.json(extractions);
+      response.status(200).json(extractions);
     } catch (error) {
       console.error('Error fetching shot extractions:', error);
       response.status(500).json({ message: 'Error fetching shot extractions' });
@@ -23,7 +23,7 @@ export class ShotExtractionController {
   async one(request: Request, response: Response) {
     try {
       const extraction = await this.shotExtractionService.getShotExtractionById(request.params.id);
-      response.json(extraction);
+      response.status(200).json(extraction);
     } catch (error) {
       console.error('Error fetching shot extraction:', error);
       if (error instanceof Error && error.message.includes('not found')) {
@@ -84,11 +84,14 @@ export class ShotExtractionController {
         peak_pressure_bar,
       });
 
-      response.json(result);
+      response.status(200).json(result);
     } catch (error) {
       console.error('Error updating shot extraction:', error);
       if (error instanceof Error && error.message.includes('not found')) {
         return response.status(404).json({ message: 'Shot extraction not found' });
+      }
+      if (error instanceof Error && error.message.includes('required')) {
+        return response.status(400).json({ message: error.message });
       }
       response.status(500).json({ message: 'Error updating shot extraction' });
     }
@@ -96,13 +99,13 @@ export class ShotExtractionController {
 
   async remove(request: Request, response: Response) {
     try {
-      const success = await this.shotExtractionService.deleteShotExtraction(request.params.id);
-      if (!success) {
-        return response.status(404).json({ message: 'Shot extraction not found' });
-      }
+      await this.shotExtractionService.deleteShotExtraction(request.params.id);
       response.status(204).send();
     } catch (error) {
       console.error('Error deleting shot extraction:', error);
+      if (error instanceof Error && error.message.includes('not found')) {
+        return response.status(404).json({ message: 'Shot extraction not found' });
+      }
       response.status(500).json({ message: 'Error deleting shot extraction' });
     }
   }
