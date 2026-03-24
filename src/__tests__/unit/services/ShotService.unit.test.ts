@@ -688,4 +688,183 @@ describe('ShotService - Unit Tests', () => {
       expect('notes' in minimalShotData).toBe(false);
     });
   });
+
+  describe('validateRelatedEntities - Error Cases', () => {
+    it('should throw error when BeanBatch not found', async () => {
+      // Arrange
+      const shotData = {
+        userId: '550e8400-e29b-41d4-a716-446655440003',
+        machineId: '550e8400-e29b-41d4-a716-446655440000',
+        beanBatchId: 'non-existent-beanbatch',
+        grinderId: '550e8400-e29b-41d4-a716-446655440001',
+        shot_type: 'normale' as const,
+      };
+
+      // Act & Assert
+      await expect(shotService.createShot(shotData)).rejects.toThrow(
+        'BeanBatch with ID non-existent-beanbatch not found'
+      );
+    });
+
+    it('should throw error when Grinder not found', async () => {
+      // Arrange
+      const shotData = {
+        userId: '550e8400-e29b-41d4-a716-446655440003',
+        machineId: '550e8400-e29b-41d4-a716-446655440000',
+        beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
+        grinderId: 'non-existent-grinder',
+        shot_type: 'ristretto' as const,
+      };
+
+      // Mock beanBatch to be found but grinder not found
+      mockBeanBatchRepo.findOne.mockImplementation((options: any) => {
+        if (options.where.id === '550e8400-e29b-41d4-a716-446655440001') {
+          return Promise.resolve({
+            id: '550e8400-e29b-41d4-a716-446655440001',
+            name: 'Test Bean Batch',
+          });
+        }
+        return Promise.resolve(null);
+      });
+
+      // Act & Assert
+      await expect(shotService.createShot(shotData)).rejects.toThrow(
+        'Grinder with ID non-existent-grinder not found'
+      );
+    });
+  });
+
+  describe('createShot - Transaction Error Cases', () => {
+    it('should throw error when shot not found after creation', async () => {
+      // Arrange
+      const shotData = {
+        userId: '550e8400-e29b-41d4-a716-446655440003',
+        machineId: '550e8400-e29b-41d4-a716-446655440000',
+        beanBatchId: '550e8400-e29b-41d4-a716-446655440001',
+        grinderId: '550e8400-e29b-41d4-a716-446655440001',
+        shot_type: 'normale' as const,
+      };
+
+      // Mock successful creation but failed retrieval
+      const mockQueryRunner = {
+        connect: jest.fn().mockResolvedValue(undefined),
+        startTransaction: jest.fn().mockResolvedValue(undefined),
+        commitTransaction: jest.fn().mockResolvedValue(undefined),
+        rollbackTransaction: jest.fn().mockResolvedValue(undefined),
+        release: jest.fn().mockResolvedValue(undefined),
+        manager: {
+          save: jest.fn().mockResolvedValue({ id: 'new-shot-id' }),
+          findOne: jest.fn().mockResolvedValue(null), // Simulate shot not found after creation
+        },
+      };
+
+      const mockConnection = {
+        createQueryRunner: jest.fn().mockReturnValue(mockQueryRunner),
+      };
+
+      mockShotRepo.manager.connection = mockConnection;
+
+      // Act & Assert
+      await expect(shotService.createShot(shotData)).rejects.toThrow(
+        'Shot with ID new-shot-id not found after creation'
+      );
+
+      // Verify transaction was rolled back
+      expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
+      expect(mockQueryRunner.release).toHaveBeenCalled();
+    });
+  });
+
+  describe('getShots - Date Filtering Logic', () => {
+    it('should filter shots with both dateFrom and dateTo', async () => {
+      // Arrange
+      const dateFrom = new Date('2024-01-01');
+      const dateTo = new Date('2024-01-31');
+      
+      mockShotRepo.findAndCount.mockResolvedValue([[], 0]);
+
+      // Act
+      await shotService.getShots({
+        page: 1,
+        limit: 10,
+        dateFrom,
+        dateTo,
+      });
+
+      // Assert
+      expect(mockShotRepo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            pulled_at: expect.any(Object), // Between operator
+          }),
+        })
+      );
+    });
+
+    it('should filter shots with only dateFrom', async () => {
+      // Arrange
+      const dateFrom = new Date('2024-01-01');
+      
+      mockShotRepo.findAndCount.mockResolvedValue([[], 0]);
+
+      // Act
+      await shotService.getShots({
+        page: 1,
+        limit: 10,
+        dateFrom,
+      });
+
+      // Assert
+      expect(mockShotRepo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            pulled_at: expect.any(Object), // MoreThanOrEqual operator
+          }),
+        })
+      );
+    });
+
+    it('should filter shots with only dateTo', async () => {
+      // Arrange
+      const dateTo = new Date('2024-01-31');
+      
+      mockShotRepo.findAndCount.mockResolvedValue([[], 0]);
+
+      // Act
+      await shotService.getShots({
+        page: 1,
+        limit: 10,
+        dateTo,
+      });
+
+      // Assert
+      expect(mockShotRepo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            pulled_at: expect.any(Object), // LessThanOrEqual operator
+          }),
+        })
+      );
+    });
+
+    it('should not apply date filter when no dates provided', async () => {
+      // Arrange
+      mockShotRepo.findAndCount.mockResolvedValue([[], 0]);
+
+      // Act
+      await shotService.getShots({
+        page: 1,
+        limit: 10,
+      });
+
+      // Assert
+      expect(mockShotRepo.findAndCount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.not.objectContaining({
+            pulled_at: expect.anything(),
+          }),
+        })
+      );
+    });
+  });
 });
