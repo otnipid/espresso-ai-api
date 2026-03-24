@@ -50,6 +50,7 @@ describe('ShotExtractionController', () => {
 
       // Assert: Test HTTP interface, not repository calls
       expect(mockShotExtractionService.getAllShotExtractions).toHaveBeenCalled();
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith(mockExtractions);
     });
 
@@ -89,6 +90,7 @@ describe('ShotExtractionController', () => {
 
       // Assert: Test HTTP interface, not repository calls
       expect(mockShotExtractionService.getShotExtractionById).toHaveBeenCalledWith('1');
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith(mockExtraction);
     });
 
@@ -169,6 +171,26 @@ describe('ShotExtractionController', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(201);
       expect(mockResponse.json).toHaveBeenCalledWith(createdExtraction);
     });
+
+    it('should handle validation errors', async () => {
+      // Test: Controller should handle validation errors and return HTTP 400 response
+      const error = new Error('shot_id is required');
+      mockShotExtractionService.createShotExtraction.mockRejectedValue(error);
+      mockRequest.body = { yield_grams: 36.0 }; // Missing required shot_id
+
+      const ShotExtractionController = (
+        await import('../../../controllers/shotExtraction.controller')
+      ).ShotExtractionController;
+      const controller = new ShotExtractionController();
+
+      await controller.save(mockRequest as Request, mockResponse as Response);
+
+      // Assert: Test HTTP error handling, not repository calls
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'shot_id is required',
+      });
+    });
   });
 
   describe('update', () => {
@@ -211,6 +233,7 @@ describe('ShotExtractionController', () => {
         preinfusion_seconds: undefined,
         water_temp_c: undefined,
       });
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith(updatedExtraction);
     });
 
@@ -232,6 +255,27 @@ describe('ShotExtractionController', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(404);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Shot extraction not found',
+      });
+    });
+
+    it('should handle validation errors on update', async () => {
+      // Test: Controller should handle validation errors and return HTTP 400 response
+      const error = new Error('yield_grams is required');
+      mockShotExtractionService.updateShotExtraction.mockRejectedValue(error);
+      mockRequest.params = { id: '1' };
+      mockRequest.body = { shot_time_seconds: 'invalid' };
+
+      const ShotExtractionController = (
+        await import('../../../controllers/shotExtraction.controller')
+      ).ShotExtractionController;
+      const controller = new ShotExtractionController();
+
+      await controller.update(mockRequest as Request, mockResponse as Response);
+
+      // Assert: Test HTTP error handling, not repository calls
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'yield_grams is required',
       });
     });
 
@@ -268,6 +312,7 @@ describe('ShotExtractionController', () => {
         water_temp_c: undefined,
         yield_grams: '38.0',
       });
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
       expect(mockResponse.json).toHaveBeenCalledWith({
         ...existingExtraction,
         yield_grams: 38.0,
@@ -295,9 +340,10 @@ describe('ShotExtractionController', () => {
     });
 
     it('should handle shot extraction not found on deletion', async () => {
-      // Test: Controller should handle service returning false and return 404
+      // Test: Controller should handle service throwing error and return 404
       mockRequest.params = { id: '999' };
-      mockShotExtractionService.deleteShotExtraction.mockResolvedValue(false);
+      const error = new Error('Shot extraction not found');
+      mockShotExtractionService.deleteShotExtraction.mockRejectedValue(error);
 
       const ShotExtractionController = (
         await import('../../../controllers/shotExtraction.controller')
@@ -309,8 +355,28 @@ describe('ShotExtractionController', () => {
       // Assert: Test HTTP error handling, not repository calls
       expect(mockShotExtractionService.deleteShotExtraction).toHaveBeenCalledWith('999');
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+      expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Shot extraction not found',
+      });
+    });
+
+    it('should handle deletion errors', async () => {
+      // Test: Controller should handle general errors and return HTTP 500 response
+      const error = new Error('Database error');
+      mockShotExtractionService.deleteShotExtraction.mockRejectedValue(error);
+      mockRequest.params = { id: '1' };
+
+      const ShotExtractionController = (
+        await import('../../../controllers/shotExtraction.controller')
+      ).ShotExtractionController;
+      const controller = new ShotExtractionController();
+
+      await controller.remove(mockRequest as Request, mockResponse as Response);
+
+      // Assert: Test HTTP error handling, not repository calls
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Error deleting shot extraction',
       });
     });
   });
