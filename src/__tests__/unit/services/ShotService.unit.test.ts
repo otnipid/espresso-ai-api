@@ -700,6 +700,10 @@ describe('ShotService - Unit Tests', () => {
         shot_type: 'normale' as const,
       };
 
+      // Mock User and Machine to be found, but BeanBatch not found
+      mockUserRepo.findOne.mockResolvedValue({ id: shotData.userId });
+      mockMachineRepo.findOne.mockResolvedValue({ id: shotData.machineId });
+
       // Act & Assert
       await expect(shotService.createShot(shotData)).rejects.toThrow(
         'BeanBatch with ID non-existent-beanbatch not found'
@@ -716,7 +720,9 @@ describe('ShotService - Unit Tests', () => {
         shot_type: 'ristretto' as const,
       };
 
-      // Mock beanBatch to be found but grinder not found
+      // Mock User, Machine, and BeanBatch to be found, but Grinder not found
+      mockUserRepo.findOne.mockResolvedValue({ id: shotData.userId });
+      mockMachineRepo.findOne.mockResolvedValue({ id: shotData.machineId });
       mockBeanBatchRepo.findOne.mockImplementation((options: any) => {
         if (options.where.id === '550e8400-e29b-41d4-a716-446655440001') {
           return Promise.resolve({
@@ -744,6 +750,12 @@ describe('ShotService - Unit Tests', () => {
         grinderId: '550e8400-e29b-41d4-a716-446655440001',
         shot_type: 'normale' as const,
       };
+
+      // Mock all related entities to be found
+      mockUserRepo.findOne.mockResolvedValue({ id: shotData.userId });
+      mockMachineRepo.findOne.mockResolvedValue({ id: shotData.machineId });
+      mockBeanBatchRepo.findOne.mockResolvedValue({ id: shotData.beanBatchId });
+      mockGrinderRepo.findOne.mockResolvedValue({ id: shotData.grinderId });
 
       // Mock successful creation but failed retrieval
       const mockQueryRunner = {
