@@ -87,7 +87,7 @@ export class UserController {
   async getUsersByEmail(request: Request, response: Response) {
     try {
       const { email } = request.query;
-      
+
       if (!email || typeof email !== 'string') {
         return response.status(400).json({ message: 'Email parameter is required' });
       }

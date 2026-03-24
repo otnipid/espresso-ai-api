@@ -436,7 +436,7 @@ describe('ShotFeedbackService', () => {
         notes: 'Nice shot',
         shot: mockShotData,
       };
-      
+
       const updateDataWithStringNumbers = {
         overall_score: '9', // String that should be converted
         acidity: '8', // String that should be converted
@@ -456,7 +456,10 @@ describe('ShotFeedbackService', () => {
       });
 
       // Act
-      const result = await shotFeedbackService.updateShotFeedback(shotId, updateDataWithStringNumbers);
+      const result = await shotFeedbackService.updateShotFeedback(
+        shotId,
+        updateDataWithStringNumbers
+      );
 
       // Assert
       expect(result.overall_score).toBe(9);
@@ -478,7 +481,7 @@ describe('ShotFeedbackService', () => {
         body: 7,
         shot: mockShotData,
       };
-      
+
       const updateDataWithInvalidNumbers = {
         overall_score: 'invalid-number', // Should become null
         acidity: 'invalid-number', // Should become null
@@ -498,7 +501,10 @@ describe('ShotFeedbackService', () => {
       });
 
       // Act
-      const result = await shotFeedbackService.updateShotFeedback(shotId, updateDataWithInvalidNumbers);
+      const result = await shotFeedbackService.updateShotFeedback(
+        shotId,
+        updateDataWithInvalidNumbers
+      );
 
       // Assert
       expect(result.overall_score).toBeNull();
@@ -522,7 +528,7 @@ describe('ShotFeedbackService', () => {
         notes: 'Nice shot',
         shot: mockShotData,
       };
-      
+
       const updateDataWithNulls = {
         overall_score: null,
         acidity: null,
@@ -561,7 +567,7 @@ describe('ShotFeedbackService', () => {
         notes: 'Nice shot',
         shot: mockShotData,
       };
-      
+
       const updateDataWithWhitespace = {
         extraction_assessment: '  Excellent  ', // Should be trimmed
         notes: '  Very nice shot  ', // Should be trimmed

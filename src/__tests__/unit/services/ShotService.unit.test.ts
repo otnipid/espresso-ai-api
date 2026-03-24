@@ -792,7 +792,7 @@ describe('ShotService - Unit Tests', () => {
       // Arrange
       const dateFrom = new Date('2024-01-01');
       const dateTo = new Date('2024-01-31');
-      
+
       mockShotRepo.findAndCount.mockResolvedValue([[], 0]);
 
       // Act
@@ -816,7 +816,7 @@ describe('ShotService - Unit Tests', () => {
     it('should filter shots with only dateFrom', async () => {
       // Arrange
       const dateFrom = new Date('2024-01-01');
-      
+
       mockShotRepo.findAndCount.mockResolvedValue([[], 0]);
 
       // Act
@@ -839,7 +839,7 @@ describe('ShotService - Unit Tests', () => {
     it('should filter shots with only dateTo', async () => {
       // Arrange
       const dateTo = new Date('2024-01-31');
-      
+
       mockShotRepo.findAndCount.mockResolvedValue([[], 0]);
 
       // Act

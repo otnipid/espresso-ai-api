@@ -93,7 +93,7 @@ export class GrinderController {
   async getGrindersByManufacturer(request: Request, response: Response) {
     try {
       const { manufacturer } = request.query;
-      
+
       if (!manufacturer || typeof manufacturer !== 'string') {
         return response.status(400).json({ message: 'Manufacturer parameter is required' });
       }

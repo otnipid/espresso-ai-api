@@ -381,7 +381,7 @@ describe('ShotExtractionService', () => {
         preinfusion_seconds: 5.0,
         peak_pressure_bar: 10.0,
       };
-      
+
       const updateDataWithStringNumbers = {
         yield_grams: '38.5', // String that should be converted
         shot_time_seconds: '27', // String that should be converted
@@ -403,7 +403,10 @@ describe('ShotExtractionService', () => {
       });
 
       // Act
-      const result = await shotExtractionService.updateShotExtraction(shotId, updateDataWithStringNumbers);
+      const result = await shotExtractionService.updateShotExtraction(
+        shotId,
+        updateDataWithStringNumbers
+      );
 
       // Assert
       expect(result.yield_grams).toBe(38.5);
@@ -426,7 +429,7 @@ describe('ShotExtractionService', () => {
         preinfusion_seconds: 5.0,
         peak_pressure_bar: 10.0,
       };
-      
+
       const updateDataWithInvalidNumbers = {
         yield_grams: 'invalid-number', // Should become null
         shot_time_seconds: 'invalid-number', // Should become null
@@ -448,7 +451,10 @@ describe('ShotExtractionService', () => {
       });
 
       // Act
-      const result = await shotExtractionService.updateShotExtraction(shotId, updateDataWithInvalidNumbers);
+      const result = await shotExtractionService.updateShotExtraction(
+        shotId,
+        updateDataWithInvalidNumbers
+      );
 
       // Assert
       expect(result.yield_grams).toBeNull();
@@ -471,7 +477,7 @@ describe('ShotExtractionService', () => {
         preinfusion_seconds: 5.0,
         peak_pressure_bar: 10.0,
       };
-      
+
       const updateDataWithNulls = {
         yield_grams: null,
         shot_time_seconds: null,

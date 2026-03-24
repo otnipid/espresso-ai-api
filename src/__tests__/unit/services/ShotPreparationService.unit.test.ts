@@ -381,7 +381,7 @@ describe('ShotPreparationService', () => {
         tamp_type: 'Leveler',
         tamp_pressure_category: 'Medium',
       };
-      
+
       const updateDataWithStringNumbers = {
         dose_grams: '20.5', // String that should be converted
         grind_setting: '12', // String that should be converted
@@ -397,7 +397,10 @@ describe('ShotPreparationService', () => {
       });
 
       // Act
-      const result = await shotPreparationService.updateShotPreparation(shotId, updateDataWithStringNumbers);
+      const result = await shotPreparationService.updateShotPreparation(
+        shotId,
+        updateDataWithStringNumbers
+      );
 
       // Assert
       expect(result.dose_grams).toBe(20.5);
@@ -414,7 +417,7 @@ describe('ShotPreparationService', () => {
         grind_setting: 15,
         basket_size_grams: 18,
       };
-      
+
       const updateDataWithInvalidNumbers = {
         dose_grams: 'invalid-number', // Should become null
         grind_setting: 'invalid-number', // Should become null
@@ -430,7 +433,10 @@ describe('ShotPreparationService', () => {
       });
 
       // Act
-      const result = await shotPreparationService.updateShotPreparation(shotId, updateDataWithInvalidNumbers);
+      const result = await shotPreparationService.updateShotPreparation(
+        shotId,
+        updateDataWithInvalidNumbers
+      );
 
       // Assert
       expect(result.dose_grams).toBeNull();
@@ -450,7 +456,7 @@ describe('ShotPreparationService', () => {
         tamp_type: 'Leveler',
         tamp_pressure_category: 'Medium',
       };
-      
+
       const updateDataWithNulls = {
         dose_grams: null,
         grind_setting: null,
@@ -467,7 +473,10 @@ describe('ShotPreparationService', () => {
       });
 
       // Act
-      const result = await shotPreparationService.updateShotPreparation(shotId, updateDataWithNulls);
+      const result = await shotPreparationService.updateShotPreparation(
+        shotId,
+        updateDataWithNulls
+      );
 
       // Assert
       expect(result.dose_grams).toBeNull();
@@ -488,7 +497,7 @@ describe('ShotPreparationService', () => {
         tamp_type: 'Leveler',
         tamp_pressure_category: 'Medium',
       };
-      
+
       const updateDataWithWhitespace = {
         basket_type: '  Portafilter  ', // Should be trimmed
         distribution_method: '  WDT  ', // Should be trimmed
@@ -506,7 +515,10 @@ describe('ShotPreparationService', () => {
       });
 
       // Act
-      const result = await shotPreparationService.updateShotPreparation(shotId, updateDataWithWhitespace);
+      const result = await shotPreparationService.updateShotPreparation(
+        shotId,
+        updateDataWithWhitespace
+      );
 
       // Assert
       expect(result.basket_type).toBe('Portafilter');

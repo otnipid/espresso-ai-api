@@ -14,7 +14,7 @@ describe('UserController', () => {
   beforeEach(() => {
     // Clear all mocks before each test
     jest.clearAllMocks();
-    
+
     // Create mock service
     mockUserService = {
       getAllUsers: jest.fn(),
@@ -27,10 +27,10 @@ describe('UserController', () => {
 
     // Mock the service constructor
     (UserService as jest.MockedClass<any>).mockImplementation(() => mockUserService);
-    
+
     // Create controller instance with mocked service
     userController = new UserController();
-    
+
     // Setup mock request
     mockRequest = {
       body: {},
@@ -128,7 +128,7 @@ describe('UserController', () => {
       const error = new Error('User not found');
       mockUserService.getUserById.mockRejectedValue(error);
       mockRequest.params = { id: '999' };
-      
+
       // Act
       await userController.one(mockRequest as Request, mockResponse as Response);
 
@@ -182,9 +182,7 @@ describe('UserController', () => {
 
     it('should return 400 when name is missing', async () => {
       // Arrange
-      mockUserService.createUser.mockRejectedValue(
-        new Error('User name is required')
-      );
+      mockUserService.createUser.mockRejectedValue(new Error('User name is required'));
 
       mockRequest.body = {
         email: 'john@example.com',
@@ -203,9 +201,7 @@ describe('UserController', () => {
 
     it('should return 400 when name is only whitespace', async () => {
       // Arrange
-      mockUserService.createUser.mockRejectedValue(
-        new Error('User name is required')
-      );
+      mockUserService.createUser.mockRejectedValue(new Error('User name is required'));
 
       mockRequest.body = {
         email: 'john@example.com',
@@ -295,9 +291,7 @@ describe('UserController', () => {
 
     it('should return 400 when name is empty in update', async () => {
       // Arrange
-      mockUserService.updateUser.mockRejectedValue(
-        new Error('User name cannot be empty')
-      );
+      mockUserService.updateUser.mockRejectedValue(new Error('User name cannot be empty'));
 
       mockRequest.params = { id: '550e8400-e29b-41d4-a716-446655440000' };
       mockRequest.body = {
@@ -316,9 +310,7 @@ describe('UserController', () => {
 
     it('should return 400 when name is only whitespace in update', async () => {
       // Arrange
-      mockUserService.updateUser.mockRejectedValue(
-        new Error('User name cannot be empty')
-      );
+      mockUserService.updateUser.mockRejectedValue(new Error('User name cannot be empty'));
 
       mockRequest.params = { id: '550e8400-e29b-41d4-a716-446655440000' };
       mockRequest.body = {

@@ -14,7 +14,7 @@ describe('GrinderController', () => {
   beforeEach(() => {
     // Clear all mocks before each test
     jest.clearAllMocks();
-    
+
     // Create mock service
     mockGrinderService = {
       getAllGrinders: jest.fn(),
@@ -27,10 +27,10 @@ describe('GrinderController', () => {
 
     // Mock the service constructor
     (GrinderService as jest.MockedClass<any>).mockImplementation(() => mockGrinderService);
-    
+
     // Create controller instance with mocked service
     grinderController = new GrinderController();
-    
+
     // Setup mock request
     mockRequest = {
       body: {},
@@ -131,7 +131,7 @@ describe('GrinderController', () => {
       const error = new Error('Grinder not found');
       mockGrinderService.getGrinderById.mockRejectedValue(error);
       mockRequest.params = { id: '999' };
-      
+
       // Act
       await grinderController.one(mockRequest as Request, mockResponse as Response);
 
@@ -189,9 +189,7 @@ describe('GrinderController', () => {
 
     it('should return 400 when model is missing', async () => {
       // Arrange
-      mockGrinderService.createGrinder.mockRejectedValue(
-        new Error('Grinder model is required')
-      );
+      mockGrinderService.createGrinder.mockRejectedValue(new Error('Grinder model is required'));
 
       mockRequest.body = {
         manufacturer: 'Baratza',
@@ -211,9 +209,7 @@ describe('GrinderController', () => {
 
     it('should return 400 when model is only whitespace', async () => {
       // Arrange
-      mockGrinderService.createGrinder.mockRejectedValue(
-        new Error('Grinder model is required')
-      );
+      mockGrinderService.createGrinder.mockRejectedValue(new Error('Grinder model is required'));
 
       mockRequest.body = {
         manufacturer: 'Baratza',
@@ -451,7 +447,10 @@ describe('GrinderController', () => {
       mockRequest.query = { manufacturer: 'Baratza' };
 
       // Act
-      await grinderController.getGrindersByManufacturer(mockRequest as Request, mockResponse as Response);
+      await grinderController.getGrindersByManufacturer(
+        mockRequest as Request,
+        mockResponse as Response
+      );
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(200);
@@ -466,7 +465,10 @@ describe('GrinderController', () => {
       mockRequest.query = { manufacturer: 'Baratza' };
 
       // Act
-      await grinderController.getGrindersByManufacturer(mockRequest as Request, mockResponse as Response);
+      await grinderController.getGrindersByManufacturer(
+        mockRequest as Request,
+        mockResponse as Response
+      );
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
@@ -480,7 +482,10 @@ describe('GrinderController', () => {
       mockRequest.query = {};
 
       // Act
-      await grinderController.getGrindersByManufacturer(mockRequest as Request, mockResponse as Response);
+      await grinderController.getGrindersByManufacturer(
+        mockRequest as Request,
+        mockResponse as Response
+      );
 
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(400);
