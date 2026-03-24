@@ -421,6 +421,166 @@ describe('ShotFeedbackService', () => {
         'Database error'
       );
     });
+
+    it('should handle string-to-number conversions in update', async () => {
+      // Arrange
+      const shotId = 'test-shot-id';
+      const existingFeedback = {
+        shot_id: shotId,
+        overall_score: 8,
+        acidity: 7,
+        sweetness: 6,
+        bitterness: 5,
+        body: 7,
+        extraction_assessment: 'Good',
+        notes: 'Nice shot',
+        shot: mockShotData,
+      };
+      
+      const updateDataWithStringNumbers = {
+        overall_score: '9', // String that should be converted
+        acidity: '8', // String that should be converted
+        sweetness: '7', // String that should be converted
+        bitterness: '6', // String that should be converted
+        body: '8', // String that should be converted
+      };
+
+      mockFeedbackRepository.findOne.mockResolvedValue(existingFeedback);
+      mockFeedbackRepository.save.mockResolvedValue({
+        ...existingFeedback,
+        overall_score: 9,
+        acidity: 8,
+        sweetness: 7,
+        bitterness: 6,
+        body: 8,
+      });
+
+      // Act
+      const result = await shotFeedbackService.updateShotFeedback(shotId, updateDataWithStringNumbers);
+
+      // Assert
+      expect(result.overall_score).toBe(9);
+      expect(result.acidity).toBe(8);
+      expect(result.sweetness).toBe(7);
+      expect(result.bitterness).toBe(6);
+      expect(result.body).toBe(8);
+    });
+
+    it('should handle invalid string-to-number conversions in update', async () => {
+      // Arrange
+      const shotId = 'test-shot-id';
+      const existingFeedback = {
+        shot_id: shotId,
+        overall_score: 8,
+        acidity: 7,
+        sweetness: 6,
+        bitterness: 5,
+        body: 7,
+        shot: mockShotData,
+      };
+      
+      const updateDataWithInvalidNumbers = {
+        overall_score: 'invalid-number', // Should become null
+        acidity: 'invalid-number', // Should become null
+        sweetness: 'invalid-number', // Should become null
+        bitterness: 'invalid-number', // Should become null
+        body: 'invalid-number', // Should become null
+      };
+
+      mockFeedbackRepository.findOne.mockResolvedValue(existingFeedback);
+      mockFeedbackRepository.save.mockResolvedValue({
+        ...existingFeedback,
+        overall_score: null,
+        acidity: null,
+        sweetness: null,
+        bitterness: null,
+        body: null,
+      });
+
+      // Act
+      const result = await shotFeedbackService.updateShotFeedback(shotId, updateDataWithInvalidNumbers);
+
+      // Assert
+      expect(result.overall_score).toBeNull();
+      expect(result.acidity).toBeNull();
+      expect(result.sweetness).toBeNull();
+      expect(result.bitterness).toBeNull();
+      expect(result.body).toBeNull();
+    });
+
+    it('should handle null assignments in update', async () => {
+      // Arrange
+      const shotId = 'test-shot-id';
+      const existingFeedback = {
+        shot_id: shotId,
+        overall_score: 8,
+        acidity: 7,
+        sweetness: 6,
+        bitterness: 5,
+        body: 7,
+        extraction_assessment: 'Good',
+        notes: 'Nice shot',
+        shot: mockShotData,
+      };
+      
+      const updateDataWithNulls = {
+        overall_score: null,
+        acidity: null,
+        sweetness: null,
+        bitterness: null,
+        body: null,
+        extraction_assessment: null,
+        notes: null,
+      };
+
+      mockFeedbackRepository.findOne.mockResolvedValue(existingFeedback);
+      mockFeedbackRepository.save.mockResolvedValue({
+        ...existingFeedback,
+        ...updateDataWithNulls,
+      });
+
+      // Act
+      const result = await shotFeedbackService.updateShotFeedback(shotId, updateDataWithNulls);
+
+      // Assert
+      expect(result.overall_score).toBeNull();
+      expect(result.acidity).toBeNull();
+      expect(result.sweetness).toBeNull();
+      expect(result.bitterness).toBeNull();
+      expect(result.body).toBeNull();
+      expect(result.extraction_assessment).toBeNull();
+      expect(result.notes).toBeNull();
+    });
+
+    it('should handle string field trimming in update', async () => {
+      // Arrange
+      const shotId = 'test-shot-id';
+      const existingFeedback = {
+        shot_id: shotId,
+        extraction_assessment: 'Good',
+        notes: 'Nice shot',
+        shot: mockShotData,
+      };
+      
+      const updateDataWithWhitespace = {
+        extraction_assessment: '  Excellent  ', // Should be trimmed
+        notes: '  Very nice shot  ', // Should be trimmed
+      };
+
+      mockFeedbackRepository.findOne.mockResolvedValue(existingFeedback);
+      mockFeedbackRepository.save.mockResolvedValue({
+        ...existingFeedback,
+        extraction_assessment: 'Excellent',
+        notes: 'Very nice shot',
+      });
+
+      // Act
+      const result = await shotFeedbackService.updateShotFeedback(shotId, updateDataWithWhitespace);
+
+      // Assert
+      expect(result.extraction_assessment).toBe('Excellent');
+      expect(result.notes).toBe('Very nice shot');
+    });
   });
 
   describe('deleteShotFeedback', () => {
