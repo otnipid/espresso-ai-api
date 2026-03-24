@@ -155,6 +155,60 @@ describe('BeanService', () => {
       // Act & Assert
       await expect(beanService.createBean(mockBeanData)).rejects.toThrow('Database error');
     });
+
+    it('should set altitude to null when invalid string provided', async () => {
+      // Arrange
+      const beanDataWithInvalidAltitude = {
+        ...mockBeanData,
+        altitude_m: 'invalid-number',
+      };
+      const expectedBean = { ...mockBeanData, altitude_m: null };
+      mockBeanRepository.create.mockReturnValue(expectedBean);
+      mockBeanRepository.save.mockResolvedValue(expectedBean);
+
+      // Act
+      const result = await beanService.createBean(beanDataWithInvalidAltitude);
+
+      // Assert
+      expect(mockBeanRepository.create).toHaveBeenCalledWith(expectedBean);
+      expect(result.altitude_m).toBeNull();
+    });
+
+    it('should handle null altitude_m correctly', async () => {
+      // Arrange
+      const beanDataWithNullAltitude = {
+        ...mockBeanData,
+        altitude_m: null,
+      };
+      const expectedBean = { ...mockBeanData, altitude_m: null };
+      mockBeanRepository.create.mockReturnValue(expectedBean);
+      mockBeanRepository.save.mockResolvedValue(expectedBean);
+
+      // Act
+      const result = await beanService.createBean(beanDataWithNullAltitude);
+
+      // Assert
+      expect(mockBeanRepository.create).toHaveBeenCalledWith(expectedBean);
+      expect(result.altitude_m).toBeNull();
+    });
+
+    it('should handle undefined altitude_m correctly', async () => {
+      // Arrange
+      const beanDataWithUndefinedAltitude = {
+        ...mockBeanData,
+        altitude_m: undefined,
+      };
+      const expectedBean = { ...mockBeanData, altitude_m: null }; // Service converts undefined to null
+      mockBeanRepository.create.mockReturnValue(expectedBean);
+      mockBeanRepository.save.mockResolvedValue(expectedBean);
+
+      // Act
+      const result = await beanService.createBean(beanDataWithUndefinedAltitude);
+
+      // Assert
+      expect(mockBeanRepository.create).toHaveBeenCalledWith(expectedBean);
+      expect(result.altitude_m).toBeNull(); // Service converts undefined to null
+    });
   });
 
   describe('updateBean', () => {
@@ -225,6 +279,169 @@ describe('BeanService', () => {
 
       // Act & Assert
       await expect(beanService.updateBean(beanId, updateData)).rejects.toThrow('Database error');
+    });
+
+    it('should handle altitude conversion in update with invalid string', async () => {
+      // Arrange
+      const beanId = 'test-id';
+      const existingBean = {
+        id: beanId,
+        name: 'Test Bean',
+        altitude_m: 1500,
+      };
+      const updateData = { altitude_m: 'invalid-number' };
+      const updatedBean = { ...existingBean, altitude_m: null };
+
+      mockBeanRepository.findOne.mockResolvedValue(existingBean);
+      mockBeanRepository.save.mockResolvedValue(updatedBean);
+
+      // Act
+      const result = await beanService.updateBean(beanId, updateData);
+
+      // Assert
+      expect(result.altitude_m).toBeNull();
+    });
+
+    it('should handle altitude conversion in update with valid string', async () => {
+      // Arrange
+      const beanId = 'test-id';
+      const existingBean = {
+        id: beanId,
+        name: 'Test Bean',
+        altitude_m: 1500,
+      };
+      const updateData = { altitude_m: '1800' };
+      const updatedBean = { ...existingBean, altitude_m: 1800 };
+
+      mockBeanRepository.findOne.mockResolvedValue(existingBean);
+      mockBeanRepository.save.mockResolvedValue(updatedBean);
+
+      // Act
+      const result = await beanService.updateBean(beanId, updateData);
+
+      // Assert
+      expect(result.altitude_m).toBe(1800);
+    });
+
+    it('should not update altitude when not provided in update data', async () => {
+      // Arrange
+      const beanId = 'test-id';
+      const existingBean = {
+        id: beanId,
+        name: 'Test Bean',
+        altitude_m: 1500,
+      };
+      const updateData = { name: 'Updated Name' };
+      const updatedBean = { ...existingBean, name: 'Updated Name' };
+
+      mockBeanRepository.findOne.mockResolvedValue(existingBean);
+      mockBeanRepository.save.mockResolvedValue(updatedBean);
+
+      // Act
+      const result = await beanService.updateBean(beanId, updateData);
+
+      // Assert
+      expect(result.altitude_m).toBe(1500); // Should remain unchanged
+    });
+
+    it('should handle each field update individually', async () => {
+      // Test name field
+      const beanId = 'test-id';
+      const existingBean = {
+        id: beanId,
+        name: 'Original Name',
+        roaster: 'Original Roaster',
+        country: 'Original Country',
+        region: 'Original Region',
+        farm: 'Original Farm',
+        varietal: 'Original Varietal',
+        processing_method: 'Original Process',
+        density_category: 'Original Density',
+      };
+
+      mockBeanRepository.findOne.mockResolvedValue(existingBean);
+
+      // Test name update
+      const nameUpdate = { name: '  Updated Name  ' }; // With whitespace
+      const nameUpdatedBean = { ...existingBean, name: 'Updated Name' };
+      mockBeanRepository.save.mockResolvedValue(nameUpdatedBean);
+      let result = await beanService.updateBean(beanId, nameUpdate);
+      expect(result.name).toBe('Updated Name');
+
+      // Test roaster update
+      const roasterUpdate = { roaster: '  Updated Roaster  ' };
+      const roasterUpdatedBean = { ...existingBean, roaster: 'Updated Roaster' };
+      mockBeanRepository.save.mockResolvedValue(roasterUpdatedBean);
+      result = await beanService.updateBean(beanId, roasterUpdate);
+      expect(result.roaster).toBe('Updated Roaster');
+
+      // Test country update
+      const countryUpdate = { country: '  Updated Country  ' };
+      const countryUpdatedBean = { ...existingBean, country: 'Updated Country' };
+      mockBeanRepository.save.mockResolvedValue(countryUpdatedBean);
+      result = await beanService.updateBean(beanId, countryUpdate);
+      expect(result.country).toBe('Updated Country');
+
+      // Test region update
+      const regionUpdate = { region: '  Updated Region  ' };
+      const regionUpdatedBean = { ...existingBean, region: 'Updated Region' };
+      mockBeanRepository.save.mockResolvedValue(regionUpdatedBean);
+      result = await beanService.updateBean(beanId, regionUpdate);
+      expect(result.region).toBe('Updated Region');
+
+      // Test farm update
+      const farmUpdate = { farm: '  Updated Farm  ' };
+      const farmUpdatedBean = { ...existingBean, farm: 'Updated Farm' };
+      mockBeanRepository.save.mockResolvedValue(farmUpdatedBean);
+      result = await beanService.updateBean(beanId, farmUpdate);
+      expect(result.farm).toBe('Updated Farm');
+
+      // Test varietal update
+      const varietalUpdate = { varietal: '  Updated Varietal  ' };
+      const varietalUpdatedBean = { ...existingBean, varietal: 'Updated Varietal' };
+      mockBeanRepository.save.mockResolvedValue(varietalUpdatedBean);
+      result = await beanService.updateBean(beanId, varietalUpdate);
+      expect(result.varietal).toBe('Updated Varietal');
+
+      // Test processing_method update
+      const processUpdate = { processing_method: '  Updated Process  ' };
+      const processUpdatedBean = { ...existingBean, processing_method: 'Updated Process' };
+      mockBeanRepository.save.mockResolvedValue(processUpdatedBean);
+      result = await beanService.updateBean(beanId, processUpdate);
+      expect(result.processing_method).toBe('Updated Process');
+
+      // Test density_category update
+      const densityUpdate = { density_category: '  Updated Density  ' };
+      const densityUpdatedBean = { ...existingBean, density_category: 'Updated Density' };
+      mockBeanRepository.save.mockResolvedValue(densityUpdatedBean);
+      result = await beanService.updateBean(beanId, densityUpdate);
+      expect(result.density_category).toBe('Updated Density');
+    });
+
+    it('should handle empty string updates by keeping original values', async () => {
+      // Arrange
+      const beanId = 'test-id';
+      const existingBean = {
+        id: beanId,
+        name: 'Original Name',
+        roaster: 'Original Roaster',
+      };
+
+      mockBeanRepository.findOne.mockResolvedValue(existingBean);
+
+      // Test name with empty string
+      const nameUpdate = { name: '' };
+      const nameUpdatedBean = { ...existingBean, name: 'Original Name' }; // Should keep original
+      mockBeanRepository.save.mockResolvedValue(nameUpdatedBean);
+      let result = await beanService.updateBean(beanId, nameUpdate);
+      expect(result.name).toBe('Original Name');
+
+      // Test roaster with empty string
+      const roasterUpdate = { roaster: '' };
+      const roasterUpdatedBean = { ...existingBean, roaster: 'Original Roaster' }; // Should keep original
+      mockBeanRepository.save.mockResolvedValue(roasterUpdatedBean);
+      result = await beanService.updateBean(beanId, roasterUpdate);
+      expect(result.roaster).toBe('Original Roaster');
     });
   });
 
