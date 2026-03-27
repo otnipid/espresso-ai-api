@@ -149,7 +149,6 @@ export const validateBeanBatchExists = async (req: Request, res: Response, next:
  */
 export const validateShotExists = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    
     const shotId = req.validated?.params?.id || req.params?.id;
 
     if (!shotId) {

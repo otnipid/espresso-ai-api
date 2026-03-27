@@ -22,7 +22,9 @@ export class BeanBatchController {
   async one(request: Request, response: Response) {
     try {
       if (typeof request.params.id !== 'string') {
-        return response.status(400).json({ message: 'Invalid bean batch ID. ID must be a string.' });
+        return response
+          .status(400)
+          .json({ message: 'Invalid bean batch ID. ID must be a string.' });
       }
       const batch = await this.beanBatchService.getBeanBatchById(request.params.id);
 
@@ -66,7 +68,9 @@ export class BeanBatchController {
   async update(request: Request, response: Response) {
     try {
       if (typeof request.params.id !== 'string') {
-        return response.status(400).json({ message: 'Invalid bean batch ID. ID must be a string.' });
+        return response
+          .status(400)
+          .json({ message: 'Invalid bean batch ID. ID must be a string.' });
       }
       const { roastDate, bagOpenDate, roastLevel, roastDegree } = request.body;
 
@@ -89,7 +93,9 @@ export class BeanBatchController {
   async remove(request: Request, response: Response) {
     try {
       if (typeof request.params.id !== 'string') {
-        return response.status(400).json({ message: 'Invalid bean batch ID. ID must be a string.' });
+        return response
+          .status(400)
+          .json({ message: 'Invalid bean batch ID. ID must be a string.' });
       }
       const success = await this.beanBatchService.deleteBeanBatch(request.params.id);
       if (!success) {

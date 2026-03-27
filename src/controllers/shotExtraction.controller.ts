@@ -23,7 +23,9 @@ export class ShotExtractionController {
   async one(request: Request, response: Response) {
     try {
       if (typeof request.params.id !== 'string') {
-        return response.status(400).json({ message: 'Invalid shot extraction ID. ID must be a string.' });
+        return response
+          .status(400)
+          .json({ message: 'Invalid shot extraction ID. ID must be a string.' });
       }
       const extraction = await this.shotExtractionService.getShotExtractionById(request.params.id);
       response.status(200).json(extraction);
@@ -70,7 +72,9 @@ export class ShotExtractionController {
   async update(request: Request, response: Response) {
     try {
       if (typeof request.params.id !== 'string') {
-        return response.status(400).json({ message: 'Invalid shot extraction ID. ID must be a string.' });
+        return response
+          .status(400)
+          .json({ message: 'Invalid shot extraction ID. ID must be a string.' });
       }
       const {
         yield_grams,
@@ -106,7 +110,9 @@ export class ShotExtractionController {
   async remove(request: Request, response: Response) {
     try {
       if (typeof request.params.id !== 'string') {
-        return response.status(400).json({ message: 'Invalid shot extraction ID. ID must be a string.' });
+        return response
+          .status(400)
+          .json({ message: 'Invalid shot extraction ID. ID must be a string.' });
       }
       await this.shotExtractionService.deleteShotExtraction(request.params.id);
       response.status(204).send();

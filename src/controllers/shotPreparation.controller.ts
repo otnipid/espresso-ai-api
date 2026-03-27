@@ -25,7 +25,9 @@ export class ShotPreparationController {
   async one(request: Request, response: Response) {
     try {
       if (typeof request.params.id !== 'string') {
-        return response.status(400).json({ message: 'Invalid shot preparation ID. ID must be a string.' });
+        return response
+          .status(400)
+          .json({ message: 'Invalid shot preparation ID. ID must be a string.' });
       }
       const preparation = await this.shotPreparationService.getShotPreparationById(
         request.params.id
@@ -78,7 +80,9 @@ export class ShotPreparationController {
   async update(request: Request, response: Response) {
     try {
       if (typeof request.params.id !== 'string') {
-        return response.status(400).json({ message: 'Invalid shot preparation ID. ID must be a string.' });
+        return response
+          .status(400)
+          .json({ message: 'Invalid shot preparation ID. ID must be a string.' });
       }
       const {
         dose_grams,
@@ -112,7 +116,9 @@ export class ShotPreparationController {
   async remove(request: Request, response: Response) {
     try {
       if (typeof request.params.id !== 'string') {
-        return response.status(400).json({ message: 'Invalid shot preparation ID. ID must be a string.' });
+        return response
+          .status(400)
+          .json({ message: 'Invalid shot preparation ID. ID must be a string.' });
       }
       await this.shotPreparationService.deleteShotPreparation(request.params.id);
 

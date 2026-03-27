@@ -24,7 +24,9 @@ export class ShotEnvironmentController {
   async one(request: Request, response: Response) {
     try {
       if (typeof request.params.id !== 'string') {
-        return response.status(400).json({ message: 'Invalid shot environment ID. ID must be a string.' });
+        return response
+          .status(400)
+          .json({ message: 'Invalid shot environment ID. ID must be a string.' });
       }
       const environment = await this.shotEnvironmentService.getShotEnvironmentById(
         request.params.id
@@ -44,7 +46,9 @@ export class ShotEnvironmentController {
   async save(request: Request, response: Response) {
     try {
       if (typeof request.params.id !== 'string') {
-        return response.status(400).json({ message: 'Invalid shot environment ID. ID must be a string.' });
+        return response
+          .status(400)
+          .json({ message: 'Invalid shot environment ID. ID must be a string.' });
       }
       const {
         ambient_temp_c,
@@ -77,7 +81,9 @@ export class ShotEnvironmentController {
   async update(request: Request, response: Response) {
     try {
       if (typeof request.params.id !== 'string') {
-        return response.status(400).json({ message: 'Invalid shot environment ID. ID must be a string.' });
+        return response
+          .status(400)
+          .json({ message: 'Invalid shot environment ID. ID must be a string.' });
       }
       const {
         ambient_temp_c,
@@ -109,7 +115,9 @@ export class ShotEnvironmentController {
   async remove(request: Request, response: Response) {
     try {
       if (typeof request.params.id !== 'string') {
-        return response.status(400).json({ message: 'Invalid shot environment ID. ID must be a string.' });
+        return response
+          .status(400)
+          .json({ message: 'Invalid shot environment ID. ID must be a string.' });
       }
       await this.shotEnvironmentService.deleteShotEnvironment(request.params.id);
       response.status(204).send();
