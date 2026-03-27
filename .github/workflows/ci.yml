@@ -227,14 +227,6 @@ jobs:
       - name: Run security audit
         run: npm audit --audit-level high
 
-      - name: Run security scan
-        run: |
-          if command -v npm audit &> /dev/null; then
-            npm audit --audit-level moderate
-          else
-            echo "npm audit not available"
-          fi
-
   # Build and Docker Image
   build:
     name: Build Docker Image
