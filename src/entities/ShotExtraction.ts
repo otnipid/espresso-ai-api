@@ -10,21 +10,21 @@ export class ShotExtraction {
   @JoinColumn({ name: 'shot_id' })
   shot!: Shot;
 
-  @Column({ type: 'numeric', precision: 5, scale: 2, nullable: true })
-  dose_grams?: number | null;
+  @Column({ type: 'numeric', precision: 4, scale: 1, nullable: true })
+  water_temp_c?: number | null;
+
+  @Column({ type: 'numeric', precision: 4, scale: 1, nullable: true })
+  preinfusion_seconds?: number | null;
 
   @Column({ type: 'numeric', precision: 5, scale: 2, nullable: true })
+  shot_time_seconds?: number | null;
+
+  @Column({ type: 'numeric', precision: 6, scale: 2, nullable: true })
   yield_grams?: number | null;
 
-  @Column({ type: 'integer', nullable: true })
-  extraction_time_seconds?: number | null;
+  @Column({ type: 'numeric', precision: 4, scale: 2, nullable: true })
+  peak_pressure_bar?: number | null;
 
-  @Column({ type: 'numeric', precision: 5, scale: 2, nullable: true })
-  temperature_celsius?: number | null;
-
-  @Column({ type: 'numeric', precision: 5, scale: 2, nullable: true })
-  pressure_bars?: number | null;
-
-  @Column({ type: 'text', nullable: true })
-  notes?: string | null;
+  @Column({ type: 'numeric', precision: 4, scale: 2, nullable: true })
+  avg_pressure_bar?: number | null;
 }

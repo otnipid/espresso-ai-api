@@ -1,15 +1,17 @@
 import { Request, Response } from 'express';
-import { AppDataSource } from '../data-source';
+import { BeanBatchService } from '../services/BeanBatchService';
 import { BeanBatch } from '../entities/BeanBatch';
 
 export class BeanBatchController {
-  private beanBatchRepository = AppDataSource.getRepository(BeanBatch);
+  private beanBatchService: BeanBatchService;
+
+  constructor() {
+    this.beanBatchService = new BeanBatchService(require('../data-source').AppDataSource);
+  }
 
   async all(request: Request, response: Response) {
     try {
-      const batches = await this.beanBatchRepository.find({
-        relations: ['bean'],
-      });
+      const batches = await this.beanBatchService.getAllBeanBatches();
       response.json(batches);
     } catch (error) {
       console.error('Error fetching bean batches:', error);
@@ -19,10 +21,12 @@ export class BeanBatchController {
 
   async one(request: Request, response: Response) {
     try {
-      const batch = await this.beanBatchRepository.findOne({
-        where: { id: request.params.id },
-        relations: ['bean'],
-      });
+      if (typeof request.params.id !== 'string') {
+        return response
+          .status(400)
+          .json({ message: 'Invalid bean batch ID. ID must be a string.' });
+      }
+      const batch = await this.beanBatchService.getBeanBatchById(request.params.id);
 
       if (!batch) {
         return response.status(404).json({ message: 'Bean batch not found' });
@@ -37,53 +41,48 @@ export class BeanBatchController {
 
   async save(request: Request, response: Response) {
     try {
-      const { beanId, roastDate, bestByDate, weightKg, notes } = request.body;
+      const { beanId, roastDate, bagOpenDate, roastLevel, roastDegree } = request.body;
 
-      if (!beanId || !roastDate) {
-        return response.status(400).json({
-          message: 'Bean ID and roast date are required',
-        });
-      }
-
-      const batch = this.beanBatchRepository.create({
-        bean: { id: beanId },
-        roastDate: new Date(roastDate),
-        bestByDate: bestByDate ? new Date(bestByDate) : null,
-        weightKg: weightKg ? parseFloat(weightKg) : null,
-        notes: notes || null,
+      const result = await this.beanBatchService.createBeanBatch({
+        beanId,
+        roastDate,
+        bagOpenDate,
+        roastLevel,
+        roastDegree,
       });
-
-      const result = await this.beanBatchRepository.save(batch);
       response.status(201).json(result);
     } catch (error) {
       console.error('Error creating bean batch:', error);
+      if (
+        error instanceof Error &&
+        (error.message.includes('required') ||
+          error.message.includes('not found') ||
+          error.message.includes('Invalid'))
+      ) {
+        return response.status(400).json({ message: error.message });
+      }
       response.status(500).json({ message: 'Error creating bean batch' });
     }
   }
 
   async update(request: Request, response: Response) {
     try {
-      const { beanId, roastDate, bestByDate, weightKg, notes } = request.body;
+      if (typeof request.params.id !== 'string') {
+        return response
+          .status(400)
+          .json({ message: 'Invalid bean batch ID. ID must be a string.' });
+      }
+      const { roastDate, bagOpenDate, roastLevel, roastDegree } = request.body;
 
-      const batch = await this.beanBatchRepository.findOne({
-        where: { id: request.params.id },
+      const result = await this.beanBatchService.updateBeanBatch(request.params.id, {
+        roastDate,
+        bagOpenDate,
+        roastLevel,
+        roastDegree,
       });
-
-      if (!batch) {
+      if (!result) {
         return response.status(404).json({ message: 'Bean batch not found' });
       }
-
-      if (beanId !== undefined) batch.bean = { id: beanId } as any;
-      if (roastDate !== undefined) batch.roastDate = new Date(roastDate);
-      if (bestByDate !== undefined) {
-        batch.bestByDate = bestByDate ? new Date(bestByDate) : null;
-      }
-      if (weightKg !== undefined) {
-        batch.weightKg = weightKg ? parseFloat(weightKg) : null;
-      }
-      if (notes !== undefined) batch.notes = notes;
-
-      const result = await this.beanBatchRepository.save(batch);
       response.json(result);
     } catch (error) {
       console.error('Error updating bean batch:', error);
@@ -93,15 +92,15 @@ export class BeanBatchController {
 
   async remove(request: Request, response: Response) {
     try {
-      const batch = await this.beanBatchRepository.findOne({
-        where: { id: request.params.id },
-      });
-
-      if (!batch) {
+      if (typeof request.params.id !== 'string') {
+        return response
+          .status(400)
+          .json({ message: 'Invalid bean batch ID. ID must be a string.' });
+      }
+      const success = await this.beanBatchService.deleteBeanBatch(request.params.id);
+      if (!success) {
         return response.status(404).json({ message: 'Bean batch not found' });
       }
-
-      await this.beanBatchRepository.remove(batch);
       response.status(204).send();
     } catch (error) {
       console.error('Error deleting bean batch:', error);

@@ -6,3 +6,5 @@ export * from './ShotPreparation';
 export * from './ShotExtraction';
 export * from './shotEnvironment';
 export * from './shotFeedback';
+export * from './User';
+export * from './Grinder';

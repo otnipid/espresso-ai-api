@@ -1,25 +1,30 @@
 import { Request, Response } from 'express';
-import { AppDataSource } from '../data-source';
+import { MachineService, MachineCreateData, MachineUpdateData } from '../services/MachineService';
 import { Machine } from '../entities/Machine';
 
 export class MachineController {
-  private machineRepository = AppDataSource.getRepository(Machine);
+  private machineService: MachineService;
+
+  constructor() {
+    this.machineService = new MachineService(require('../data-source').AppDataSource);
+  }
 
   async all(request: Request, response: Response) {
     try {
-      const machines = await this.machineRepository.find();
+      const machines = await this.machineService.getAllMachines();
       response.json(machines);
     } catch (error) {
-      console.error('Error fetching machine:', error);
+      console.error('Error fetching machines:', error);
       response.status(500).json({ message: 'Error fetching machines' });
     }
   }
 
   async one(request: Request, response: Response) {
     try {
-      const machine = await this.machineRepository.findOne({
-        where: { id: request.params.id },
-      });
+      if (typeof request.params.id !== 'string') {
+        return response.status(400).json({ message: 'Invalid machine ID. ID must be a string.' });
+      }
+      const machine = await this.machineService.getMachineById(request.params.id);
 
       if (!machine) {
         return response.status(404).json({ message: 'Machine not found' });
@@ -36,59 +41,55 @@ export class MachineController {
     try {
       const { model, firmware_version } = request.body;
 
-      if (!model) {
-        return response.status(400).json({ message: 'Model is required' });
-      }
-
-      const machine = this.machineRepository.create({
+      const result = await this.machineService.createMachine({
         model,
         firmware_version,
       });
-
-      const result = await this.machineRepository.save(machine);
       response.status(201).json(result);
     } catch (error) {
       console.error('Error creating machine:', error);
+      if (error instanceof Error && error.message.includes('required')) {
+        return response.status(400).json({ message: error.message });
+      }
       response.status(500).json({ message: 'Error creating machine' });
     }
   }
 
   async update(request: Request, response: Response) {
     try {
-      const { model, firmware_version } = request.body;
+      if (typeof request.params.id !== 'string') {
+        return response.status(400).json({ message: 'Invalid machine ID. ID must be a string.' });
+      }
+      const updateData: MachineUpdateData = {
+        model: request.body.model,
+        firmware_version: request.body.firmware_version,
+      };
 
-      const machine = await this.machineRepository.findOne({
-        where: { id: request.params.id },
-      });
+      const machine = await this.machineService.updateMachine(request.params.id, updateData);
 
       if (!machine) {
         return response.status(404).json({ message: 'Machine not found' });
       }
 
-      machine.model = model || machine.model;
-      if (firmware_version !== undefined) {
-        machine.firmware_version = firmware_version;
-      }
-
-      const result = await this.machineRepository.save(machine);
-      response.json(result);
+      response.json(machine);
     } catch (error) {
       console.error('Error updating machine:', error);
-      response.status(500).json({ message: 'Error updating machine' });
+      response.status(400).json({ message: (error as Error).message || 'Error updating machine' });
     }
   }
 
   async remove(request: Request, response: Response) {
     try {
-      const machine = await this.machineRepository.findOne({
-        where: { id: request.params.id },
-      });
+      if (typeof request.params.id !== 'string') {
+        return response.status(400).json({ message: 'Invalid machine ID. ID must be a string.' });
+      }
+      const success = await this.machineService.deleteMachine(request.params.id);
+      response.status(204).send();
 
-      if (!machine) {
+      if (!success) {
         return response.status(404).json({ message: 'Machine not found' });
       }
 
-      await this.machineRepository.remove(machine);
       response.status(204).send();
     } catch (error) {
       console.error('Error deleting machine:', error);

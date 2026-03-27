@@ -1,15 +1,19 @@
 import { Request, Response } from 'express';
 import { FindOptionsWhere } from 'typeorm';
-import { AppDataSource } from '../data-source';
+import { ShotExtractionService } from '../services/ShotExtractionService';
 import { ShotExtraction } from '../entities/ShotExtraction';
 
 export class ShotExtractionController {
-  private extractionRepository = AppDataSource.getRepository(ShotExtraction);
+  private shotExtractionService: ShotExtractionService;
+
+  constructor() {
+    this.shotExtractionService = new ShotExtractionService(require('../data-source').AppDataSource);
+  }
 
   async all(request: Request, response: Response) {
     try {
-      const extractions = await this.extractionRepository.find();
-      response.json(extractions);
+      const extractions = await this.shotExtractionService.getAllShotExtractions();
+      response.status(200).json(extractions);
     } catch (error) {
       console.error('Error fetching shot extractions:', error);
       response.status(500).json({ message: 'Error fetching shot extractions' });
@@ -18,84 +22,105 @@ export class ShotExtractionController {
 
   async one(request: Request, response: Response) {
     try {
-      const extraction = await this.extractionRepository.findOne({
-        where: { id: request.params.id } as FindOptionsWhere<ShotExtraction>,
-      });
-
-      if (!extraction) {
-        return response.status(404).json({ message: 'Shot extraction not found' });
+      if (typeof request.params.id !== 'string') {
+        return response
+          .status(400)
+          .json({ message: 'Invalid shot extraction ID. ID must be a string.' });
       }
-
-      response.json(extraction);
+      const extraction = await this.shotExtractionService.getShotExtractionById(request.params.id);
+      response.status(200).json(extraction);
     } catch (error) {
       console.error('Error fetching shot extraction:', error);
+      if (error instanceof Error && error.message.includes('not found')) {
+        return response.status(404).json({ message: 'Shot extraction not found' });
+      }
       response.status(500).json({ message: 'Error fetching shot extraction' });
     }
   }
 
   async save(request: Request, response: Response) {
     try {
-      const { yield_grams, extraction_time_seconds, pressure_bars, notes } = request.body;
+      const {
+        shot_id,
+        yield_grams,
+        shot_time_seconds,
+        avg_pressure_bar,
+        water_temp_c,
+        preinfusion_seconds,
+        peak_pressure_bar,
+      } = request.body;
 
-      const extraction = this.extractionRepository.create({
-        yield_grams: yield_grams ? parseFloat(yield_grams) : null,
-        extraction_time_seconds: extraction_time_seconds ? parseInt(extraction_time_seconds) : null,
-        pressure_bars: pressure_bars ? parseFloat(pressure_bars) : null,
-        notes: notes || null,
+      const result = await this.shotExtractionService.createShotExtraction({
+        shot_id,
+        yield_grams,
+        shot_time_seconds,
+        avg_pressure_bar,
+        water_temp_c,
+        preinfusion_seconds,
+        peak_pressure_bar,
       });
-
-      const result = await this.extractionRepository.save(extraction);
       response.status(201).json(result);
     } catch (error) {
       console.error('Error creating shot extraction:', error);
+      if (error instanceof Error && error.message.includes('required')) {
+        return response.status(400).json({ message: error.message });
+      }
       response.status(500).json({ message: 'Error creating shot extraction' });
     }
   }
 
   async update(request: Request, response: Response) {
     try {
-      const { yield_grams, extraction_time_seconds, pressure_bars, notes } = request.body;
+      if (typeof request.params.id !== 'string') {
+        return response
+          .status(400)
+          .json({ message: 'Invalid shot extraction ID. ID must be a string.' });
+      }
+      const {
+        yield_grams,
+        shot_time_seconds,
+        avg_pressure_bar,
+        water_temp_c,
+        preinfusion_seconds,
+        peak_pressure_bar,
+      } = request.body;
 
-      const extraction = await this.extractionRepository.findOne({
-        where: { shot_id: request.params.id } as FindOptionsWhere<ShotExtraction>,
+      const result = await this.shotExtractionService.updateShotExtraction(request.params.id, {
+        yield_grams,
+        shot_time_seconds,
+        avg_pressure_bar,
+        water_temp_c,
+        preinfusion_seconds,
+        peak_pressure_bar,
       });
 
-      if (!extraction) {
-        return response.status(404).json({ message: 'Shot extraction not found' });
-      }
-
-      if (yield_grams !== undefined)
-        extraction.yield_grams = yield_grams ? parseFloat(yield_grams) : null;
-      if (extraction_time_seconds !== undefined)
-        extraction.extraction_time_seconds = extraction_time_seconds
-          ? parseInt(extraction_time_seconds)
-          : null;
-      if (pressure_bars !== undefined)
-        extraction.pressure_bars = pressure_bars ? parseFloat(pressure_bars) : null;
-      if (notes !== undefined) extraction.notes = notes;
-
-      const result = await this.extractionRepository.save(extraction);
-      response.json(result);
+      response.status(200).json(result);
     } catch (error) {
       console.error('Error updating shot extraction:', error);
+      if (error instanceof Error && error.message.includes('not found')) {
+        return response.status(404).json({ message: 'Shot extraction not found' });
+      }
+      if (error instanceof Error && error.message.includes('required')) {
+        return response.status(400).json({ message: error.message });
+      }
       response.status(500).json({ message: 'Error updating shot extraction' });
     }
   }
 
   async remove(request: Request, response: Response) {
     try {
-      const extraction = await this.extractionRepository.findOne({
-        where: { shot_id: request.params.id } as FindOptionsWhere<ShotExtraction>,
-      });
-
-      if (!extraction) {
-        return response.status(404).json({ message: 'Shot extraction not found' });
+      if (typeof request.params.id !== 'string') {
+        return response
+          .status(400)
+          .json({ message: 'Invalid shot extraction ID. ID must be a string.' });
       }
-
-      await this.extractionRepository.remove(extraction);
+      await this.shotExtractionService.deleteShotExtraction(request.params.id);
       response.status(204).send();
     } catch (error) {
       console.error('Error deleting shot extraction:', error);
+      if (error instanceof Error && error.message.includes('not found')) {
+        return response.status(404).json({ message: 'Shot extraction not found' });
+      }
       response.status(500).json({ message: 'Error deleting shot extraction' });
     }
   }

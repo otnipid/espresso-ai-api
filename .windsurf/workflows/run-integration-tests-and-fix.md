@@ -24,7 +24,7 @@ Follow this process to run and debug integration tests.
 Navigate to the infrastructure directory and start the local database environment.
 
 ```
-cd /Users/nicholasdipinto/CascadeProjects/espresso-ml/infrastructure
+cd /Users/nicholasdipinto/CascadeProjects/espresso-ml/espresso-db
 docker-compose up -d
 ```
 

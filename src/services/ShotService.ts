@@ -14,14 +14,17 @@ import { ShotEnvironment } from '../entities/shotEnvironment';
 import { ShotFeedback } from '../entities/shotFeedback';
 import { BeanBatch } from '../entities/BeanBatch';
 import { Machine } from '../entities/Machine';
+import { User } from '../entities/User';
+import { Grinder } from '../entities/Grinder';
 
 export interface CreateShotData {
+  userId: string;
   machineId: string;
   beanBatchId: string;
+  grinderId: string;
   shot_type: 'ristretto' | 'normale' | 'lungo';
   pulled_at?: Date;
   success?: boolean;
-  notes?: string;
   preparation?: Partial<ShotPreparation>;
   extraction?: Partial<ShotExtraction>;
   environment?: Partial<ShotEnvironment>;
@@ -29,12 +32,13 @@ export interface CreateShotData {
 }
 
 export interface UpdateShotData {
+  userId?: string;
   machineId?: string;
   beanBatchId?: string;
+  grinderId?: string;
   shot_type?: 'ristretto' | 'normale' | 'lungo';
   pulled_at?: Date;
   success?: boolean;
-  notes?: string;
   preparation?: Partial<ShotPreparation>;
   extraction?: Partial<ShotExtraction>;
   environment?: Partial<ShotEnvironment>;
@@ -74,6 +78,8 @@ export class ShotService {
   private shotFeedbackRepository: Repository<ShotFeedback>;
   private beanBatchRepository: Repository<BeanBatch>;
   private machineRepository: Repository<Machine>;
+  private userRepository: Repository<User>;
+  private grinderRepository: Repository<Grinder>;
 
   constructor(dataSource: DataSource) {
     this.shotRepository = dataSource.getRepository(Shot);
@@ -83,6 +89,45 @@ export class ShotService {
     this.shotFeedbackRepository = dataSource.getRepository(ShotFeedback);
     this.beanBatchRepository = dataSource.getRepository(BeanBatch);
     this.machineRepository = dataSource.getRepository(Machine);
+    this.userRepository = dataSource.getRepository(User);
+    this.grinderRepository = dataSource.getRepository(Grinder);
+  }
+
+  /**
+   * Validate that all related entities exist before starting transaction
+   * @param shotData - The shot data to validate
+   * @returns The validated related entities
+   */
+  private async validateRelatedEntities(shotData: CreateShotData) {
+    const user = await this.userRepository.findOne({
+      where: { id: shotData.userId },
+    });
+    if (!user) {
+      throw new Error(`User with ID ${shotData.userId} not found`);
+    }
+
+    const machine = await this.machineRepository.findOne({
+      where: { id: shotData.machineId },
+    });
+    if (!machine) {
+      throw new Error(`Machine with ID ${shotData.machineId} not found`);
+    }
+
+    const beanBatch = await this.beanBatchRepository.findOne({
+      where: { id: shotData.beanBatchId },
+    });
+    if (!beanBatch) {
+      throw new Error(`BeanBatch with ID ${shotData.beanBatchId} not found`);
+    }
+
+    const grinder = await this.grinderRepository.findOne({
+      where: { id: shotData.grinderId },
+    });
+    if (!grinder) {
+      throw new Error(`Grinder with ID ${shotData.grinderId} not found`);
+    }
+
+    return { user, machine, beanBatch, grinder };
   }
 
   /**
@@ -91,34 +136,24 @@ export class ShotService {
    * @returns The created shot with all relations
    */
   async createShot(shotData: CreateShotData): Promise<Shot> {
+    // Step 1: Validate related entities exist (outside transaction)
+    const { user, machine, beanBatch, grinder } = await this.validateRelatedEntities(shotData);
+
+    // Step 2: Use transaction for creation operations
     const queryRunner = this.shotRepository.manager.connection.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      // Validate related entities exist
-      const machine = await this.machineRepository.findOne({
-        where: { id: shotData.machineId },
-      });
-      if (!machine) {
-        throw new Error(`Machine with ID ${shotData.machineId} not found`);
-      }
-
-      const beanBatch = await this.beanBatchRepository.findOne({
-        where: { id: shotData.beanBatchId },
-      });
-      if (!beanBatch) {
-        throw new Error(`BeanBatch with ID ${shotData.beanBatchId} not found`);
-      }
-
       // Create the main shot entity
       const shot = this.shotRepository.create({
+        user,
         machine,
         beanBatch,
+        grinder,
         shot_type: shotData.shot_type,
         pulled_at: shotData.pulled_at || new Date(),
         success: shotData.success,
-        notes: shotData.notes,
       });
 
       const savedShot = await queryRunner.manager.save(shot);
@@ -143,7 +178,7 @@ export class ShotService {
       if (shotData.environment) {
         const environment = this.shotEnvironmentRepository.create({
           ...shotData.environment,
-          shot: savedShot,
+          shot_id: savedShot.id,
         });
         await queryRunner.manager.save(environment);
       }
@@ -151,15 +186,33 @@ export class ShotService {
       if (shotData.feedback) {
         const feedback = this.shotFeedbackRepository.create({
           ...shotData.feedback,
-          shot: savedShot,
+          shot_id: savedShot.id,
         });
         await queryRunner.manager.save(feedback);
       }
 
+      // Get the complete shot with all relations before committing
+      const completeShot = await queryRunner.manager.findOne(Shot, {
+        where: { id: savedShot.id },
+        relations: [
+          'user',
+          'machine',
+          'beanBatch',
+          'grinder',
+          'preparation',
+          'extraction',
+          'environment',
+          'feedback',
+        ],
+      });
+
       await queryRunner.commitTransaction();
 
-      // Return the complete shot with all relations
-      return this.getShotById(savedShot.id);
+      if (!completeShot) {
+        throw new Error(`Shot with ID ${savedShot.id} not found after creation`);
+      }
+
+      return completeShot;
     } catch (error) {
       await queryRunner.rollbackTransaction();
       throw error;
@@ -176,7 +229,16 @@ export class ShotService {
   async getShotById(id: string): Promise<Shot> {
     const shot = await this.shotRepository.findOne({
       where: { id },
-      relations: ['machine', 'beanBatch', 'preparation', 'extraction', 'environment', 'feedback'],
+      relations: [
+        'user',
+        'machine',
+        'beanBatch',
+        'grinder',
+        'preparation',
+        'extraction',
+        'environment',
+        'feedback',
+      ],
     });
 
     if (!shot) {
@@ -228,7 +290,16 @@ export class ShotService {
     // Build find options
     const findOptions: FindManyOptions<Shot> = {
       where,
-      relations: ['machine', 'beanBatch', 'preparation', 'extraction', 'environment', 'feedback'],
+      relations: [
+        'user',
+        'machine',
+        'beanBatch',
+        'grinder',
+        'preparation',
+        'extraction',
+        'environment',
+        'feedback',
+      ],
       order: { [sortBy]: sortOrder },
       skip,
       take: limit,
@@ -286,7 +357,6 @@ export class ShotService {
       if (updateData.shot_type) existingShot.shot_type = updateData.shot_type;
       if (updateData.pulled_at) existingShot.pulled_at = updateData.pulled_at;
       if (updateData.success !== undefined) existingShot.success = updateData.success;
-      if (updateData.notes !== undefined) existingShot.notes = updateData.notes;
 
       await queryRunner.manager.save(existingShot);
 
@@ -326,7 +396,7 @@ export class ShotService {
       if (updateData.environment) {
         const envRepo = queryRunner.manager.getRepository(ShotEnvironment);
         const existingEnv = await envRepo.findOne({
-          where: { shot: { id } },
+          where: { shot_id: id },
         });
 
         if (existingEnv) {
@@ -335,7 +405,7 @@ export class ShotService {
         } else {
           const environment = envRepo.create({
             ...updateData.environment,
-            shot: { id },
+            shot_id: id,
           });
           await envRepo.save(environment);
         }
@@ -344,7 +414,7 @@ export class ShotService {
       if (updateData.feedback) {
         const feedbackRepo = queryRunner.manager.getRepository(ShotFeedback);
         const existingFeedback = await feedbackRepo.findOne({
-          where: { shot: { id } },
+          where: { shot_id: id },
         });
 
         if (existingFeedback) {
@@ -353,7 +423,7 @@ export class ShotService {
         } else {
           const feedback = feedbackRepo.create({
             ...updateData.feedback,
-            shot: { id },
+            shot_id: id,
           });
           await feedbackRepo.save(feedback);
         }
@@ -402,14 +472,14 @@ export class ShotService {
 
       // For entities with relationships, we need to find them first
       const environment = await queryRunner.manager.findOne(ShotEnvironment, {
-        where: { shot: { id } },
+        where: { shot_id: id },
       });
       if (environment) {
         await queryRunner.manager.remove(ShotEnvironment, environment);
       }
 
       const feedback = await queryRunner.manager.findOne(ShotFeedback, {
-        where: { shot: { id } },
+        where: { shot_id: id },
       });
       if (feedback) {
         await queryRunner.manager.remove(ShotFeedback, feedback);

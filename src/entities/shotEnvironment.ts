@@ -1,20 +1,20 @@
-import { Entity, PrimaryGeneratedColumn, Column, JoinColumn, OneToOne } from 'typeorm';
+import { Entity, PrimaryColumn, Column, JoinColumn, OneToOne } from 'typeorm';
 import { Shot } from './Shot';
 
 @Entity('shot_environment')
 export class ShotEnvironment {
-  @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  @PrimaryColumn({ type: 'uuid' })
+  shot_id!: string;
 
   @OneToOne(() => Shot, shot => shot.environment, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'shot_id' })
   shot!: Shot;
 
   @Column({ type: 'numeric', precision: 4, scale: 1, nullable: true })
-  ambient_temp_c!: number | null;
+  ambient_temp_c?: number | null;
 
   @Column({ type: 'numeric', precision: 4, scale: 1, nullable: true })
-  humidity_percent!: number | null;
+  humidity_percent?: number | null;
 
   @Column({ type: 'text', nullable: true })
   water_source?: string | null;

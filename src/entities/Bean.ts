@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
 import { BeanBatch } from './BeanBatch';
 
-@Entity()
+@Entity('beans')
 export class Bean {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

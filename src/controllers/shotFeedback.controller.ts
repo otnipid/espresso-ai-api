@@ -1,14 +1,17 @@
 import { Request, Response } from 'express';
-import { AppDataSource } from '../data-source';
+import { ShotFeedbackService } from '../services/ShotFeedbackService';
 import { ShotFeedback } from '../entities/shotFeedback';
-import { FindOptionsWhere } from 'typeorm';
 
 export class ShotFeedbackController {
-  private shotFeedbackRepository = AppDataSource.getRepository(ShotFeedback);
+  private shotFeedbackService: ShotFeedbackService;
+
+  constructor() {
+    this.shotFeedbackService = new ShotFeedbackService(require('../data-source').AppDataSource);
+  }
 
   async all(request: Request, response: Response) {
     try {
-      const feedbacks = await this.shotFeedbackRepository.find();
+      const feedbacks = await this.shotFeedbackService.getAllShotFeedbacks();
       response.json(feedbacks);
     } catch (error) {
       console.error('Error fetching shot feedbacks:', error);
@@ -18,9 +21,10 @@ export class ShotFeedbackController {
 
   async one(request: Request, response: Response) {
     try {
-      const feedback = await this.shotFeedbackRepository.findOne({
-        where: { id: request.params.id } as FindOptionsWhere<ShotFeedback>,
-      });
+      if (typeof request.params.id !== 'string') {
+        return response.status(400).json({ message: 'Invalid.*ID must be a string.' });
+      }
+      const feedback = await this.shotFeedbackService.getShotFeedbackById(request.params.id);
 
       if (!feedback) {
         return response.status(404).json({ message: 'Shot feedback not found' });
@@ -29,80 +33,86 @@ export class ShotFeedbackController {
       response.json(feedback);
     } catch (error) {
       console.error('Error fetching shot feedback:', error);
+      if (error instanceof Error && error.message.includes('not found')) {
+        return response.status(404).json({ message: 'Shot feedback not found' });
+      }
       response.status(500).json({ message: 'Error fetching shot feedback' });
     }
   }
 
   async save(request: Request, response: Response) {
     try {
+      if (typeof request.params.id !== 'string') {
+        return response
+          .status(400)
+          .json({ message: 'Invalid shot feedback ID. ID must be a string.' });
+      }
       const { overall_score, acidity, sweetness, bitterness, body, extraction_assessment, notes } =
         request.body;
 
-      const feedback = this.shotFeedbackRepository.create({
-        overall_score: overall_score ? parseInt(overall_score) : null,
-        acidity: acidity ? parseInt(acidity) : null,
-        sweetness: sweetness ? parseInt(sweetness) : null,
-        bitterness: bitterness ? parseInt(bitterness) : null,
-        body: body ? parseInt(body) : null,
-        extraction_assessment: extraction_assessment,
-        notes: notes,
+      const result = await this.shotFeedbackService.createShotFeedback({
+        shot_id: request.params.id,
+        overall_score,
+        acidity,
+        sweetness,
+        bitterness,
+        body,
+        extraction_assessment,
+        notes,
       });
-
-      const result = await this.shotFeedbackRepository.save(feedback);
       response.status(201).json(result);
     } catch (error) {
       console.error('Error creating shot:', error);
-      response.status(500).json({ message: 'Error creating shot' });
+      if (error instanceof Error && error.message.includes('required')) {
+        return response.status(400).json({ message: error.message });
+      }
+      response.status(500).json({ message: 'Error creating shot feedback' });
     }
   }
 
   async update(request: Request, response: Response) {
     try {
+      if (typeof request.params.id !== 'string') {
+        return response
+          .status(400)
+          .json({ message: 'Invalid shot feedback ID. ID must be a string.' });
+      }
       const { overall_score, acidity, sweetness, bitterness, body, extraction_assessment, notes } =
         request.body;
 
-      // Find the shot with relations
-      const feedback = await this.shotFeedbackRepository.findOne({
-        where: { shot_id: request.params.id } as FindOptionsWhere<ShotFeedback>,
+      const result = await this.shotFeedbackService.updateShotFeedback(request.params.id, {
+        overall_score,
+        acidity,
+        sweetness,
+        bitterness,
+        body,
+        extraction_assessment,
+        notes,
       });
-
-      if (!feedback) {
-        return response.status(404).json({ message: 'Shot feedback not found' });
-      }
-
-      // Update basic fields
-      if (overall_score !== undefined)
-        feedback.overall_score = overall_score ? parseInt(overall_score) : null;
-      if (acidity !== undefined) feedback.acidity = acidity ? parseInt(acidity) : null;
-      if (sweetness !== undefined) feedback.sweetness = sweetness ? parseInt(sweetness) : null;
-      if (bitterness !== undefined) feedback.bitterness = bitterness ? parseInt(bitterness) : null;
-      if (body !== undefined) feedback.body = body ? parseInt(body) : null;
-      if (extraction_assessment !== undefined)
-        feedback.extraction_assessment = extraction_assessment;
-      if (notes !== undefined) feedback.notes = notes;
-
-      const result = await this.shotFeedbackRepository.save(feedback);
       response.json(result);
     } catch (error) {
       console.error('Error updating shot:', error);
-      response.status(500).json({ message: 'Error updating shot' });
+      if (error instanceof Error && error.message.includes('not found')) {
+        return response.status(404).json({ message: 'Shot feedback not found' });
+      }
+      response.status(500).json({ message: 'Error updating shot feedback' });
     }
   }
 
   async remove(request: Request, response: Response) {
     try {
-      const feedback = await this.shotFeedbackRepository.findOne({
-        where: { shot_id: request.params.id } as FindOptionsWhere<ShotFeedback>,
-      });
-
-      if (!feedback) {
-        return response.status(404).json({ message: 'Shot feedback not found' });
+      if (typeof request.params.id !== 'string') {
+        return response
+          .status(400)
+          .json({ message: 'Invalid shot feedback ID. ID must be a string.' });
       }
-
-      await this.shotFeedbackRepository.remove(feedback);
+      await this.shotFeedbackService.deleteShotFeedback(request.params.id);
       response.status(204).send();
     } catch (error) {
       console.error('Error deleting shot feedback:', error);
+      if (error instanceof Error && error.message.includes('not found')) {
+        return response.status(404).json({ message: 'Shot feedback not found' });
+      }
       response.status(500).json({ message: 'Error deleting shot feedback' });
     }
   }

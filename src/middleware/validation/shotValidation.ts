@@ -158,6 +158,13 @@ export const validateShotExists = async (req: Request, res: Response, next: Next
       });
     }
 
+    if (typeof shotId !== 'string') {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Invalid shot ID. ID must be a string.',
+      });
+    }
+
     const shotRepository = AppDataSource.getRepository(Shot);
     const shot = await shotRepository.findOne({
       where: { id: shotId },

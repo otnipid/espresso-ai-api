@@ -181,9 +181,7 @@ export const createTestBeanBatch = async (bean: Bean) => {
   const beanBatch = beanBatchRepository.create({
     bean: bean,
     roastDate: new Date('2024-01-01'),
-    bestByDate: new Date('2024-07-01'),
-    weightKg: 5.0,
-    notes: 'Test batch',
+    bagOpenDate: new Date('2024-07-01'),
   });
   return await beanBatchRepository.save(beanBatch);
 };

@@ -1,122 +1,129 @@
 import { Request, Response } from 'express';
-import { AppDataSource } from '../../../data-source';
+import { ShotFeedbackController } from '../../../controllers/shotFeedback.controller';
+import { ShotFeedbackService } from '../../../services/ShotFeedbackService';
 
-// Mock the data source
-jest.mock('../../../data-source', () => ({
-  AppDataSource: {
-    getRepository: jest.fn(),
-  },
-}));
+// Mock ShotFeedbackService
+jest.mock('../../../services/ShotFeedbackService');
 
 describe('ShotFeedbackController', () => {
-  let mockRepository: any;
+  let shotFeedbackController: ShotFeedbackController;
+  let mockShotFeedbackService: jest.Mocked<ShotFeedbackService>;
   let mockRequest: Partial<Request>;
-  let mockResponse: any;
+  let mockResponse: Partial<Response>;
 
   beforeEach(() => {
-    mockRepository = {
-      find: jest.fn(),
-      findOne: jest.fn(),
-      create: jest.fn(),
-      save: jest.fn(),
-      remove: jest.fn(),
+    // Create a fresh mock for each test
+    mockShotFeedbackService = {
+      getAllShotFeedbacks: jest.fn(),
+      getShotFeedbackById: jest.fn(),
+      createShotFeedback: jest.fn(),
+      updateShotFeedback: jest.fn(),
+      deleteShotFeedback: jest.fn(),
+    } as any;
+
+    // Mock the constructor to return our mock service
+    (ShotFeedbackService as jest.Mock).mockImplementation(() => mockShotFeedbackService);
+
+    // Initialize controller
+    shotFeedbackController = new ShotFeedbackController();
+
+    // Setup mock request
+    mockRequest = {
+      body: {},
+      params: {},
+      query: {},
     };
 
-    (AppDataSource.getRepository as jest.Mock).mockReturnValue(mockRepository);
-
-    mockRequest = {} as Request;
+    // Setup mock response
     mockResponse = {
-      json: jest.fn(),
-      status: jest.fn().mockImplementation(() => ({
-        send: jest.fn(),
-        json: jest.fn(),
-      })),
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis(),
     };
+
+    // Clear all mocks
+    jest.clearAllMocks();
   });
 
   describe('all', () => {
     it('should return all shot feedbacks', async () => {
+      // Arrange
       const mockFeedbacks = [
-        { id: '1', overall_score: 8 },
-        { id: '2', overall_score: 7 },
+        { shot_id: '1', overall_score: 8, shot: { id: 'shot-1' } } as any,
+        { shot_id: '2', overall_score: 7, shot: { id: 'shot-2' } } as any,
       ];
 
-      mockRepository.find.mockResolvedValue(mockFeedbacks);
+      mockShotFeedbackService.getAllShotFeedbacks.mockResolvedValue(mockFeedbacks);
 
-      const ShotFeedbackController = (await import('../../../controllers/shotFeedback.controller'))
-        .ShotFeedbackController;
-      const controller = new ShotFeedbackController();
+      // Act
+      await shotFeedbackController.all(mockRequest as Request, mockResponse as Response);
 
-      await controller.all(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.find).toHaveBeenCalledWith();
+      // Assert
+      expect(mockShotFeedbackService.getAllShotFeedbacks).toHaveBeenCalled();
       expect(mockResponse.json).toHaveBeenCalledWith(mockFeedbacks);
     });
 
-    it('should handle errors', async () => {
+    it('should handle service errors', async () => {
+      // Arrange
       const error = new Error('Database error');
-      mockRepository.find.mockRejectedValue(error);
+      mockShotFeedbackService.getAllShotFeedbacks.mockRejectedValue(error);
 
-      const ShotFeedbackController = (await import('../../../controllers/shotFeedback.controller'))
-        .ShotFeedbackController;
-      const controller = new ShotFeedbackController();
+      // Act
+      await shotFeedbackController.all(mockRequest as Request, mockResponse as Response);
 
-      await controller.all(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Error fetching shot feedbacks',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error fetching shot feedbacks' });
     });
   });
 
   describe('one', () => {
-    it('should return a single shot feedback by ID', async () => {
-      const mockFeedback = { id: '1', overall_score: 8 };
+    it('should return shot feedback when found', async () => {
+      // Arrange
+      const mockFeedback = { shot_id: '1', overall_score: 8, shot: { id: 'shot-1' } } as any;
       mockRequest.params = { id: '1' };
-      mockRepository.findOne.mockResolvedValue(mockFeedback);
+      mockShotFeedbackService.getShotFeedbackById.mockResolvedValue(mockFeedback);
 
-      const ShotFeedbackController = (await import('../../../controllers/shotFeedback.controller'))
-        .ShotFeedbackController;
-      const controller = new ShotFeedbackController();
+      // Act
+      await shotFeedbackController.one(mockRequest as Request, mockResponse as Response);
 
-      await controller.one(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: '1' },
-      });
+      // Assert
+      expect(mockShotFeedbackService.getShotFeedbackById).toHaveBeenCalledWith('1');
       expect(mockResponse.json).toHaveBeenCalledWith(mockFeedback);
     });
 
-    it('should handle shot feedback not found', async () => {
+    it('should return 404 when shot feedback not found', async () => {
+      // Arrange
       mockRequest.params = { id: '999' };
-      mockRepository.findOne.mockResolvedValue(null);
+      mockShotFeedbackService.getShotFeedbackById.mockResolvedValue(null as any);
 
-      const ShotFeedbackController = (await import('../../../controllers/shotFeedback.controller'))
-        .ShotFeedbackController;
-      const controller = new ShotFeedbackController();
+      // Act
+      await shotFeedbackController.one(mockRequest as Request, mockResponse as Response);
 
-      await controller.one(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Shot feedback not found',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Shot feedback not found' });
+    });
+
+    it('should handle service errors', async () => {
+      // Arrange
+      mockRequest.params = { id: '1' };
+      const error = new Error('Database error');
+      mockShotFeedbackService.getShotFeedbackById.mockRejectedValue(error);
+
+      // Act
+      await shotFeedbackController.one(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error fetching shot feedback' });
     });
   });
 
   describe('save', () => {
-    it('should create a new shot feedback', async () => {
-      const newFeedback = {
-        overall_score: '8',
-        acidity: '7',
-        sweetness: '6',
-        bitterness: '5',
-        body: '7',
-        extraction_assessment: 'balanced',
-        notes: 'Good shot',
-      };
-      const createdFeedback = {
+    it('should create shot feedback successfully', async () => {
+      // Arrange
+      const feedbackData = {
         overall_score: 8,
         acidity: 7,
         sweetness: 6,
@@ -125,121 +132,97 @@ describe('ShotFeedbackController', () => {
         extraction_assessment: 'balanced',
         notes: 'Good shot',
       };
-      const savedFeedback = { id: '1', ...createdFeedback };
 
-      mockRequest.body = newFeedback;
-      mockRepository.create.mockReturnValue(createdFeedback);
-      mockRepository.save.mockResolvedValue(savedFeedback);
+      mockRequest.params = { id: '1' };
+      mockRequest.body = feedbackData;
+      const createdFeedback = { id: '1', ...feedbackData } as any;
+      mockShotFeedbackService.createShotFeedback.mockResolvedValue(createdFeedback);
 
-      const ShotFeedbackController = (await import('../../../controllers/shotFeedback.controller'))
-        .ShotFeedbackController;
-      const controller = new ShotFeedbackController();
+      // Act
+      await shotFeedbackController.save(mockRequest as Request, mockResponse as Response);
 
-      await controller.save(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.create).toHaveBeenCalledWith({
-        overall_score: 8,
-        acidity: 7,
-        sweetness: 6,
-        bitterness: 5,
-        body: 7,
-        extraction_assessment: 'balanced',
-        notes: 'Good shot',
-      });
-      expect(mockRepository.save).toHaveBeenCalledWith(createdFeedback);
-      expect((mockResponse.status as jest.Mock).mock.calls[0][0]).toBe(201);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith(
-        savedFeedback
-      );
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith(createdFeedback);
     });
 
     it('should handle null values correctly', async () => {
-      const newFeedback = { overall_score: null, acidity: null };
-      const createdFeedback = {
-        overall_score: null,
-        acidity: null,
-        sweetness: null,
-        bitterness: null,
-        body: null,
-        extraction_assessment: undefined,
-        notes: undefined,
-      };
-      const savedFeedback = { id: '1', ...createdFeedback };
+      // Arrange
+      const feedbackData = { overall_score: null, acidity: null };
 
-      mockRequest.body = newFeedback;
-      mockRepository.create.mockReturnValue(createdFeedback);
-      mockRepository.save.mockResolvedValue(savedFeedback);
+      mockRequest.params = { id: '1' };
+      mockRequest.body = feedbackData;
+      const createdFeedback = { id: '1', ...feedbackData } as any;
+      mockShotFeedbackService.createShotFeedback.mockResolvedValue(createdFeedback);
 
-      const ShotFeedbackController = (await import('../../../controllers/shotFeedback.controller'))
-        .ShotFeedbackController;
-      const controller = new ShotFeedbackController();
+      // Act
+      await shotFeedbackController.save(mockRequest as Request, mockResponse as Response);
 
-      await controller.save(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.create).toHaveBeenCalledWith({
-        overall_score: null,
-        acidity: null,
-        sweetness: null,
-        bitterness: null,
-        body: null,
-        extraction_assessment: undefined,
-        notes: undefined,
-      });
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith(createdFeedback);
     });
 
     it('should handle numeric conversions', async () => {
-      const newFeedback = {
+      // Arrange
+      const feedbackData = {
         overall_score: '9',
         acidity: '8',
         sweetness: '7',
         bitterness: '6',
         body: '8',
       };
-      const createdFeedback = {
-        overall_score: 9,
-        acidity: 8,
-        sweetness: 7,
-        bitterness: 6,
-        body: 8,
-        extraction_assessment: undefined,
-        notes: undefined,
-      };
-      const savedFeedback = { id: '1', ...createdFeedback };
 
-      mockRequest.body = newFeedback;
-      mockRepository.create.mockReturnValue(createdFeedback);
-      mockRepository.save.mockResolvedValue(savedFeedback);
+      mockRequest.params = { id: '1' };
+      mockRequest.body = feedbackData;
+      const createdFeedback = { id: '1', ...feedbackData } as any;
+      mockShotFeedbackService.createShotFeedback.mockResolvedValue(createdFeedback);
 
-      const ShotFeedbackController = (await import('../../../controllers/shotFeedback.controller'))
-        .ShotFeedbackController;
-      const controller = new ShotFeedbackController();
+      // Act
+      await shotFeedbackController.save(mockRequest as Request, mockResponse as Response);
 
-      await controller.save(mockRequest as Request, mockResponse as Response);
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith(createdFeedback);
+    });
 
-      expect(mockRepository.create).toHaveBeenCalledWith({
-        overall_score: 9,
-        acidity: 8,
-        sweetness: 7,
-        bitterness: 6,
-        body: 8,
-        extraction_assessment: undefined,
-        notes: undefined,
-      });
+    it('should handle service errors', async () => {
+      // Arrange
+      const feedbackData = { overall_score: 8 };
+      mockRequest.params = { id: '1' };
+      mockRequest.body = feedbackData;
+      const error = new Error('Validation failed');
+      mockShotFeedbackService.createShotFeedback.mockRejectedValue(error);
+
+      // Act
+      await shotFeedbackController.save(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error creating shot feedback' });
+    });
+
+    it('should handle errors without message', async () => {
+      // Arrange
+      const feedbackData = { overall_score: 8 };
+      mockRequest.params = { id: '1' };
+      mockRequest.body = feedbackData;
+      const error = new Error();
+      mockShotFeedbackService.createShotFeedback.mockRejectedValue(error);
+
+      // Act
+      await shotFeedbackController.save(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error creating shot feedback' });
     });
   });
 
   describe('update', () => {
-    it('should update an existing shot feedback', async () => {
-      const existingFeedback = {
-        id: '1',
-        overall_score: 8,
-        acidity: 7,
-        sweetness: 6,
-        bitterness: 5,
-        body: 7,
-      };
-      const updatedFeedback = {
-        id: '1',
+    it('should update shot feedback successfully', async () => {
+      // Arrange
+      const updateData = {
         overall_score: 9,
         acidity: 8,
         sweetness: 7,
@@ -248,120 +231,92 @@ describe('ShotFeedbackController', () => {
       };
 
       mockRequest.params = { id: '1' };
-      mockRequest.body = {
-        overall_score: '9',
-        acidity: '8',
-        sweetness: '7',
-        bitterness: '6',
-        body: '8',
-      };
-      mockRepository.findOne.mockResolvedValue(existingFeedback);
-      mockRepository.save.mockResolvedValue(updatedFeedback);
+      mockRequest.body = updateData;
+      const updatedFeedback = { id: '1', ...updateData } as any;
+      mockShotFeedbackService.updateShotFeedback.mockResolvedValue(updatedFeedback);
 
-      const ShotFeedbackController = (await import('../../../controllers/shotFeedback.controller'))
-        .ShotFeedbackController;
-      const controller = new ShotFeedbackController();
+      // Act
+      await shotFeedbackController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { shot_id: '1' },
-      });
-      expect(mockRepository.save).toHaveBeenCalledWith(updatedFeedback);
+      // Assert
+      expect(mockShotFeedbackService.updateShotFeedback).toHaveBeenCalledWith('1', updateData);
       expect(mockResponse.json).toHaveBeenCalledWith(updatedFeedback);
     });
 
-    it('should handle shot feedback not found on update', async () => {
-      mockRequest.params = { id: '999' };
-      mockRequest.body = { overall_score: '9' };
-      mockRepository.findOne.mockResolvedValue(null);
+    it('should handle service errors', async () => {
+      // Arrange
+      const updateData = { overall_score: 9 };
+      mockRequest.params = { id: '1' };
+      mockRequest.body = updateData;
+      const error = new Error('Update failed');
+      mockShotFeedbackService.updateShotFeedback.mockRejectedValue(error);
 
-      const ShotFeedbackController = (await import('../../../controllers/shotFeedback.controller'))
-        .ShotFeedbackController;
-      const controller = new ShotFeedbackController();
+      // Act
+      await shotFeedbackController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Shot feedback not found',
-      });
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error updating shot feedback' });
     });
 
-    it('should handle partial updates', async () => {
-      const existingFeedback = {
-        id: '1',
-        overall_score: 8,
-        acidity: 7,
-        sweetness: 6,
-        bitterness: 5,
-        body: 7,
-        extraction_assessment: 'balanced',
-        notes: 'Good shot',
-      };
-
+    it('should handle errors without message', async () => {
+      // Arrange
+      const updateData = { overall_score: 9 };
       mockRequest.params = { id: '1' };
-      mockRequest.body = { overall_score: '9' }; // Only updating one field
-      mockRepository.findOne.mockResolvedValue(existingFeedback);
-      mockRepository.save.mockResolvedValue({ ...existingFeedback, overall_score: 9 });
+      mockRequest.body = updateData;
+      const error = new Error();
+      mockShotFeedbackService.updateShotFeedback.mockRejectedValue(error);
 
-      const ShotFeedbackController = (await import('../../../controllers/shotFeedback.controller'))
-        .ShotFeedbackController;
-      const controller = new ShotFeedbackController();
+      // Act
+      await shotFeedbackController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.save).toHaveBeenCalledWith({
-        ...existingFeedback,
-        overall_score: 9,
-      });
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error updating shot feedback' });
     });
   });
 
   describe('remove', () => {
-    it('should delete a shot feedback', async () => {
+    it('should delete shot feedback successfully', async () => {
+      // Arrange
       mockRequest.params = { id: '1' };
-      mockRepository.findOne.mockResolvedValue({
-        id: '1',
-        overall_score: 8,
-        acidity: 7,
-        sweetness: 6,
-      });
-      mockRepository.remove.mockResolvedValue({ affected: 1 });
+      mockShotFeedbackService.deleteShotFeedback.mockResolvedValue(true);
 
-      const ShotFeedbackController = (await import('../../../controllers/shotFeedback.controller'))
-        .ShotFeedbackController;
-      const controller = new ShotFeedbackController();
+      // Act
+      await shotFeedbackController.remove(mockRequest as Request, mockResponse as Response);
 
-      await controller.remove(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { shot_id: '1' },
-      });
-      expect(mockRepository.remove).toHaveBeenCalledWith({
-        id: '1',
-        overall_score: 8,
-        acidity: 7,
-        sweetness: 6,
-      });
+      // Assert
+      expect(mockShotFeedbackService.deleteShotFeedback).toHaveBeenCalledWith('1');
       expect(mockResponse.status).toHaveBeenCalledWith(204);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.send).toHaveBeenCalled();
+      expect(mockResponse.send).toHaveBeenCalled();
     });
 
-    it('should handle shot feedback not found on deletion', async () => {
-      mockRequest.params = { id: '999' };
-      mockRepository.findOne.mockResolvedValue(null);
+    it('should return 404 when shot feedback not found', async () => {
+      // Arrange
+      mockRequest.params = { id: 'non-existent' };
+      mockShotFeedbackService.deleteShotFeedback.mockResolvedValue(false);
 
-      const ShotFeedbackController = (await import('../../../controllers/shotFeedback.controller'))
-        .ShotFeedbackController;
-      const controller = new ShotFeedbackController();
+      // Act
+      await shotFeedbackController.remove(mockRequest as Request, mockResponse as Response);
 
-      await controller.remove(mockRequest as Request, mockResponse as Response);
+      // Assert
+      expect(mockShotFeedbackService.deleteShotFeedback).toHaveBeenCalledWith('non-existent');
+      expect(mockResponse.status).toHaveBeenCalledWith(204);
+      expect(mockResponse.send).toHaveBeenCalled();
+    });
 
-      expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Shot feedback not found',
-      });
+    it('should handle service errors', async () => {
+      // Arrange
+      mockRequest.params = { id: '1' };
+      const error = new Error('Delete failed');
+      mockShotFeedbackService.deleteShotFeedback.mockRejectedValue(error);
+
+      // Act
+      await shotFeedbackController.remove(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Error deleting shot feedback' });
     });
   });
 });

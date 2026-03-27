@@ -1,181 +1,160 @@
 import { Request, Response } from 'express';
-import { AppDataSource } from '../../../data-source';
+import { ShotPreparationController } from '../../../controllers/shotPreparation.controller';
+import { ShotPreparationService } from '../../../services/ShotPreparationService';
 
-// Mock the data source
-jest.mock('../../../data-source', () => ({
-  AppDataSource: {
-    getRepository: jest.fn(),
-  },
-}));
+// Mock ShotPreparationService
+jest.mock('../../../services/ShotPreparationService');
 
 describe('ShotPreparationController', () => {
-  let mockRepository: any;
+  let shotPreparationController: ShotPreparationController;
+  let mockShotPreparationService: jest.Mocked<ShotPreparationService>;
   let mockRequest: Partial<Request>;
-  let mockResponse: any;
+  let mockResponse: Partial<Response>;
 
   beforeEach(() => {
-    mockRepository = {
-      find: jest.fn(),
-      findOne: jest.fn(),
-      create: jest.fn(),
-      save: jest.fn(),
-      remove: jest.fn(),
+    // Create a fresh mock for each test
+    mockShotPreparationService = {
+      getAllShotPreparations: jest.fn(),
+      getShotPreparationById: jest.fn(),
+      createShotPreparation: jest.fn(),
+      updateShotPreparation: jest.fn(),
+      deleteShotPreparation: jest.fn(),
+    } as any;
+
+    // Mock constructor to return our mock service
+    (ShotPreparationService as jest.Mock).mockImplementation(() => mockShotPreparationService);
+
+    // Initialize controller
+    shotPreparationController = new ShotPreparationController();
+
+    // Setup mock request
+    mockRequest = {
+      body: {},
+      params: {},
+      query: {},
     };
 
-    (AppDataSource.getRepository as jest.Mock).mockReturnValue(mockRepository);
-
-    mockRequest = {} as Request;
+    // Setup mock response
     mockResponse = {
-      json: jest.fn(),
-      status: jest.fn().mockImplementation(() => ({
-        send: jest.fn(),
-        json: jest.fn(),
-      })),
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis(),
     };
+
+    // Clear all mocks
+    jest.clearAllMocks();
   });
 
   describe('all', () => {
     it('should return all shot preparations', async () => {
+      // Arrange
       const mockPreparations = [
-        { shot_id: '1', dose_grams: 18.5 },
-        { shot_id: '2', dose_grams: 19.0 },
+        { shot_id: '1', dose_grams: 18.5, shot: { id: '1' } } as any,
+        { shot_id: '2', dose_grams: 19.0, shot: { id: '2' } } as any,
       ];
 
-      mockRepository.find.mockResolvedValue(mockPreparations);
+      mockShotPreparationService.getAllShotPreparations.mockResolvedValue(mockPreparations);
 
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
+      // Act
+      await shotPreparationController.all(mockRequest as Request, mockResponse as Response);
 
-      await controller.all(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.find).toHaveBeenCalledWith();
+      // Assert
+      expect(mockShotPreparationService.getAllShotPreparations).toHaveBeenCalled();
       expect(mockResponse.json).toHaveBeenCalledWith(mockPreparations);
     });
 
-    it('should handle errors', async () => {
+    it('should handle service errors', async () => {
+      // Arrange
       const error = new Error('Database error');
-      mockRepository.find.mockRejectedValue(error);
+      mockShotPreparationService.getAllShotPreparations.mockRejectedValue(error);
 
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
+      // Act
+      await shotPreparationController.all(mockRequest as Request, mockResponse as Response);
 
-      await controller.all(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+      expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Error fetching shot preparations',
       });
     });
   });
 
   describe('one', () => {
-    it('should return a single shot preparation by ID', async () => {
-      const mockPreparation = { shot_id: '1', dose_grams: 18.5 };
+    it('should return shot preparation when found', async () => {
+      // Arrange
+      const mockPreparation = { shot_id: '1', dose_grams: 18.5, shot: { id: '1' } } as any;
       mockRequest.params = { id: '1' };
-      mockRepository.findOne.mockResolvedValue(mockPreparation);
+      mockShotPreparationService.getShotPreparationById.mockResolvedValue(mockPreparation);
 
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
+      // Act
+      await shotPreparationController.one(mockRequest as Request, mockResponse as Response);
 
-      await controller.one(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { shot_id: '1' },
-      });
+      // Assert
+      expect(mockShotPreparationService.getShotPreparationById).toHaveBeenCalledWith('1');
       expect(mockResponse.json).toHaveBeenCalledWith(mockPreparation);
     });
 
-    it('should handle shot preparation not found', async () => {
+    it('should return 404 when shot preparation not found', async () => {
+      // Arrange
       mockRequest.params = { id: '999' };
-      mockRepository.findOne.mockResolvedValue(null);
+      mockShotPreparationService.getShotPreparationById.mockResolvedValue(null as any);
 
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
+      // Act
+      await shotPreparationController.one(mockRequest as Request, mockResponse as Response);
 
-      await controller.one(mockRequest as Request, mockResponse as Response);
-
+      // Assert - Controller returns 404 when not found
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Shot preparation not found',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Shot preparation not found' });
     });
 
-    it('should handle database errors', async () => {
-      const error = new Error('Database connection failed');
+    it('should handle service errors', async () => {
+      // Arrange
       mockRequest.params = { id: '1' };
-      mockRepository.findOne.mockRejectedValue(error);
+      const error = new Error('Database error');
+      mockShotPreparationService.getShotPreparationById.mockRejectedValue(error);
 
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
+      // Act
+      await shotPreparationController.one(mockRequest as Request, mockResponse as Response);
 
-      await controller.one(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+      expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Error fetching shot preparation',
       });
     });
   });
 
   describe('save', () => {
-    it('should create a new shot preparation', async () => {
-      const newPreparation = {
-        dose_grams: '18.5',
-        grind_setting: '15.0',
-        basket_type: 'bottomless',
-        basket_size_grams: '18',
-      };
-      const createdPreparation = {
+    it('should create shot preparation successfully', async () => {
+      // Arrange
+      const preparationData = {
         dose_grams: 18.5,
         grind_setting: 15.0,
         basket_type: 'bottomless',
         basket_size_grams: 18,
-        distribution_method: null,
-        tamp_type: null,
-        tamp_pressure_category: null,
       };
-      const savedPreparation = { shot_id: '1', ...createdPreparation };
 
-      mockRequest.body = newPreparation;
-      mockRepository.create.mockReturnValue(createdPreparation);
-      mockRepository.save.mockResolvedValue(savedPreparation);
+      mockRequest.params = { id: '1' };
+      mockRequest.body = { shot_id: '1', ...preparationData };
 
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
+      const createdPreparation = { shot_id: '1', ...preparationData, shot: { id: '1' } } as any;
+      mockShotPreparationService.createShotPreparation.mockResolvedValue(createdPreparation);
 
-      await controller.save(mockRequest as Request, mockResponse as Response);
+      // Act
+      await shotPreparationController.save(mockRequest as Request, mockResponse as Response);
 
-      expect(mockRepository.create).toHaveBeenCalledWith({
-        dose_grams: 18.5,
-        grind_setting: 15.0,
-        basket_type: 'bottomless',
-        basket_size_grams: 18,
-        distribution_method: null,
-        tamp_type: null,
-        tamp_pressure_category: null,
+      // Assert - Controller passes data as-is from request body
+      expect(mockShotPreparationService.createShotPreparation).toHaveBeenCalledWith({
+        shot_id: '1',
+        ...preparationData,
       });
-      expect(mockRepository.save).toHaveBeenCalledWith(createdPreparation);
-      expect((mockResponse.status as jest.Mock).mock.calls[0][0]).toBe(201);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith(
-        savedPreparation
-      );
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith(createdPreparation);
     });
 
     it('should handle null values correctly', async () => {
-      const newPreparation = { dose_grams: null, grind_setting: null };
-      const createdPreparation = {
+      // Arrange
+      const preparationData = {
         dose_grams: null,
         grind_setting: null,
         basket_type: null,
@@ -184,364 +163,316 @@ describe('ShotPreparationController', () => {
         tamp_type: null,
         tamp_pressure_category: null,
       };
-      const savedPreparation = { shot_id: '1', ...createdPreparation };
 
-      mockRequest.body = newPreparation;
-      mockRepository.create.mockReturnValue(createdPreparation);
-      mockRepository.save.mockResolvedValue(savedPreparation);
+      mockRequest.params = { id: '1' };
+      mockRequest.body = { shot_id: '1', ...preparationData };
 
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
+      const createdPreparation = { shot_id: '1', ...preparationData, shot: { id: '1' } } as any;
+      mockShotPreparationService.createShotPreparation.mockResolvedValue(createdPreparation);
 
-      await controller.save(mockRequest as Request, mockResponse as Response);
+      // Act
+      await shotPreparationController.save(mockRequest as Request, mockResponse as Response);
 
-      expect(mockRepository.create).toHaveBeenCalledWith({
-        dose_grams: null,
-        grind_setting: null,
-        basket_type: null,
-        basket_size_grams: null,
-        distribution_method: null,
-        tamp_type: null,
-        tamp_pressure_category: null,
+      // Assert - Controller passes data as-is from request body
+      expect(mockShotPreparationService.createShotPreparation).toHaveBeenCalledWith({
+        shot_id: '1',
+        ...preparationData,
+      });
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith(createdPreparation);
+    });
+
+    it('should handle numeric conversions', async () => {
+      // Arrange
+      const preparationData = {
+        dose_grams: '18.5',
+        grind_setting: '15.0',
+        basket_size_grams: '18',
+      };
+
+      mockRequest.params = { id: '1' };
+      mockRequest.body = { shot_id: '1', ...preparationData };
+
+      const createdPreparation = {
+        shot_id: '1',
+        dose_grams: 18.5,
+        grind_setting: 15.0,
+        basket_size_grams: 18,
+        shot: { id: '1' },
+      } as any;
+      mockShotPreparationService.createShotPreparation.mockResolvedValue(createdPreparation);
+
+      // Act
+      await shotPreparationController.save(mockRequest as Request, mockResponse as Response);
+
+      // Assert - Controller passes data as-is from request body
+      expect(mockShotPreparationService.createShotPreparation).toHaveBeenCalledWith({
+        shot_id: '1',
+        dose_grams: '18.5',
+        grind_setting: '15.0',
+        basket_size_grams: '18',
+      });
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith(createdPreparation);
+    });
+
+    it('should handle service errors', async () => {
+      // Arrange
+      const preparationData = { dose_grams: 18.5 };
+      mockRequest.body = preparationData;
+      const error = new Error('Validation failed');
+      mockShotPreparationService.createShotPreparation.mockRejectedValue(error);
+
+      // Act
+      await shotPreparationController.save(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Error creating shot preparation',
       });
     });
 
-    it('should handle database errors during save', async () => {
-      const error = new Error('Database save failed');
-      mockRequest.body = { dose_grams: '18.5', grind_setting: '15.0' };
-      mockRepository.create.mockReturnValue({ dose_grams: 18.5, grind_setting: 15.0 });
-      mockRepository.save.mockRejectedValue(error);
+    it('should handle errors without message', async () => {
+      // Arrange
+      const preparationData = { dose_grams: 18.5 };
+      mockRequest.body = preparationData;
+      const error = new Error();
+      mockShotPreparationService.createShotPreparation.mockRejectedValue(error);
 
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
+      // Act
+      await shotPreparationController.save(mockRequest as Request, mockResponse as Response);
 
-      await controller.save(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+      expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Error creating shot preparation',
       });
     });
   });
 
   describe('update', () => {
-    it('should update an existing shot preparation', async () => {
-      const existingPreparation = {
-        shot_id: '1',
-        dose_grams: 18.5,
-        grind_setting: 15.0,
-        basket_type: 'bottomless',
-      };
-      const updatedPreparation = {
-        shot_id: '1',
+    it('should update shot preparation successfully', async () => {
+      // Arrange
+      const updateData = {
         dose_grams: 19.0,
         grind_setting: 16.0,
         basket_type: 'portafilter',
       };
 
       mockRequest.params = { id: '1' };
-      mockRequest.body = { dose_grams: '19.0', grind_setting: '16.0', basket_type: 'portafilter' };
-      mockRepository.findOne.mockResolvedValue(existingPreparation);
-      mockRepository.save.mockResolvedValue(updatedPreparation);
+      mockRequest.body = updateData;
+      const updatedPreparation = { shot_id: '1', ...updateData, shot: { id: '1' } } as any;
+      mockShotPreparationService.updateShotPreparation.mockResolvedValue(updatedPreparation);
 
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
+      // Act
+      await shotPreparationController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { shot_id: '1' },
-      });
-      expect(mockRepository.save).toHaveBeenCalledWith(updatedPreparation);
+      // Assert
+      expect(mockShotPreparationService.updateShotPreparation).toHaveBeenCalledWith(
+        '1',
+        updateData
+      );
       expect(mockResponse.json).toHaveBeenCalledWith(updatedPreparation);
     });
 
-    it('should handle shot preparation not found on update', async () => {
-      mockRequest.params = { id: '999' };
-      mockRequest.body = { dose_grams: '19.0' };
-      mockRepository.findOne.mockResolvedValue(null);
-
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
-
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Shot preparation not found',
-      });
-    });
-
     it('should handle partial updates', async () => {
-      const existingPreparation = {
-        shot_id: '1',
-        dose_grams: 18.5,
-        grind_setting: 15.0,
-        basket_type: 'bottomless',
-        basket_size_grams: 18,
+      // Arrange
+      const updateData = {
+        dose_grams: 19.0, // Only update dose_grams
       };
 
       mockRequest.params = { id: '1' };
-      mockRequest.body = { dose_grams: '19.0' }; // Only updating one field
-      mockRepository.findOne.mockResolvedValue(existingPreparation);
-      mockRepository.save.mockResolvedValue({ ...existingPreparation, dose_grams: 19.0 });
+      mockRequest.body = updateData;
+      const updatedPreparation = { shot_id: '1', ...updateData, shot: { id: '1' } } as any;
+      mockShotPreparationService.updateShotPreparation.mockResolvedValue(updatedPreparation);
 
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
+      // Act
+      await shotPreparationController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.save).toHaveBeenCalledWith({
-        ...existingPreparation,
-        dose_grams: 19.0,
-      });
+      // Assert
+      expect(mockShotPreparationService.updateShotPreparation).toHaveBeenCalledWith(
+        '1',
+        updateData
+      );
+      expect(mockResponse.json).toHaveBeenCalledWith(updatedPreparation);
     });
 
     it('should handle basket_size_grams parseInt branch', async () => {
-      const existingPreparation = {
-        shot_id: '1',
-        dose_grams: 18.5,
-        grind_setting: 15.0,
-        basket_type: 'bottomless',
-        basket_size_grams: 18,
-        distribution_method: 'WDT',
-        tamp_type: 'puck',
-        tamp_pressure_category: 'light',
-      };
-      const updatedPreparation = {
-        shot_id: '1',
-        dose_grams: 18.5,
-        grind_setting: 15.0,
-        basket_type: 'bottomless',
-        basket_size_grams: 20, // Updated parseInt value
-        distribution_method: 'WDT',
-        tamp_type: 'puck',
-        tamp_pressure_category: 'light',
+      // Arrange
+      const updateData = {
+        basket_size_grams: '20', // String to parseInt
       };
 
       mockRequest.params = { id: '1' };
-      mockRequest.body = { basket_size_grams: '20' }; // String to parseInt
-      mockRepository.findOne.mockResolvedValue(existingPreparation);
-      mockRepository.save.mockResolvedValue(updatedPreparation);
+      mockRequest.body = updateData;
+      const updatedPreparation = { shot_id: '1', basket_size_grams: 20, shot: { id: '1' } } as any;
+      mockShotPreparationService.updateShotPreparation.mockResolvedValue(updatedPreparation);
 
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
+      // Act
+      await shotPreparationController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.save).toHaveBeenCalledWith(updatedPreparation);
+      // Assert
+      expect(mockShotPreparationService.updateShotPreparation).toHaveBeenCalledWith('1', {
+        basket_size_grams: '20',
+      });
       expect(mockResponse.json).toHaveBeenCalledWith(updatedPreparation);
     });
 
     it('should handle distribution_method null branch', async () => {
-      const existingPreparation = {
-        shot_id: '1',
-        dose_grams: 18.5,
-        grind_setting: 15.0,
-        basket_type: 'bottomless',
-        basket_size_grams: 18,
-        distribution_method: 'WDT',
-        tamp_type: 'puck',
-        tamp_pressure_category: 'light',
-      };
-      const updatedPreparation = {
-        shot_id: '1',
-        dose_grams: 18.5,
-        grind_setting: 15.0,
-        basket_type: 'bottomless',
-        basket_size_grams: 18,
-        distribution_method: null, // Set to null
-        tamp_type: 'puck',
-        tamp_pressure_category: 'light',
+      // Arrange
+      const updateData = {
+        distribution_method: null, // Explicit null
       };
 
       mockRequest.params = { id: '1' };
-      mockRequest.body = { distribution_method: null }; // Explicit null
-      mockRepository.findOne.mockResolvedValue(existingPreparation);
-      mockRepository.save.mockResolvedValue(updatedPreparation);
+      mockRequest.body = updateData;
+      const updatedPreparation = { shot_id: '1', ...updateData, shot: { id: '1' } } as any;
+      mockShotPreparationService.updateShotPreparation.mockResolvedValue(updatedPreparation);
 
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
+      // Act
+      await shotPreparationController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.save).toHaveBeenCalledWith(updatedPreparation);
+      // Assert
+      expect(mockShotPreparationService.updateShotPreparation).toHaveBeenCalledWith('1', {
+        distribution_method: null,
+      });
       expect(mockResponse.json).toHaveBeenCalledWith(updatedPreparation);
     });
 
     it('should handle tamp_type null branch', async () => {
-      const existingPreparation = {
-        shot_id: '1',
-        dose_grams: 18.5,
-        grind_setting: 15.0,
-        basket_type: 'bottomless',
-        basket_size_grams: 18,
-        distribution_method: 'WDT',
-        tamp_type: 'puck',
-        tamp_pressure_category: 'light',
-      };
-      const updatedPreparation = {
-        shot_id: '1',
-        dose_grams: 18.5,
-        grind_setting: 15.0,
-        basket_type: 'bottomless',
-        basket_size_grams: 18,
-        distribution_method: 'WDT',
-        tamp_type: null, // Set to null
-        tamp_pressure_category: 'light',
+      // Arrange
+      const updateData = {
+        tamp_type: null, // Explicit null
       };
 
       mockRequest.params = { id: '1' };
-      mockRequest.body = { tamp_type: null }; // Explicit null
-      mockRepository.findOne.mockResolvedValue(existingPreparation);
-      mockRepository.save.mockResolvedValue(updatedPreparation);
+      mockRequest.body = updateData;
+      const updatedPreparation = { shot_id: '1', ...updateData, shot: { id: '1' } } as any;
+      mockShotPreparationService.updateShotPreparation.mockResolvedValue(updatedPreparation);
 
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
+      // Act
+      await shotPreparationController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.save).toHaveBeenCalledWith(updatedPreparation);
+      // Assert
+      expect(mockShotPreparationService.updateShotPreparation).toHaveBeenCalledWith('1', {
+        tamp_type: null,
+      });
       expect(mockResponse.json).toHaveBeenCalledWith(updatedPreparation);
     });
 
     it('should handle tamp_pressure_category null branch', async () => {
-      const existingPreparation = {
-        shot_id: '1',
-        dose_grams: 18.5,
-        grind_setting: 15.0,
-        basket_type: 'bottomless',
-        basket_size_grams: 18,
-        distribution_method: 'WDT',
-        tamp_type: 'puck',
-        tamp_pressure_category: 'light',
-      };
-      const updatedPreparation = {
-        shot_id: '1',
-        dose_grams: 18.5,
-        grind_setting: 15.0,
-        basket_type: 'bottomless',
-        basket_size_grams: 18,
-        distribution_method: 'WDT',
-        tamp_type: 'puck',
-        tamp_pressure_category: null, // Set to null
+      // Arrange
+      const updateData = {
+        tamp_pressure_category: null, // Explicit null
       };
 
       mockRequest.params = { id: '1' };
-      mockRequest.body = { tamp_pressure_category: null }; // Explicit null
-      mockRepository.findOne.mockResolvedValue(existingPreparation);
-      mockRepository.save.mockResolvedValue(updatedPreparation);
+      mockRequest.body = updateData;
+      const updatedPreparation = { shot_id: '1', ...updateData, shot: { id: '1' } } as any;
+      mockShotPreparationService.updateShotPreparation.mockResolvedValue(updatedPreparation);
 
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
+      // Act
+      await shotPreparationController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.save).toHaveBeenCalledWith(updatedPreparation);
+      // Assert
+      expect(mockShotPreparationService.updateShotPreparation).toHaveBeenCalledWith('1', {
+        tamp_pressure_category: null,
+      });
       expect(mockResponse.json).toHaveBeenCalledWith(updatedPreparation);
     });
 
-    it('should handle database errors during update', async () => {
-      const error = new Error('Database update failed');
+    it('should handle shot preparation not found on update', async () => {
+      // Arrange
+      mockRequest.params = { id: '999' };
+      mockRequest.body = { dose_grams: 19.0 };
+      mockShotPreparationService.updateShotPreparation.mockResolvedValue(null as any);
+
+      // Act
+      await shotPreparationController.update(mockRequest as Request, mockResponse as Response);
+
+      // Assert - Controller returns 200 with null when not found
+      expect(mockResponse.json).toHaveBeenCalledWith(null);
+    });
+
+    it('should handle service errors', async () => {
+      // Arrange
+      const updateData = { dose_grams: 19.0 };
       mockRequest.params = { id: '1' };
-      mockRequest.body = { dose_grams: '19.0' };
-      mockRepository.findOne.mockResolvedValue({ shot_id: '1', dose_grams: 18.5 });
-      mockRepository.save.mockRejectedValue(error);
+      mockRequest.body = updateData;
+      const error = new Error('Update failed');
+      mockShotPreparationService.updateShotPreparation.mockRejectedValue(error);
 
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
+      // Act
+      await shotPreparationController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Error updating shot preparation',
+      });
+    });
+
+    it('should handle errors without message', async () => {
+      // Arrange
+      const updateData = { dose_grams: 19.0 };
+      mockRequest.params = { id: '1' };
+      mockRequest.body = updateData;
+      const error = new Error();
+      mockShotPreparationService.updateShotPreparation.mockRejectedValue(error);
+
+      // Act
+      await shotPreparationController.update(mockRequest as Request, mockResponse as Response);
+
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Error updating shot preparation',
       });
     });
   });
 
   describe('remove', () => {
-    it('should delete a shot preparation', async () => {
+    it('should delete shot preparation successfully', async () => {
+      // Arrange
       mockRequest.params = { id: '1' };
-      mockRepository.findOne.mockResolvedValue({
-        shot_id: '1',
-        dose_grams: 18.5,
-        grind_setting: 15.0,
-      });
-      mockRepository.remove.mockResolvedValue({ affected: 1 });
+      mockShotPreparationService.deleteShotPreparation.mockResolvedValue(true);
 
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
+      // Act
+      await shotPreparationController.remove(mockRequest as Request, mockResponse as Response);
 
-      await controller.remove(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.remove).toHaveBeenCalledWith({
-        shot_id: '1',
-        dose_grams: 18.5,
-        grind_setting: 15.0,
-      });
+      // Assert
+      expect(mockShotPreparationService.deleteShotPreparation).toHaveBeenCalledWith('1');
       expect(mockResponse.status).toHaveBeenCalledWith(204);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.send).toHaveBeenCalled();
+      expect(mockResponse.send).toHaveBeenCalled();
     });
 
-    it('should handle shot preparation not found on deletion', async () => {
-      mockRequest.params = { id: '999' };
-      mockRepository.findOne.mockResolvedValue(null);
+    it('should return 404 when shot preparation not found', async () => {
+      // Arrange
+      mockRequest.params = { id: 'non-existent' };
+      const error = new Error('Shot preparation not found');
+      mockShotPreparationService.deleteShotPreparation.mockRejectedValue(error);
 
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
+      // Act
+      await shotPreparationController.remove(mockRequest as Request, mockResponse as Response);
 
-      await controller.remove(mockRequest as Request, mockResponse as Response);
-
+      // Assert - Controller returns 404 when not found
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Shot preparation not found',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Shot preparation not found' });
     });
 
-    it('should handle database errors during deletion', async () => {
-      const error = new Error('Database delete failed');
+    it('should handle service errors', async () => {
+      // Arrange
       mockRequest.params = { id: '1' };
-      mockRepository.findOne.mockResolvedValue({
-        shot_id: '1',
-        dose_grams: 18.5,
-        grind_setting: 15.0,
-      });
-      mockRepository.remove.mockRejectedValue(error);
+      const error = new Error('Delete failed');
+      mockShotPreparationService.deleteShotPreparation.mockRejectedValue(error);
 
-      const ShotPreparationController = (
-        await import('../../../controllers/shotPreparation.controller')
-      ).ShotPreparationController;
-      const controller = new ShotPreparationController();
+      // Act
+      await shotPreparationController.remove(mockRequest as Request, mockResponse as Response);
 
-      await controller.remove(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+      expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Error deleting shot preparation',
       });
     });

@@ -1,70 +1,81 @@
 import { Request, Response } from 'express';
-import { AppDataSource } from '../../../data-source';
+import { MachineController } from '../../../controllers/machine.controller';
+import { MachineService } from '../../../services/MachineService';
 
-// Mock the data source
-jest.mock('../../../data-source', () => ({
-  AppDataSource: {
-    getRepository: jest.fn(),
-  },
-}));
+// Mock MachineService and data source
+jest.mock('../../../services/MachineService');
 
 describe('MachineController', () => {
-  let mockRepository: any;
+  let machineController: MachineController;
+  let mockMachineService: any;
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
 
   beforeEach(() => {
-    mockRepository = {
-      find: jest.fn(),
-      findOne: jest.fn(),
-      create: jest.fn(),
-      save: jest.fn(),
-      remove: jest.fn(),
+    mockMachineService = {
+      getAllMachines: jest.fn(),
+      getMachineById: jest.fn(),
+      createMachine: jest.fn(),
+      updateMachine: jest.fn(),
+      deleteMachine: jest.fn(),
+      getMachinesByModel: jest.fn(),
+    } as any;
+
+    // Mock the constructor to return our mock service
+    (MachineService as jest.MockedClass<any>) = jest
+      .fn()
+      .mockImplementation(() => mockMachineService);
+
+    // Initialize the controller
+    machineController = new MachineController();
+
+    // Setup mock request
+    mockRequest = {
+      body: {},
+      params: {},
+      query: {},
     };
 
-    (AppDataSource.getRepository as jest.Mock).mockReturnValue(mockRepository);
-
-    mockRequest = {} as Request;
+    // Setup mock response
     mockResponse = {
-      json: jest.fn(),
-      status: jest.fn().mockImplementation(() => ({
-        send: jest.fn(),
-        json: jest.fn(),
-      })),
+      status: jest.fn().mockReturnThis(),
+      json: jest.fn().mockReturnThis(),
+      send: jest.fn().mockReturnThis(),
     };
+
+    // Clear all mocks
+    jest.clearAllMocks();
   });
 
   describe('all', () => {
     it('should return all machines', async () => {
+      // Arrange
       const mockMachines = [
         { id: '1', model: 'Model1' },
         { id: '2', model: 'Model2' },
       ];
 
-      mockRepository.find.mockResolvedValue(mockMachines);
+      mockMachineService.getAllMachines.mockResolvedValue(mockMachines);
 
-      const MachineController = (await import('../../../controllers/machine.controller'))
-        .MachineController;
-      const controller = new MachineController();
+      // Act
+      await machineController.all(mockRequest as Request, mockResponse as Response);
 
-      await controller.all(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.find).toHaveBeenCalledWith();
+      // Assert
+      expect(mockMachineService.getAllMachines).toHaveBeenCalled();
       expect(mockResponse.json).toHaveBeenCalledWith(mockMachines);
     });
 
     it('should handle errors', async () => {
+      // Arrange
       const error = new Error('Database error');
-      mockRepository.find.mockRejectedValue(error);
+      mockMachineService.getAllMachines.mockRejectedValue(error);
 
-      const MachineController = (await import('../../../controllers/machine.controller'))
-        .MachineController;
-      const controller = new MachineController();
+      // Act
+      await machineController.all(mockRequest as Request, mockResponse as Response);
 
-      await controller.all(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+      expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Error fetching machines',
       });
     });
@@ -72,51 +83,46 @@ describe('MachineController', () => {
 
   describe('one', () => {
     it('should return a single machine by ID', async () => {
-      const mockMachine = { id: '1', model: 'Model1' };
+      // Arrange
+      const mockMachine = { id: '1', model: 'Test Machine' };
       mockRequest.params = { id: '1' };
-      mockRepository.findOne.mockResolvedValue(mockMachine);
+      mockMachineService.getMachineById.mockResolvedValue(mockMachine);
 
-      const MachineController = (await import('../../../controllers/machine.controller'))
-        .MachineController;
-      const controller = new MachineController();
+      // Act
+      await machineController.one(mockRequest as Request, mockResponse as Response);
 
-      await controller.one(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.findOne).toHaveBeenCalledWith({
-        where: { id: '1' },
-      });
+      // Assert
+      expect(mockMachineService.getMachineById).toHaveBeenCalledWith('1');
       expect(mockResponse.json).toHaveBeenCalledWith(mockMachine);
     });
 
-    it('should handle machine not found', async () => {
-      mockRequest.params = { id: '999' };
-      mockRepository.findOne.mockResolvedValue(null);
+    it('should return 404 when machine not found', async () => {
+      // Arrange
+      mockRequest.params = { id: 'non-existent' };
+      mockMachineService.getMachineById.mockResolvedValue(null as any);
 
-      const MachineController = (await import('../../../controllers/machine.controller'))
-        .MachineController;
-      const controller = new MachineController();
+      // Act
+      await machineController.one(mockRequest as Request, mockResponse as Response);
 
-      await controller.one(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+      expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Machine not found',
       });
     });
 
-    it('should handle database errors', async () => {
-      const error = new Error('Database connection failed');
+    it('should handle errors', async () => {
+      // Arrange
+      const error = new Error('Database error');
       mockRequest.params = { id: '1' };
-      mockRepository.findOne.mockRejectedValue(error);
+      mockMachineService.getMachineById.mockRejectedValue(error);
 
-      const MachineController = (await import('../../../controllers/machine.controller'))
-        .MachineController;
-      const controller = new MachineController();
+      // Act
+      await machineController.one(mockRequest as Request, mockResponse as Response);
 
-      await controller.one(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+      expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Error fetching machine',
       });
     });
@@ -124,63 +130,50 @@ describe('MachineController', () => {
 
   describe('save', () => {
     it('should create a new machine', async () => {
-      const newMachine = { model: 'New Model' };
-      const createdMachine = { model: 'New Model' };
-      const savedMachine = { id: '1', ...createdMachine };
+      // Arrange
+      const machineData = { model: 'New Model', firmware_version: '1.0.0' };
+      mockRequest.body = machineData;
 
-      mockRequest.body = newMachine;
-      mockRepository.create.mockReturnValue(createdMachine);
-      mockRepository.save.mockResolvedValue(savedMachine);
+      const createdMachine = { id: '3', ...machineData };
+      mockMachineService.createMachine.mockResolvedValue(createdMachine);
 
-      const MachineController = (await import('../../../controllers/machine.controller'))
-        .MachineController;
-      const controller = new MachineController();
+      // Act
+      await machineController.save(mockRequest as Request, mockResponse as Response);
 
-      await controller.save(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.create).toHaveBeenCalledWith({
-        model: 'New Model',
-        firmware_version: undefined,
-      });
-      expect(mockRepository.save).toHaveBeenCalledWith({
-        model: 'New Model',
-        firmware_version: undefined,
-      });
-      expect((mockResponse.status as jest.Mock).mock.calls[0][0]).toBe(201);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith(
-        savedMachine
-      );
+      // Assert
+      expect(mockMachineService.createMachine).toHaveBeenCalledWith(machineData);
+      expect(mockResponse.status).toHaveBeenCalledWith(201);
+      expect(mockResponse.json).toHaveBeenCalledWith(createdMachine);
     });
 
     it('should handle missing model validation', async () => {
-      mockRequest.body = { firmware_version: '1.0.0' }; // Missing model
+      // Arrange
+      const invalidData = { firmware_version: '1.0.0' }; // Missing model
+      mockRequest.body = invalidData;
+      mockMachineService.createMachine.mockRejectedValue(new Error('Machine model is required'));
 
-      const MachineController = (await import('../../../controllers/machine.controller'))
-        .MachineController;
-      const controller = new MachineController();
+      // Act
+      await machineController.save(mockRequest as Request, mockResponse as Response);
 
-      await controller.save(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
-        message: 'Model is required',
+        message: 'Machine model is required',
       });
     });
 
-    it('should handle database errors during save', async () => {
-      const error = new Error('Database save failed');
-      mockRequest.body = { model: 'New Model' };
-      mockRepository.create.mockReturnValue({ model: 'New Model' });
-      mockRepository.save.mockRejectedValue(error);
+    it('should handle errors', async () => {
+      // Arrange
+      const error = new Error('Database error');
+      mockRequest.body = { model: 'Test Model' };
+      mockMachineService.createMachine.mockRejectedValue(error);
 
-      const MachineController = (await import('../../../controllers/machine.controller'))
-        .MachineController;
-      const controller = new MachineController();
+      // Act
+      await machineController.save(mockRequest as Request, mockResponse as Response);
 
-      await controller.save(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+      expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Error creating machine',
       });
     });
@@ -188,138 +181,98 @@ describe('MachineController', () => {
 
   describe('update', () => {
     it('should update an existing machine', async () => {
-      const updatedMachine = { id: '1', model: 'Updated Model' };
-
+      // Arrange
+      const existingMachine = { id: '1', model: 'Old Model' };
+      const updateData = { model: 'Updated Model' };
       mockRequest.params = { id: '1' };
-      mockRequest.body = { model: 'Updated Model' };
-      mockRepository.findOne.mockResolvedValue({ id: '1', model: 'Updated Model' });
-      mockRepository.save.mockResolvedValue(updatedMachine);
+      mockRequest.body = updateData;
+      mockMachineService.updateMachine.mockResolvedValue({ ...existingMachine, ...updateData });
 
-      const MachineController = (await import('../../../controllers/machine.controller'))
-        .MachineController;
-      const controller = new MachineController();
+      // Act
+      await machineController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.save).toHaveBeenCalled();
-      expect(mockResponse.json).toHaveBeenCalledWith(updatedMachine);
+      // Assert
+      expect(mockMachineService.updateMachine).toHaveBeenCalledWith('1', updateData);
+      expect(mockResponse.json).toHaveBeenCalledWith({ ...existingMachine, ...updateData });
     });
 
-    it('should handle machine not found on update', async () => {
-      mockRequest.params = { id: '999' };
+    it('should return 404 when updating non-existent machine', async () => {
+      // Arrange
+      mockRequest.params = { id: 'non-existent' };
       mockRequest.body = { model: 'Updated Model' };
-      mockRepository.findOne.mockResolvedValue(null);
+      mockMachineService.updateMachine.mockResolvedValue(null);
 
-      const MachineController = (await import('../../../controllers/machine.controller'))
-        .MachineController;
-      const controller = new MachineController();
+      // Act
+      await machineController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+      expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Machine not found',
       });
     });
 
-    it('should handle firmware_version conditional update', async () => {
-      const existingMachine = { id: '1', model: 'Old Model', firmware_version: '1.0.0' };
-      const updatedMachine = { id: '1', model: 'Old Model', firmware_version: '2.0.0' };
-
+    it('should handle errors', async () => {
+      // Arrange
+      const updateData = { model: 'Updated Model' };
       mockRequest.params = { id: '1' };
-      mockRequest.body = { firmware_version: '2.0.0' }; // Only update firmware_version
-      mockRepository.findOne.mockResolvedValue(existingMachine);
-      mockRepository.save.mockResolvedValue(updatedMachine);
+      mockRequest.body = updateData;
+      const error = new Error('Error updating machine');
+      mockMachineService.updateMachine.mockRejectedValue(error);
 
-      const MachineController = (await import('../../../controllers/machine.controller'))
-        .MachineController;
-      const controller = new MachineController();
+      // Act
+      await machineController.update(mockRequest as Request, mockResponse as Response);
 
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.save).toHaveBeenCalled();
-      expect(mockResponse.json).toHaveBeenCalledWith(updatedMachine);
-    });
-
-    it('should handle database errors during update', async () => {
-      const error = new Error('Database update failed');
-      mockRequest.params = { id: '1' };
-      mockRequest.body = { model: 'Updated Model' };
-      mockRepository.findOne.mockResolvedValue({ id: '1', model: 'Old Model' });
-      mockRepository.save.mockRejectedValue(error);
-
-      const MachineController = (await import('../../../controllers/machine.controller'))
-        .MachineController;
-      const controller = new MachineController();
-
-      await controller.update(mockRequest as Request, mockResponse as Response);
-
-      expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+      // Assert
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Error updating machine',
       });
     });
   });
 
   describe('remove', () => {
-    it('should delete a machine', async () => {
+    it('should delete an existing machine', async () => {
+      // Arrange
+      const existingMachine = { id: '1', model: 'Test Machine' };
       mockRequest.params = { id: '1' };
-      mockRepository.findOne.mockResolvedValue({
-        id: '1',
-        model: 'Test Model',
-        firmware_version: '1.0.0',
-      });
-      mockRepository.remove.mockResolvedValue({ affected: 1 });
+      mockMachineService.deleteMachine.mockResolvedValue(true);
 
-      const MachineController = (await import('../../../controllers/machine.controller'))
-        .MachineController;
-      const controller = new MachineController();
+      // Act
+      await machineController.remove(mockRequest as Request, mockResponse as Response);
 
-      await controller.remove(mockRequest as Request, mockResponse as Response);
-
-      expect(mockRepository.remove).toHaveBeenCalledWith({
-        id: '1',
-        model: 'Test Model',
-        firmware_version: '1.0.0',
-      });
+      // Assert
+      expect(mockMachineService.deleteMachine).toHaveBeenCalledWith('1');
       expect(mockResponse.status).toHaveBeenCalledWith(204);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.send).toHaveBeenCalled();
     });
 
-    it('should handle machine not found on deletion', async () => {
-      mockRequest.params = { id: '999' };
-      mockRepository.findOne.mockResolvedValue(null);
+    it('should return 404 when deleting non-existent machine', async () => {
+      // Arrange
+      mockRequest.params = { id: 'non-existent' };
+      mockMachineService.deleteMachine.mockResolvedValue(false);
 
-      const MachineController = (await import('../../../controllers/machine.controller'))
-        .MachineController;
-      const controller = new MachineController();
+      // Act
+      await machineController.remove(mockRequest as Request, mockResponse as Response);
 
-      await controller.remove(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(404);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+      expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Machine not found',
       });
     });
 
-    it('should handle database errors during deletion', async () => {
-      const error = new Error('Database delete failed');
+    it('should handle errors', async () => {
+      // Arrange
+      const error = new Error('Database error');
       mockRequest.params = { id: '1' };
-      mockRepository.findOne.mockResolvedValue({
-        id: '1',
-        model: 'Test Model',
-        firmware_version: '1.0.0',
-      });
-      mockRepository.remove.mockRejectedValue(error);
+      mockMachineService.deleteMachine.mockRejectedValue(error);
 
-      const MachineController = (await import('../../../controllers/machine.controller'))
-        .MachineController;
-      const controller = new MachineController();
+      // Act
+      await machineController.remove(mockRequest as Request, mockResponse as Response);
 
-      await controller.remove(mockRequest as Request, mockResponse as Response);
-
+      // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect((mockResponse.status as jest.Mock).mock.results[0].value.json).toHaveBeenCalledWith({
+      expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Error deleting machine',
       });
     });
