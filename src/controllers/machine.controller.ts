@@ -21,6 +21,9 @@ export class MachineController {
 
   async one(request: Request, response: Response) {
     try {
+      if (typeof request.params.id !== 'string') {
+        return response.status(400).json({ message: 'Invalid machine ID. ID must be a string.' });
+      }
       const machine = await this.machineService.getMachineById(request.params.id);
 
       if (!machine) {
@@ -54,6 +57,9 @@ export class MachineController {
 
   async update(request: Request, response: Response) {
     try {
+      if (typeof request.params.id !== 'string') {
+        return response.status(400).json({ message: 'Invalid machine ID. ID must be a string.' });
+      }
       const updateData: MachineUpdateData = {
         model: request.body.model,
         firmware_version: request.body.firmware_version,
@@ -74,6 +80,9 @@ export class MachineController {
 
   async remove(request: Request, response: Response) {
     try {
+      if (typeof request.params.id !== 'string') {
+        return response.status(400).json({ message: 'Invalid machine ID. ID must be a string.' });
+      }
       const success = await this.machineService.deleteMachine(request.params.id);
       response.status(204).send();
 

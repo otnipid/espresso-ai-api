@@ -115,6 +115,7 @@ describe('GrinderController', () => {
         updated_at: new Date('2023-01-01'),
         shots: [],
       };
+      mockRequest.params = { id: '1' };
 
       mockGrinderService.getGrinderById.mockResolvedValue(mockGrinder);
 
@@ -169,6 +170,7 @@ describe('GrinderController', () => {
         updated_at: new Date('2023-01-01'),
         shots: [],
       };
+      mockRequest.params = { id: '1' };
       mockRequest.body = {
         model: 'Baratza Sette 270Wi',
         manufacturer: 'Baratza',
@@ -191,6 +193,7 @@ describe('GrinderController', () => {
       // Arrange
       mockGrinderService.createGrinder.mockRejectedValue(new Error('Grinder model is required'));
 
+      mockRequest.params = { id: '1' };
       mockRequest.body = {
         manufacturer: 'Baratza',
         burrType: 'Conical',
@@ -211,6 +214,7 @@ describe('GrinderController', () => {
       // Arrange
       mockGrinderService.createGrinder.mockRejectedValue(new Error('Grinder model is required'));
 
+      mockRequest.params = { id: '1' };
       mockRequest.body = {
         manufacturer: 'Baratza',
         burrType: 'Conical',
@@ -232,6 +236,7 @@ describe('GrinderController', () => {
       const error = new Error('Database error');
       mockGrinderService.createGrinder.mockRejectedValue(error);
 
+      mockRequest.params = { id: '1' };
       mockRequest.body = {
         model: 'Baratza Sette 270Wi',
         manufacturer: 'Baratza',

@@ -113,6 +113,7 @@ describe('UserController', () => {
         updatedShots: [],
       };
 
+      mockRequest.params = { id: '550e8400-e29b-41d4-a716-446655440000' };
       mockUserService.getUserById.mockResolvedValue(mockUser);
 
       // Act
@@ -165,6 +166,8 @@ describe('UserController', () => {
         createdShots: [],
         updatedShots: [],
       };
+      
+      mockRequest.params = { id: '550e8400-e29b-41d4-a716-446655440000' };
       mockRequest.body = {
         name: 'John Doe',
         email: 'john@example.com',
@@ -184,6 +187,7 @@ describe('UserController', () => {
       // Arrange
       mockUserService.createUser.mockRejectedValue(new Error('User name is required'));
 
+      mockRequest.params = { id: '550e8400-e29b-41d4-a716-446655440000' };
       mockRequest.body = {
         email: 'john@example.com',
         // name is missing
@@ -203,6 +207,7 @@ describe('UserController', () => {
       // Arrange
       mockUserService.createUser.mockRejectedValue(new Error('User name is required'));
 
+      mockRequest.params = { id: '550e8400-e29b-41d4-a716-446655440000' };
       mockRequest.body = {
         email: 'john@example.com',
         name: '   ', // only whitespace
@@ -223,6 +228,7 @@ describe('UserController', () => {
       const error = new Error('Database error');
       mockUserService.createUser.mockRejectedValue(error);
 
+      mockRequest.params = { id: '550e8400-e29b-41d4-a716-446655440000' };
       mockRequest.body = {
         name: 'John Doe',
         email: 'john@example.com',

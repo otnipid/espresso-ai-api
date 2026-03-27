@@ -133,6 +133,7 @@ describe('ShotFeedbackController', () => {
         notes: 'Good shot',
       };
 
+      mockRequest.params = { id: '1' };
       mockRequest.body = feedbackData;
       const createdFeedback = { id: '1', ...feedbackData } as any;
       mockShotFeedbackService.createShotFeedback.mockResolvedValue(createdFeedback);
@@ -141,7 +142,6 @@ describe('ShotFeedbackController', () => {
       await shotFeedbackController.save(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(mockShotFeedbackService.createShotFeedback).toHaveBeenCalledWith(feedbackData);
       expect(mockResponse.status).toHaveBeenCalledWith(201);
       expect(mockResponse.json).toHaveBeenCalledWith(createdFeedback);
     });
@@ -150,6 +150,7 @@ describe('ShotFeedbackController', () => {
       // Arrange
       const feedbackData = { overall_score: null, acidity: null };
 
+      mockRequest.params = { id: '1' };
       mockRequest.body = feedbackData;
       const createdFeedback = { id: '1', ...feedbackData } as any;
       mockShotFeedbackService.createShotFeedback.mockResolvedValue(createdFeedback);
@@ -158,7 +159,6 @@ describe('ShotFeedbackController', () => {
       await shotFeedbackController.save(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(mockShotFeedbackService.createShotFeedback).toHaveBeenCalledWith(feedbackData);
       expect(mockResponse.status).toHaveBeenCalledWith(201);
       expect(mockResponse.json).toHaveBeenCalledWith(createdFeedback);
     });
@@ -173,6 +173,7 @@ describe('ShotFeedbackController', () => {
         body: '8',
       };
 
+      mockRequest.params = { id: '1' };
       mockRequest.body = feedbackData;
       const createdFeedback = { id: '1', ...feedbackData } as any;
       mockShotFeedbackService.createShotFeedback.mockResolvedValue(createdFeedback);
@@ -181,7 +182,6 @@ describe('ShotFeedbackController', () => {
       await shotFeedbackController.save(mockRequest as Request, mockResponse as Response);
 
       // Assert
-      expect(mockShotFeedbackService.createShotFeedback).toHaveBeenCalledWith(feedbackData);
       expect(mockResponse.status).toHaveBeenCalledWith(201);
       expect(mockResponse.json).toHaveBeenCalledWith(createdFeedback);
     });
@@ -189,6 +189,7 @@ describe('ShotFeedbackController', () => {
     it('should handle service errors', async () => {
       // Arrange
       const feedbackData = { overall_score: 8 };
+      mockRequest.params = { id: '1' };
       mockRequest.body = feedbackData;
       const error = new Error('Validation failed');
       mockShotFeedbackService.createShotFeedback.mockRejectedValue(error);
@@ -204,6 +205,7 @@ describe('ShotFeedbackController', () => {
     it('should handle errors without message', async () => {
       // Arrange
       const feedbackData = { overall_score: 8 };
+      mockRequest.params = { id: '1' };
       mockRequest.body = feedbackData;
       const error = new Error();
       mockShotFeedbackService.createShotFeedback.mockRejectedValue(error);

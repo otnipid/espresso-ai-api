@@ -21,6 +21,9 @@ export class GrinderController {
 
   async one(request: Request, response: Response) {
     try {
+      if (typeof request.params.id !== 'string') {
+        return response.status(400).json({ message: 'Invalid grinder ID. ID must be a string.' });
+      }
       const grinder = await this.grinderService.getGrinderById(request.params.id);
       response.status(200).json(grinder);
     } catch (error) {
@@ -34,6 +37,9 @@ export class GrinderController {
 
   async save(request: Request, response: Response) {
     try {
+      if (typeof request.params.id !== 'string') {
+        return response.status(400).json({ message: 'Invalid grinder ID. ID must be a string.' });
+      }
       const { model, manufacturer, burrType, burrInstallDate, serialNumber } = request.body;
 
       const result = await this.grinderService.createGrinder({
@@ -55,6 +61,9 @@ export class GrinderController {
 
   async update(request: Request, response: Response) {
     try {
+      if (typeof request.params.id !== 'string') {
+        return response.status(400).json({ message: 'Invalid grinder ID. ID must be a string.' });
+      }
       const { model, manufacturer, burrType, burrInstallDate, serialNumber } = request.body;
 
       const result = await this.grinderService.updateGrinder(request.params.id, {
@@ -79,6 +88,9 @@ export class GrinderController {
 
   async remove(request: Request, response: Response) {
     try {
+      if (typeof request.params.id !== 'string') {
+        return response.status(400).json({ message: 'Invalid grinder ID. ID must be a string.' });
+      }
       await this.grinderService.deleteGrinder(request.params.id);
       response.status(204).send();
     } catch (error) {

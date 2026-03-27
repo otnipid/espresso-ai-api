@@ -149,12 +149,20 @@ export const validateBeanBatchExists = async (req: Request, res: Response, next:
  */
 export const validateShotExists = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    
     const shotId = req.validated?.params?.id || req.params?.id;
 
     if (!shotId) {
       return res.status(400).json({
         error: 'Validation failed',
         message: 'Shot ID is required',
+      });
+    }
+
+    if (typeof shotId !== 'string') {
+      return res.status(400).json({
+        error: 'Validation failed',
+        message: 'Invalid shot ID. ID must be a string.',
       });
     }
 
