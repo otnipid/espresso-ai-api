@@ -43,6 +43,7 @@
     "@babel/preset-env": "^7.29.0",
     "@babel/preset-typescript": "^7.28.5",
     "@jest/globals": "^30.2.0",
+    "@testcontainers/postgresql": "^10.15.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jest": "^30.0.0",
