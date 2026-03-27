@@ -35,9 +35,6 @@ export class ShotController {
 
   async one(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid shot ID. ID must be a string.');
-      }
       const shot = await this.shotService.getShotById(request.params.id);
 
       if (!shot) {
@@ -79,9 +76,6 @@ export class ShotController {
 
   async update(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid shot ID. ID must be a string.');
-      }
       // Extract and validate update data from request body
       const updateData: UpdateShotData = {
         userId: request.body.userId,
@@ -107,9 +101,6 @@ export class ShotController {
 
   async remove(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid shot ID. ID must be a string.');
-      }
       const success = await this.shotService.hardDeleteShot(request.params.id);
 
       if (!success) {

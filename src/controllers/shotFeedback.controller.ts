@@ -21,9 +21,6 @@ export class ShotFeedbackController {
 
   async one(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid shot feedback ID. ID must be a string.');
-      }
       const feedback = await this.shotFeedbackService.getShotFeedbackById(request.params.id);
 
       if (!feedback) {
@@ -42,9 +39,6 @@ export class ShotFeedbackController {
 
   async save(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid shot ID. ID must be a string.');
-      }
       const { overall_score, acidity, sweetness, bitterness, body, extraction_assessment, notes } =
         request.body;
 
@@ -70,9 +64,6 @@ export class ShotFeedbackController {
 
   async update(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid shot feedback ID. ID must be a string.');
-      }
       const { overall_score, acidity, sweetness, bitterness, body, extraction_assessment, notes } =
         request.body;
 
@@ -97,9 +88,6 @@ export class ShotFeedbackController {
 
   async remove(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid shot feedback ID. ID must be a string.');
-      }
       await this.shotFeedbackService.deleteShotFeedback(request.params.id);
       response.status(204).send();
     } catch (error) {

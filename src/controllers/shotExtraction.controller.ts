@@ -22,9 +22,6 @@ export class ShotExtractionController {
 
   async one(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid shot extraction ID. ID must be a string.');
-      }
       const extraction = await this.shotExtractionService.getShotExtractionById(request.params.id);
       response.status(200).json(extraction);
     } catch (error) {
@@ -38,9 +35,6 @@ export class ShotExtractionController {
 
   async save(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid shot ID. ID must be a string.');
-      }
       const {
         shot_id,
         yield_grams,
@@ -72,9 +66,6 @@ export class ShotExtractionController {
 
   async update(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid shot extraction ID. ID must be a string.');
-      }
       const {
         yield_grams,
         shot_time_seconds,
@@ -108,9 +99,6 @@ export class ShotExtractionController {
 
   async remove(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid shot extraction ID. ID must be a string.');
-      }
       await this.shotExtractionService.deleteShotExtraction(request.params.id);
       response.status(204).send();
     } catch (error) {

@@ -21,9 +21,6 @@ export class BeanController {
 
   async one(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid bean ID. ID must be a string.');
-      }
       const bean = await this.beanService.getBeanById(request.params.id);
 
       if (!bean) {
@@ -89,9 +86,6 @@ export class BeanController {
         density_category,
       } = request.body;
 
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid bean ID. ID must be a string.');
-      }
       const result = await this.beanService.updateBean(request.params.id, {
         name,
         roaster,
@@ -115,9 +109,6 @@ export class BeanController {
 
   async remove(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid bean ID. ID must be a string.');
-      }
       const success = await this.beanService.deleteBean(request.params.id);
       if (!success) {
         return response.status(404).json({ message: 'Bean not found' });

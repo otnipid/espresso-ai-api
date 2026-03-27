@@ -21,9 +21,6 @@ export class UserController {
 
   async one(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid user ID. ID must be a string.');
-      }
       const user = await this.userService.getUserById(request.params.id);
       response.status(200).json(user);
     } catch (error) {
@@ -55,9 +52,6 @@ export class UserController {
 
   async update(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid user ID. ID must be a string.');
-      }
       const { name, email } = request.body;
 
       const result = await this.userService.updateUser(request.params.id, {
@@ -79,9 +73,6 @@ export class UserController {
 
   async remove(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid user ID. ID must be a string.');
-      }
       await this.userService.deleteUser(request.params.id);
       response.status(204).send();
     } catch (error) {

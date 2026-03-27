@@ -21,9 +21,6 @@ export class BeanBatchController {
 
   async one(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid bean batch ID. ID must be a string.');
-      }
       const batch = await this.beanBatchService.getBeanBatchById(request.params.id);
 
       if (!batch) {
@@ -65,9 +62,6 @@ export class BeanBatchController {
 
   async update(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid bean batch ID. ID must be a string.');
-      }
       const { roastDate, bagOpenDate, roastLevel, roastDegree } = request.body;
 
       const result = await this.beanBatchService.updateBeanBatch(request.params.id, {
@@ -88,9 +82,6 @@ export class BeanBatchController {
 
   async remove(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        throw new Error('Invalid bean batch ID. ID must be a string.');
-      }
       const success = await this.beanBatchService.deleteBeanBatch(request.params.id);
       if (!success) {
         return response.status(404).json({ message: 'Bean batch not found' });
