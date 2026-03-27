@@ -134,10 +134,9 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
-
-      - name: Rebuild native modules
-        run: npm rebuild
+        run: |
+          rm -rf node_modules/ package-lock.json
+          npm install
 
       - name: Set up test environment
         run: |
@@ -221,10 +220,12 @@ jobs:
         run: npm ci
 
       - name: Rebuild native modules
-        run: npm rebuild
+        run: |
+          rm -rf node_modules/.cache
+          npm rebuild
 
       - name: Run security audit
-        run: npm audit --audit-level moderate
+        run: npm audit --audit-level high
 
       - name: Run security scan
         run: |
