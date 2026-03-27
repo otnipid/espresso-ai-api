@@ -21,7 +21,7 @@ export const AppDataSource = new DataSource({
   synchronize: true,
   logging: false,
   ssl: {
-    rejectUnauthorized: false
+    rejectUnauthorized: false,
   },
   entities: [
     Bean,
