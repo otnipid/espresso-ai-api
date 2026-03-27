@@ -46,8 +46,8 @@ export class PostgresContainerManager {
     try {
       this.container = await new PostgreSqlContainer('postgres:15')
         .withDatabase('espresso_ml')
-        .withUsername('postgres')
-        .withPassword('postgres')
+        .withUsername(process.env.DB_USERNAME || 'postgres')
+        .withPassword(process.env.DB_PASSWORD || 'postgres')
         .withExposedPorts(5432)
         .withStartupTimeout(120000) // 2 minutes startup timeout
         .start();
