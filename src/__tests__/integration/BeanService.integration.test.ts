@@ -151,10 +151,14 @@ describe('BeanService Integration Tests', () => {
       // Assert: Verify all beans are returned with relations
       expect(result).toHaveLength(2);
       expect(result[0].id).toBeDefined();
-      expect(result[0].name).toBe('Bean 1');
-      expect(result[1].name).toBe('Bean 2');
+      expect(result[1].id).toBeDefined();
+      // Verify beans have expected names (order may vary)
+      const beanNames = result.map(bean => bean.name);
+      expect(beanNames).toContain('Bean 1');
+      expect(beanNames).toContain('Bean 2');
       // Verify relations are loaded (should be empty arrays since no bean batches exist)
       expect(Array.isArray(result[0].beanBatches)).toBe(true);
+      expect(Array.isArray(result[1].beanBatches)).toBe(true);
     });
 
     it('should return empty array when no beans exist', async () => {
