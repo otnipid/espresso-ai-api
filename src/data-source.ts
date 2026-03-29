@@ -4,6 +4,8 @@ import { Bean } from './entities/Bean';
 import { BeanBatch } from './entities/BeanBatch';
 import { Machine } from './entities/Machine';
 import { Shot } from './entities/Shot';
+import { User } from './entities/User';
+import { Grinder } from './entities/Grinder';
 import { ShotPreparation } from './entities/ShotPreparation';
 import { ShotExtraction } from './entities/ShotExtraction';
 import { ShotEnvironment } from './entities/shotEnvironment';
@@ -18,11 +20,16 @@ export const AppDataSource = new DataSource({
   database: process.env.DB_NAME || 'espresso_ml',
   synchronize: true,
   logging: false,
+  ssl: {
+    rejectUnauthorized: false,
+  },
   entities: [
     Bean,
     BeanBatch,
     Machine,
     Shot,
+    User,
+    Grinder,
     ShotPreparation,
     ShotExtraction,
     ShotEnvironment,
