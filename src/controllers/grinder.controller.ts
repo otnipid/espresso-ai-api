@@ -37,9 +37,6 @@ export class GrinderController {
 
   async save(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        return response.status(400).json({ message: 'Invalid grinder ID. ID must be a string.' });
-      }
       const { model, manufacturer, burrType, burrInstallDate, serialNumber } = request.body;
 
       const result = await this.grinderService.createGrinder({

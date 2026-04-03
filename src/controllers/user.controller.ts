@@ -37,9 +37,6 @@ export class UserController {
 
   async save(request: Request, response: Response) {
     try {
-      if (typeof request.params.id !== 'string') {
-        return response.status(400).json({ message: 'Invalid user ID. ID must be a string.' });
-      }
       const { name, email } = request.body;
 
       const result = await this.userService.createUser({
