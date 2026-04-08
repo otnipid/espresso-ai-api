@@ -60,7 +60,7 @@ describe('ShotPreparationService Integration Tests', () => {
       const preparationData = {
         shot_id: savedShot.id,
         dose_grams: 18.5,
-        grind_setting: 15,
+        burr_setting: 15,
         basket_type: 'bottomless',
         basket_size_grams: 18,
         distribution_method: 'WDT',
@@ -76,7 +76,7 @@ describe('ShotPreparationService Integration Tests', () => {
       expect(result.shot_id).toBeDefined();
       expect(result.shot_id).toBe(savedShot.id);
       expect(result.dose_grams).toBe(18.5);
-      expect(result.grind_setting).toBe(15);
+      expect(result.burr_setting).toBe(15);
       expect(result.basket_type).toBe('bottomless');
       expect(result.basket_size_grams).toBe(18);
       expect(result.distribution_method).toBe('WDT');
@@ -95,7 +95,7 @@ describe('ShotPreparationService Integration Tests', () => {
       const preparationData = {
         shot_id: savedShot.id,
         dose_grams: null,
-        grind_setting: null,
+        burr_setting: null,
         basket_type: null,
         basket_size_grams: null,
         distribution_method: null,
@@ -110,7 +110,7 @@ describe('ShotPreparationService Integration Tests', () => {
       expect(result).toBeDefined();
       expect(result.shot_id).toBeDefined();
       expect(result.dose_grams).toBeNull();
-      expect(result.grind_setting).toBeNull();
+      expect(result.burr_setting).toBeNull();
       expect(result.basket_type).toBeNull();
       expect(result.basket_size_grams).toBeNull();
       expect(result.distribution_method).toBeNull();
@@ -129,7 +129,7 @@ describe('ShotPreparationService Integration Tests', () => {
       const preparationData = {
         shot_id: savedShot.id,
         dose_grams: '18.5', // String that should be converted to number
-        grind_setting: '15.0', // String that should be converted to number
+        burr_setting: '15.0', // String that should be converted to number
         basket_type: 'bottomless',
         basket_size_grams: '18', // String that should be converted to number
         distribution_method: 'WDT',
@@ -145,7 +145,7 @@ describe('ShotPreparationService Integration Tests', () => {
       expect(result.shot_id).toBeDefined();
       expect(result.shot_id).toBe(savedShot.id);
       expect(result.dose_grams).toBe(18.5); // Service should convert string to number
-      expect(result.grind_setting).toBe(15.0); // Service should convert string to number
+      expect(result.burr_setting).toBe(15.0); // Service should convert string to number
       expect(result.basket_size_grams).toBe(18); // Service should convert string to number
       expect(result.basket_type).toBe('bottomless');
       expect(result.distribution_method).toBe('WDT');
@@ -158,7 +158,7 @@ describe('ShotPreparationService Integration Tests', () => {
       const preparationData = {
         shot_id: '550e8400-e29b-41d4-a716-446655440001', // Valid UUID format
         dose_grams: 18.5,
-        grind_setting: 15,
+        burr_setting: 15,
         basket_type: 'bottomless',
         basket_size_grams: 18,
         distribution_method: 'WDT',
@@ -185,7 +185,7 @@ describe('ShotPreparationService Integration Tests', () => {
       const preparation = await shotPreparationService.createShotPreparation({
         shot_id: savedShot.id,
         dose_grams: 18.5,
-        grind_setting: 15,
+        burr_setting: 15,
         basket_type: 'bottomless',
         basket_size_grams: 18,
         distribution_method: 'WDT',
@@ -228,7 +228,7 @@ describe('ShotPreparationService Integration Tests', () => {
       const preparation1 = await shotPreparationService.createShotPreparation({
         shot_id: savedShot1.id,
         dose_grams: 18.5,
-        grind_setting: 15,
+        burr_setting: 15,
         basket_type: 'bottomless',
         basket_size_grams: 18,
         distribution_method: 'WDT',
@@ -239,7 +239,7 @@ describe('ShotPreparationService Integration Tests', () => {
       const preparation2 = await shotPreparationService.createShotPreparation({
         shot_id: savedShot2.id,
         dose_grams: 19.0,
-        grind_setting: 14,
+        burr_setting: 14,
         basket_type: 'bottomless',
         basket_size_grams: 18,
         distribution_method: 'WDT',
@@ -286,7 +286,7 @@ describe('ShotPreparationService Integration Tests', () => {
       const preparation = await shotPreparationService.createShotPreparation({
         shot_id: savedShot.id,
         dose_grams: 18.5,
-        grind_setting: 15,
+        burr_setting: 15,
         basket_type: 'bottomless',
         basket_size_grams: 18,
         distribution_method: 'WDT',
@@ -296,7 +296,7 @@ describe('ShotPreparationService Integration Tests', () => {
 
       const updateData = {
         dose_grams: 19.0,
-        grind_setting: 14,
+        burr_setting: 14,
         basket_type: 'portafilter',
       };
 
@@ -310,7 +310,7 @@ describe('ShotPreparationService Integration Tests', () => {
       expect(result).toBeDefined();
       expect(result.shot_id).toBe(preparation.shot_id);
       expect(result.dose_grams).toBe(19.0);
-      expect(result.grind_setting).toBe(14);
+      expect(result.burr_setting).toBe(14);
       expect(result.basket_type).toBe('portafilter');
       expect(result.distribution_method).toBe('WDT'); // Should remain unchanged
       expect(result.tamp_type).toBe('flat'); // Should remain unchanged
@@ -343,7 +343,7 @@ describe('ShotPreparationService Integration Tests', () => {
       const preparation = await shotPreparationService.createShotPreparation({
         shot_id: savedShot.id,
         dose_grams: 18.5,
-        grind_setting: 15,
+        burr_setting: 15,
         basket_type: 'bottomless',
         basket_size_grams: 18,
         distribution_method: 'WDT',
