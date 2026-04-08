@@ -15,7 +15,7 @@ const mockShotData = {
 const mockPreparationData = {
   shot_id: '550e8400-e29b-41d4-a716-446655440002',
   dose_grams: 18.5,
-  grind_setting: 15,
+  burr_setting: 15,
   basket_type: 'Portafilter',
   basket_size_grams: 18,
   distribution_method: 'WDT',
@@ -64,13 +64,13 @@ describe('ShotPreparationService', () => {
         {
           shot_id: '1',
           dose_grams: 18.5,
-          grind_setting: 15,
+          burr_setting: 15,
           shot: mockShotData,
         },
         {
           shot_id: '2',
           dose_grams: 18.0,
-          grind_setting: 14,
+          burr_setting: 14,
           shot: mockShotData,
         },
       ];
@@ -105,7 +105,7 @@ describe('ShotPreparationService', () => {
       const expectedPreparation = {
         shot_id: shotId,
         dose_grams: 18.5,
-        grind_setting: 15,
+        burr_setting: 15,
         shot: mockShotData,
       };
       mockPreparationRepository.findOne.mockResolvedValue(expectedPreparation);
@@ -168,7 +168,7 @@ describe('ShotPreparationService', () => {
       expect(mockPreparationRepository.create).toHaveBeenCalledWith({
         shot: mockShot,
         dose_grams: 18.5,
-        grind_setting: 15,
+        burr_setting: 15,
         basket_type: 'Portafilter',
         basket_size_grams: 18,
         distribution_method: 'WDT',
@@ -208,7 +208,7 @@ describe('ShotPreparationService', () => {
       const preparationDataWithStrings = {
         ...mockPreparationData,
         dose_grams: '18.5', // String that should be converted to number
-        grind_setting: '15', // String that should be converted to number
+        burr_setting: '15', // String that should be converted to number
         basket_size_grams: '18', // String that should be converted to number
       };
 
@@ -223,7 +223,7 @@ describe('ShotPreparationService', () => {
       expect(mockPreparationRepository.create).toHaveBeenCalledWith({
         shot: mockShot,
         dose_grams: 18.5, // Should be converted to number
-        grind_setting: 15, // Should be converted to number
+        burr_setting: 15, // Should be converted to number
         basket_type: 'Portafilter',
         basket_size_grams: 18, // Should be converted to number
         distribution_method: 'WDT',
@@ -239,7 +239,7 @@ describe('ShotPreparationService', () => {
       const preparationDataWithInvalidNumbers = {
         ...mockPreparationData,
         dose_grams: 'invalid-number', // Invalid string that can't be parsed
-        grind_setting: 'invalid-number', // Invalid string that can't be parsed
+        burr_setting: 'invalid-number', // Invalid string that can't be parsed
         basket_size_grams: 'invalid-number', // Invalid string that can't be parsed
       };
 
@@ -256,7 +256,7 @@ describe('ShotPreparationService', () => {
       expect(mockPreparationRepository.create).toHaveBeenCalledWith({
         shot: mockShot,
         dose_grams: null, // Should be converted to null
-        grind_setting: null, // Should be converted to null
+        burr_setting: null, // Should be converted to null
         basket_type: 'Portafilter',
         basket_size_grams: null, // Should be converted to null
         distribution_method: 'WDT',
@@ -287,7 +287,7 @@ describe('ShotPreparationService', () => {
       const existingPreparation = {
         shot_id: shotId,
         dose_grams: 18.5,
-        grind_setting: 15,
+        burr_setting: 15,
         basket_type: 'Portafilter',
         basket_size_grams: 18,
         distribution_method: 'WDT',
@@ -296,7 +296,7 @@ describe('ShotPreparationService', () => {
       };
       const updateData = {
         dose_grams: 18.0,
-        grind_setting: 14,
+        burr_setting: 14,
       };
       const updatedPreparation = { ...existingPreparation, ...updateData };
 
@@ -332,7 +332,7 @@ describe('ShotPreparationService', () => {
       const existingPreparation = {
         shot_id: shotId,
         dose_grams: 18.5,
-        grind_setting: 15,
+        burr_setting: 15,
         basket_type: 'Portafilter',
         basket_size_grams: 18,
         distribution_method: 'WDT',
@@ -350,7 +350,7 @@ describe('ShotPreparationService', () => {
 
       // Assert
       expect(result.dose_grams).toBe(18.0);
-      expect(result.grind_setting).toBe(15); // Should remain unchanged
+      expect(result.burr_setting).toBe(15); // Should remain unchanged
       expect(result.basket_type).toBe('Portafilter'); // Should remain unchanged
     });
 
@@ -374,7 +374,7 @@ describe('ShotPreparationService', () => {
       const existingPreparation = {
         shot_id: shotId,
         dose_grams: 18.5,
-        grind_setting: 15,
+        burr_setting: 15,
         basket_size_grams: 18,
         basket_type: 'Portafilter',
         distribution_method: 'WDT',
@@ -384,7 +384,7 @@ describe('ShotPreparationService', () => {
 
       const updateDataWithStringNumbers = {
         dose_grams: '20.5', // String that should be converted
-        grind_setting: '12', // String that should be converted
+        burr_setting: '12', // String that should be converted
         basket_size_grams: '20', // String that should be converted
       };
 
@@ -392,7 +392,7 @@ describe('ShotPreparationService', () => {
       mockPreparationRepository.save.mockResolvedValue({
         ...existingPreparation,
         dose_grams: 20.5,
-        grind_setting: 12,
+        burr_setting: 12,
         basket_size_grams: 20,
       });
 
@@ -404,7 +404,7 @@ describe('ShotPreparationService', () => {
 
       // Assert
       expect(result.dose_grams).toBe(20.5);
-      expect(result.grind_setting).toBe(12);
+      expect(result.burr_setting).toBe(12);
       expect(result.basket_size_grams).toBe(20);
     });
 
@@ -414,13 +414,13 @@ describe('ShotPreparationService', () => {
       const existingPreparation = {
         shot_id: shotId,
         dose_grams: 18.5,
-        grind_setting: 15,
+        burr_setting: 15,
         basket_size_grams: 18,
       };
 
       const updateDataWithInvalidNumbers = {
         dose_grams: 'invalid-number', // Should become null
-        grind_setting: 'invalid-number', // Should become null
+        burr_setting: 'invalid-number', // Should become null
         basket_size_grams: 'invalid-number', // Should become null
       };
 
@@ -428,7 +428,7 @@ describe('ShotPreparationService', () => {
       mockPreparationRepository.save.mockResolvedValue({
         ...existingPreparation,
         dose_grams: null,
-        grind_setting: null,
+        burr_setting: null,
         basket_size_grams: null,
       });
 
@@ -440,7 +440,7 @@ describe('ShotPreparationService', () => {
 
       // Assert
       expect(result.dose_grams).toBeNull();
-      expect(result.grind_setting).toBeNull();
+      expect(result.burr_setting).toBeNull();
       expect(result.basket_size_grams).toBeNull();
     });
 
@@ -450,7 +450,7 @@ describe('ShotPreparationService', () => {
       const existingPreparation = {
         shot_id: shotId,
         dose_grams: 18.5,
-        grind_setting: 15,
+        burr_setting: 15,
         basket_type: 'Portafilter',
         distribution_method: 'WDT',
         tamp_type: 'Leveler',
@@ -459,7 +459,7 @@ describe('ShotPreparationService', () => {
 
       const updateDataWithNulls = {
         dose_grams: null,
-        grind_setting: null,
+        burr_setting: null,
         basket_type: null,
         distribution_method: null,
         tamp_type: null,
@@ -480,7 +480,7 @@ describe('ShotPreparationService', () => {
 
       // Assert
       expect(result.dose_grams).toBeNull();
-      expect(result.grind_setting).toBeNull();
+      expect(result.burr_setting).toBeNull();
       expect(result.basket_type).toBeNull();
       expect(result.distribution_method).toBeNull();
       expect(result.tamp_type).toBeNull();
@@ -535,7 +535,7 @@ describe('ShotPreparationService', () => {
       const existingPreparation = {
         shot_id: shotId,
         dose_grams: 18.5,
-        grind_setting: 15,
+        burr_setting: 15,
         shot: mockShotData,
       };
       mockPreparationRepository.findOne.mockResolvedValue(existingPreparation);

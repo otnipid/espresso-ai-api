@@ -129,7 +129,7 @@ describe('ShotPreparationController', () => {
       // Arrange
       const preparationData = {
         dose_grams: 18.5,
-        grind_setting: 15.0,
+        burr_setting: 15.0,
         basket_type: 'bottomless',
         basket_size_grams: 18,
       };
@@ -156,7 +156,7 @@ describe('ShotPreparationController', () => {
       // Arrange
       const preparationData = {
         dose_grams: null,
-        grind_setting: null,
+        burr_setting: null,
         basket_type: null,
         basket_size_grams: null,
         distribution_method: null,
@@ -186,7 +186,7 @@ describe('ShotPreparationController', () => {
       // Arrange
       const preparationData = {
         dose_grams: '18.5',
-        grind_setting: '15.0',
+        burr_setting: '15.0',
         basket_size_grams: '18',
       };
 
@@ -196,7 +196,7 @@ describe('ShotPreparationController', () => {
       const createdPreparation = {
         shot_id: '1',
         dose_grams: 18.5,
-        grind_setting: 15.0,
+        burr_setting: 15.0,
         basket_size_grams: 18,
         shot: { id: '1' },
       } as any;
@@ -209,7 +209,7 @@ describe('ShotPreparationController', () => {
       expect(mockShotPreparationService.createShotPreparation).toHaveBeenCalledWith({
         shot_id: '1',
         dose_grams: '18.5',
-        grind_setting: '15.0',
+        burr_setting: '15.0',
         basket_size_grams: '18',
       });
       expect(mockResponse.status).toHaveBeenCalledWith(201);
@@ -256,7 +256,7 @@ describe('ShotPreparationController', () => {
       // Arrange
       const updateData = {
         dose_grams: 19.0,
-        grind_setting: 16.0,
+        burr_setting: 16.0,
         basket_type: 'portafilter',
       };
 
