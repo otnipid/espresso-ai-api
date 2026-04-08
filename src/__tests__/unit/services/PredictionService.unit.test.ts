@@ -56,7 +56,7 @@ describe('PredictionService', () => {
     };
 
     // Setup mock data source getRepository method
-    mockAppDataSource.getRepository = jest.fn().mockImplementation((entity) => {
+    mockAppDataSource.getRepository = jest.fn().mockImplementation(entity => {
       if (entity === Shot) return mockShotRepository;
       if (entity === ShotPreparation) return mockPrepRepository;
       if (entity === ShotExtraction) return mockExtractionRepository;
@@ -238,12 +238,9 @@ describe('PredictionService', () => {
 
       // Mock extractFeatures method
       jest.spyOn(predictionService, 'extractFeatures').mockResolvedValue(mockFeatures);
-      
+
       // Mock the private callPythonService method
-      const mockCallPythonService = jest.spyOn(
-        predictionService as any,
-        'callPythonService'
-      );
+      const mockCallPythonService = jest.spyOn(predictionService as any, 'callPythonService');
       mockCallPythonService.mockResolvedValue(mockPrediction);
 
       // Act
@@ -350,7 +347,7 @@ describe('PredictionService', () => {
 
       // Assert
       expect(consoleSpy).toHaveBeenCalledWith('Saving features to database:', 'test-shot-id');
-      
+
       // Cleanup
       consoleSpy.mockRestore();
     });
