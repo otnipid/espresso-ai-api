@@ -166,9 +166,10 @@ describe('ShotPreparationService', () => {
         where: { id: mockPreparationData.shot_id },
       });
       expect(mockPreparationRepository.create).toHaveBeenCalledWith({
-        shot: mockShot,
+        shot_id: mockShot.id,
         dose_grams: 18.5,
         burr_setting: 15,
+        side_hopper: 1,
         basket_type: 'Portafilter',
         basket_size_grams: 18,
         distribution_method: 'WDT',
@@ -221,9 +222,10 @@ describe('ShotPreparationService', () => {
 
       // Assert
       expect(mockPreparationRepository.create).toHaveBeenCalledWith({
-        shot: mockShot,
+        shot_id: mockShot.id,
         dose_grams: 18.5, // Should be converted to number
         burr_setting: 15, // Should be converted to number
+        side_hopper: 1, // Default value
         basket_type: 'Portafilter',
         basket_size_grams: 18, // Should be converted to number
         distribution_method: 'WDT',
@@ -254,9 +256,10 @@ describe('ShotPreparationService', () => {
 
       // Assert
       expect(mockPreparationRepository.create).toHaveBeenCalledWith({
-        shot: mockShot,
+        shot_id: mockShot.id,
         dose_grams: null, // Should be converted to null
         burr_setting: null, // Should be converted to null
+        side_hopper: 1, // Default value
         basket_type: 'Portafilter',
         basket_size_grams: null, // Should be converted to null
         distribution_method: 'WDT',
