@@ -13,6 +13,7 @@ import shotPreparationRoutes from './routes/shotPreparation.routes';
 import shotExtractionRoutes from './routes/shotExtraction.routes';
 import shotEnvironmentRoutes from './routes/shotEnvironment.routes';
 import shotFeedbackRoutes from './routes/shotFeedback.routes';
+import predictionRoutes from './routes/prediction.routes';
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -32,6 +33,7 @@ app.use('/api/preparations', shotPreparationRoutes);
 app.use('/api/extractions', shotExtractionRoutes);
 app.use('/api/environments', shotEnvironmentRoutes);
 app.use('/api/feedback', shotFeedbackRoutes);
+app.use('/api/predictions', predictionRoutes);
 
 // Global error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

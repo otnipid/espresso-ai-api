@@ -5,7 +5,8 @@ import { Shot } from '../entities/Shot';
 export interface ShotPreparationCreateData {
   shot_id: string;
   dose_grams?: number | string | null;
-  grind_setting?: number | string | null;
+  burr_setting?: number | string | null;
+  side_hopper?: number | string | null;
   basket_type?: string | null;
   basket_size_grams?: number | string | null;
   distribution_method?: string | null;
@@ -15,7 +16,8 @@ export interface ShotPreparationCreateData {
 
 export interface ShotPreparationUpdateData {
   dose_grams?: number | string | null;
-  grind_setting?: number | string | null;
+  burr_setting?: number | string | null;
+  side_hopper?: number | string | null;
   basket_type?: string | null;
   basket_size_grams?: number | string | null;
   distribution_method?: string | null;
@@ -113,15 +115,15 @@ export class ShotPreparationService {
         }
       }
 
-      let processedGrindSetting: number | null | undefined = undefined;
-      if (preparationData.grind_setting !== undefined && preparationData.grind_setting !== null) {
-        processedGrindSetting =
-          typeof preparationData.grind_setting === 'string'
-            ? parseFloat(preparationData.grind_setting)
-            : preparationData.grind_setting;
+      let processedBurrSetting: number | null | undefined = undefined;
+      if (preparationData.burr_setting !== undefined && preparationData.burr_setting !== null) {
+        processedBurrSetting =
+          typeof preparationData.burr_setting === 'string'
+            ? parseFloat(preparationData.burr_setting)
+            : preparationData.burr_setting;
 
-        if (isNaN(processedGrindSetting)) {
-          processedGrindSetting = null;
+        if (isNaN(processedBurrSetting)) {
+          processedBurrSetting = null;
         }
       }
 
@@ -141,9 +143,12 @@ export class ShotPreparationService {
       }
 
       const preparation = this.preparationRepository.create({
-        shot: shot,
+        shot_id: shot.id,
         dose_grams: processedDoseGrams || null,
-        grind_setting: processedGrindSetting || null,
+        burr_setting: processedBurrSetting || null,
+        side_hopper: typeof preparationData.side_hopper === 'string' ? 
+          parseInt(preparationData.side_hopper) || 1 : 
+          (preparationData.side_hopper || 1),
         basket_type: preparationData.basket_type?.trim() || null,
         basket_size_grams: processedBasketSizeGrams || null,
         distribution_method: preparationData.distribution_method?.trim() || null,
@@ -200,17 +205,17 @@ export class ShotPreparationService {
         }
       }
 
-      let processedGrindSetting: number | null | undefined = undefined;
-      if (updateData.grind_setting !== undefined) {
-        processedGrindSetting =
-          updateData.grind_setting === null
+      let processedBurrSetting: number | null | undefined = undefined;
+      if (updateData.burr_setting !== undefined) {
+        processedBurrSetting =
+          updateData.burr_setting === null
             ? null
-            : typeof updateData.grind_setting === 'string'
-              ? parseFloat(updateData.grind_setting)
-              : updateData.grind_setting;
+            : typeof updateData.burr_setting === 'string'
+              ? parseFloat(updateData.burr_setting)
+              : updateData.burr_setting;
 
-        if (processedGrindSetting !== null && isNaN(processedGrindSetting)) {
-          processedGrindSetting = null;
+        if (processedBurrSetting !== null && isNaN(processedBurrSetting)) {
+          processedBurrSetting = null;
         }
       }
 
@@ -232,8 +237,13 @@ export class ShotPreparationService {
       if (processedDoseGrams !== undefined) {
         existingPreparation.dose_grams = processedDoseGrams;
       }
-      if (processedGrindSetting !== undefined) {
-        existingPreparation.grind_setting = processedGrindSetting;
+      if (processedBurrSetting !== undefined) {
+        existingPreparation.burr_setting = processedBurrSetting;
+      }
+      if (updateData.side_hopper !== undefined) {
+        existingPreparation.side_hopper = typeof updateData.side_hopper === 'string' ? 
+          parseInt(updateData.side_hopper) || 1 : 
+          (updateData.side_hopper ?? 1);
       }
       if (updateData.basket_type !== undefined) {
         existingPreparation.basket_type = updateData.basket_type?.trim() || null;
