@@ -24,15 +24,15 @@ export interface PredictionFeatures {
   extractionTimeSeconds: number;
   yieldGrams: number;
   pressureBars: number;
-  
+
   // Engineered features
   extractionRatio: number;
-  
+
   // Equipment features
   machineModel: string;
   grinderModel: string;
   grinderManufacturer: string;
-  
+
   // Bean features
   beanName: string;
   beanRoaster: string;
@@ -69,7 +69,7 @@ export class PredictionService {
     // Get shot and related data
     const shot = await shotRepository.findOne({
       where: { id: shotId },
-      relations: ['beanBatch', 'machine', 'grinder', 'user']
+      relations: ['beanBatch', 'machine', 'grinder', 'user'],
     });
 
     if (!shot) {
@@ -77,26 +77,26 @@ export class PredictionService {
     }
 
     const preparation = await prepRepository.findOne({
-      where: { shot_id: shotId }
+      where: { shot_id: shotId },
     });
 
     const extraction = await extractionRepository.findOne({
-      where: { shot_id: shotId }
+      where: { shot_id: shotId },
     });
 
     const beanBatch = await batchRepository.findOne({
       where: { id: shot.beanBatch?.id },
-      relations: ['bean']
+      relations: ['bean'],
     });
 
     const bean = beanBatch?.bean;
 
     const machine = await machineRepository.findOne({
-      where: { id: shot.machine?.id }
+      where: { id: shot.machine?.id },
     });
 
     const grinder = await grinderRepository.findOne({
-      where: { id: shot.grinder?.id }
+      where: { id: shot.grinder?.id },
     });
 
     // Extract raw features
@@ -108,7 +108,7 @@ export class PredictionService {
       extractionTimeSeconds: extraction?.shot_time_seconds || 25,
       yieldGrams: extraction?.yield_grams || 36,
       pressureBars: extraction?.avg_pressure_bar || 9,
-      extractionRatio: (extraction?.yield_grams || 36) / (preparation?.dose_grams || 18)
+      extractionRatio: (extraction?.yield_grams || 36) / (preparation?.dose_grams || 18),
     };
 
     // Calculate roast age
@@ -118,7 +118,7 @@ export class PredictionService {
     const equipmentFeatures = {
       machineModel: machine?.model || 'unknown',
       grinderModel: grinder?.model || 'unknown',
-      grinderManufacturer: grinder?.manufacturer || 'unknown'
+      grinderManufacturer: grinder?.manufacturer || 'unknown',
     };
 
     // Bean features
@@ -126,14 +126,14 @@ export class PredictionService {
       beanName: bean?.name || 'unknown',
       beanRoaster: bean?.roaster || 'unknown',
       roastLevel: beanBatch?.roastLevel || 'medium',
-      roastAge
+      roastAge,
     };
 
     return {
       shotId,
       ...rawFeatures,
       ...equipmentFeatures,
-      ...beanFeatures
+      ...beanFeatures,
     };
   }
 
@@ -148,7 +148,7 @@ export class PredictionService {
     try {
       // Extract features
       const features = await this.extractFeatures(shotId);
-      
+
       // Call Python ML service
       const prediction = await this.callPythonService('predict_parameters', {
         shot_id: features.shotId,
@@ -164,13 +164,15 @@ export class PredictionService {
         grinder_manufacturer: features.grinderManufacturer,
         bean_name: features.beanName,
         bean_roaster: features.beanRoaster,
-        roast_level: features.roastLevel
+        roast_level: features.roastLevel,
       });
 
       return prediction;
     } catch (error) {
       console.error('Error predicting parameters:', error);
-      throw new Error(`Parameter prediction failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Parameter prediction failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -179,7 +181,7 @@ export class PredictionService {
       // Create temporary input file
       const inputFile = path.join(__dirname, `../../temp_input_${Date.now()}.json`);
       const outputFile = path.join(__dirname, `../../temp_output_${Date.now()}.json`);
-      
+
       fs.writeFileSync(inputFile, JSON.stringify({ method, data }));
 
       // Call Python script
@@ -194,11 +196,11 @@ export class PredictionService {
       if (fs.existsSync(outputFile)) {
         const output = fs.readFileSync(outputFile, 'utf8');
         const result = JSON.parse(output);
-        
+
         // Clean up temporary files
         fs.unlinkSync(inputFile);
         fs.unlinkSync(outputFile);
-        
+
         return result;
       } else {
         throw new Error('Python service did not produce output file');
@@ -220,14 +222,14 @@ export class PredictionService {
     // For now, return default importance
     return {
       doseGrams: 0.25,
-      grindSetting: 0.20,
+      grindSetting: 0.2,
       waterTempC: 0.15,
       extractionTimeSeconds: 0.15,
-      pressureBars: 0.10,
+      pressureBars: 0.1,
       machineModel: 0.05,
       grinderModel: 0.05,
       beanName: 0.03,
-      roastLevel: 0.02
+      roastLevel: 0.02,
     };
   }
 
@@ -239,7 +241,7 @@ export class PredictionService {
       meanSquaredError: 0.12,
       trainingDataPoints: 1000,
       lastTrainingDate: new Date(),
-      modelVersion: '1.0.0'
+      modelVersion: '1.0.0',
     };
   }
 }

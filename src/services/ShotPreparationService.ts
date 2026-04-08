@@ -146,9 +146,10 @@ export class ShotPreparationService {
         shot_id: shot.id,
         dose_grams: processedDoseGrams || null,
         burr_setting: processedBurrSetting || null,
-        side_hopper: typeof preparationData.side_hopper === 'string' ? 
-          parseInt(preparationData.side_hopper) || 1 : 
-          (preparationData.side_hopper || 1),
+        side_hopper:
+          typeof preparationData.side_hopper === 'string'
+            ? parseInt(preparationData.side_hopper) || 1
+            : preparationData.side_hopper || 1,
         basket_type: preparationData.basket_type?.trim() || null,
         basket_size_grams: processedBasketSizeGrams || null,
         distribution_method: preparationData.distribution_method?.trim() || null,
@@ -241,9 +242,10 @@ export class ShotPreparationService {
         existingPreparation.burr_setting = processedBurrSetting;
       }
       if (updateData.side_hopper !== undefined) {
-        existingPreparation.side_hopper = typeof updateData.side_hopper === 'string' ? 
-          parseInt(updateData.side_hopper) || 1 : 
-          (updateData.side_hopper ?? 1);
+        existingPreparation.side_hopper =
+          typeof updateData.side_hopper === 'string'
+            ? parseInt(updateData.side_hopper) || 1
+            : (updateData.side_hopper ?? 1);
       }
       if (updateData.basket_type !== undefined) {
         existingPreparation.basket_type = updateData.basket_type?.trim() || null;
