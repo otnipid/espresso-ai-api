@@ -49,7 +49,8 @@ export class ShotPreparationController {
       const {
         shot_id,
         dose_grams,
-        grind_setting,
+        burr_setting,
+        side_hopper,
         basket_type,
         basket_size_grams,
         distribution_method,
@@ -60,7 +61,8 @@ export class ShotPreparationController {
       const result = await this.shotPreparationService.createShotPreparation({
         shot_id,
         dose_grams,
-        grind_setting,
+        burr_setting,
+        side_hopper,
         basket_type,
         basket_size_grams,
         distribution_method,
@@ -86,7 +88,8 @@ export class ShotPreparationController {
       }
       const {
         dose_grams,
-        grind_setting,
+        burr_setting,
+        side_hopper,
         basket_type,
         basket_size_grams,
         distribution_method,
@@ -96,7 +99,8 @@ export class ShotPreparationController {
 
       const result = await this.shotPreparationService.updateShotPreparation(request.params.id, {
         dose_grams,
-        grind_setting,
+        burr_setting,
+        side_hopper,
         basket_type,
         basket_size_grams,
         distribution_method,

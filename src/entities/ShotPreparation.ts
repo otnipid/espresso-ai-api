@@ -11,7 +11,10 @@ export class ShotPreparation {
   shot!: Shot;
 
   @Column({ type: 'integer', nullable: true })
-  grind_setting?: number | null;
+  burr_setting?: number | null;
+
+  @Column({ type: 'integer', nullable: true })
+  side_hopper?: number | null;
 
   @Column({ type: 'numeric', precision: 5, scale: 2, nullable: true })
   dose_grams?: number | null;
