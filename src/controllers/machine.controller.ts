@@ -39,10 +39,11 @@ export class MachineController {
 
   async save(request: Request, response: Response) {
     try {
-      const { model, firmware_version } = request.body;
+      const { model, manufacturer, firmware_version } = request.body;
 
       const result = await this.machineService.createMachine({
         model,
+        manufacturer,
         firmware_version,
       });
       response.status(201).json(result);
@@ -62,6 +63,7 @@ export class MachineController {
       }
       const updateData: MachineUpdateData = {
         model: request.body.model,
+        manufacturer: request.body.manufacturer,
         firmware_version: request.body.firmware_version,
       };
 

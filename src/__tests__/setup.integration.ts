@@ -1,6 +1,5 @@
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { DataSource } from 'typeorm';
-import { Bean } from '../entities/Bean';
 import { BeanBatch } from '../entities/BeanBatch';
 import { Machine } from '../entities/Machine';
 import { Shot } from '../entities/Shot';
@@ -67,7 +66,6 @@ export class PostgresContainerManager {
       password: 'postgres',
       database: 'espresso_ml',
       entities: [
-        Bean,
         BeanBatch,
         Machine,
         Shot,
@@ -122,7 +120,6 @@ export class PostgresContainerManager {
         password: 'postgres',
         database: 'espresso_ml',
         entities: [
-          Bean,
           BeanBatch,
           Machine,
           Shot,

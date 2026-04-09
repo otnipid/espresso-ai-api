@@ -3,11 +3,13 @@ import { Machine } from '../entities/Machine';
 
 export interface MachineCreateData {
   model: string;
+  manufacturer?: string | null;
   firmware_version?: string | null;
 }
 
 export interface MachineUpdateData {
   model?: string;
+  manufacturer?: string | null;
   firmware_version?: string | null;
 }
 
@@ -81,8 +83,15 @@ export class MachineService {
         processedFirmwareVersion = machineData.firmware_version.trim() || null;
       }
 
+      // Process manufacturer
+      let processedManufacturer: string | null = null;
+      if (machineData.manufacturer !== undefined && machineData.manufacturer !== null) {
+        processedManufacturer = machineData.manufacturer.trim() || null;
+      }
+
       const machine = this.machineRepository.create({
         model: machineData.model.trim(),
+        manufacturer: processedManufacturer,
         firmware_version: processedFirmwareVersion,
       });
 
@@ -120,6 +129,11 @@ export class MachineService {
           throw new Error('Machine model cannot be empty');
         }
         existingMachine.model = updateData.model.trim();
+      }
+
+      if (updateData.manufacturer !== undefined) {
+        existingMachine.manufacturer =
+          updateData.manufacturer === null ? null : updateData.manufacturer?.trim() || null;
       }
 
       if (updateData.firmware_version !== undefined) {

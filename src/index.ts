@@ -4,7 +4,6 @@ import express from 'express';
 import { AppDataSource } from './data-source';
 import cors from 'cors';
 import machineRoutes from './routes/machine.routes';
-import beanRoutes from './routes/bean.routes';
 import beanBatchRoutes from './routes/beanBatch.routes';
 import userRoutes from './routes/user.routes';
 import grinderRoutes from './routes/grinder.routes';
@@ -24,7 +23,6 @@ app.use(express.json());
 
 // API Routes
 app.use('/api/machines', machineRoutes);
-app.use('/api/beans', beanRoutes);
 app.use('/api/batches', beanBatchRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/grinders', grinderRoutes);
@@ -65,11 +63,6 @@ app.listen(port, () => {
   console.log(`  GET    /api/machines/:id`);
   console.log(`  PUT    /api/machines/:id`);
   console.log(`  DELETE /api/machines/:id`);
-  console.log(`  GET    /api/beans`);
-  console.log(`  POST   /api/beans`);
-  console.log(`  GET    /api/beans/:id`);
-  console.log(`  PUT    /api/beans/:id`);
-  console.log(`  DELETE /api/beans/:id`);
   console.log(`  GET    /api/batches`);
   console.log(`  POST   /api/batches`);
   console.log(`  GET    /api/batches/:id`);

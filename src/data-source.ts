@@ -1,6 +1,5 @@
 import { DataSource } from 'typeorm';
 import 'reflect-metadata';
-import { Bean } from './entities/Bean';
 import { BeanBatch } from './entities/BeanBatch';
 import { Machine } from './entities/Machine';
 import { Shot } from './entities/Shot';
@@ -24,7 +23,6 @@ export const AppDataSource = new DataSource({
     rejectUnauthorized: false,
   },
   entities: [
-    Bean,
     BeanBatch,
     Machine,
     Shot,

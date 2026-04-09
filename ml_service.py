@@ -9,6 +9,7 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 import joblib
 from datetime import datetime
 from typing import Dict, Tuple, Any
+import pdb
 
 class PredictionFeatures:
     """Data class for prediction features"""
@@ -147,281 +148,179 @@ class PredictionService:
             api_base_url = os.getenv('API_BASE_URL', 'http://localhost:3000/api')
             
             # Fetch shots data
-            shots_response = requests.get(f"{api_base_url}/shots")
-            shots_response.raise_for_status()
-            shots_data = shots_response.json()
-            print("Shots Data:")
-            print("*"*80)
-            print(shots_data)
+            shots_data = self._fetch_shots_data(api_base_url)
             
-            # Fetch related data
-            preparations_response = requests.get(f"{api_base_url}/preparations")
-            preparations_response.raise_for_status()
-            preparations_data = preparations_response.json()
-            print("Preparations Data:")
-            print("*"*80)
-            print(preparations_data)
+            # Create dataframe from shots data
+            shots_df = self._create_shots_dataframe(shots_data)
             
-            extractions_response = requests.get(f"{api_base_url}/extractions")
-            extractions_response.raise_for_status()
-            extractions_data = extractions_response.json()
-            print("Extractions Data:")
-            print("*"*80)
-            print(extractions_data)
-            
-            # Fetch bean and equipment data
-            beans_response = requests.get(f"{api_base_url}/beans")
-            beans_response.raise_for_status()
-            beans_data = beans_response.json()
-            print("Beans Data:")
-            print("*"*80)
-            print(beans_data)
-            
-            bean_batches_response = requests.get(f"{api_base_url}/batches")
-            bean_batches_response.raise_for_status()
-            bean_batches_data = bean_batches_response.json()
-            print("Bean Batches Data:")
-            print("*"*80)
-            print(bean_batches_data)
-            
-            machines_response = requests.get(f"{api_base_url}/machines")
-            machines_response.raise_for_status()
-            machines_data = machines_response.json()
-            print("Machines Data:")
-            print("*"*80)
-            print(machines_data)
-            
-            grinders_response = requests.get(f"{api_base_url}/grinders")
-            grinders_response.raise_for_status()
-            grinders_data = grinders_response.json()
-            print("Grinders Data:")
-            print("*"*80)
-            print(grinders_data)
-            
-            # Create dataframes with robust error handling
-            def safe_create_dataframe(data, name):
-                """Create dataframe with error handling for different data structures"""
-                try:
-                    if not data:
-                        print(f"Warning: Empty data for {name}")
-                        return pd.DataFrame()
-                    
-                    # Handle different response formats
-                    if isinstance(data, list):
-                        if len(data) == 0:
-                            print(f"Warning: Empty list for {name}")
-                            return pd.DataFrame()
-                        return pd.DataFrame(data)
-                    elif isinstance(data, dict):
-                        # Check if it's a paginated response with 'data' field
-                        if 'data' in data and isinstance(data['data'], list):
-                            if len(data['data']) == 0:
-                                print(f"Warning: Empty data list for {name}")
-                                return pd.DataFrame()
-                            return pd.DataFrame(data['data'])
-                        # Check if it's a paginated response with 'shots' field
-                        if 'shots' in data and isinstance(data['shots'], list):
-                            if len(data['shots']) == 0:
-                                print(f"Warning: Empty shots list for {name}")
-                                return pd.DataFrame()
-                            return pd.DataFrame(data['shots'])
-                        # Check if it's a single item
-                        elif 'id' in data or any(key in data for key in ['name', 'model', 'created_at']):
-                            return pd.DataFrame([data])
-                        else:
-                            print(f"Warning: Unexpected dict structure for {name}: {list(data.keys())}")
-                            return pd.DataFrame()
-                    else:
-                        print(f"Warning: Unexpected data type for {name}: {type(data)}")
-                        return pd.DataFrame()
-                        
-                except Exception as e:
-                    print(f"Error creating dataframe for {name}: {e}")
-                    return pd.DataFrame()
-            
-            shots_df = safe_create_dataframe(shots_data, "shots")
-            preparations_df = safe_create_dataframe(preparations_data, "preparations")
-            extractions_df = safe_create_dataframe(extractions_data, "extractions")
-            beans_df = safe_create_dataframe(beans_data, "beans")
-            bean_batches_df = safe_create_dataframe(bean_batches_data, "bean_batches")
-            machines_df = safe_create_dataframe(machines_data, "machines")
-            grinders_df = safe_create_dataframe(grinders_data, "grinders")
-            
-            # Debug info
-            print(f"Dataframe shapes:")
-            print(f"  Shots: {shots_df.shape}")
-            print(f"  Preparations: {preparations_df.shape}")
-            print(f"  Extractions: {extractions_df.shape}")
-            print(f"  Beans: {beans_df.shape}")
-            print(f"  Bean Batches: {bean_batches_df.shape}")
-            print(f"  Machines: {machines_df.shape}")
-            print(f"  Grinders: {grinders_df.shape}")
-            
-            # Join data together to create comprehensive training dataset
-            # Start with shots and join with related data
             if shots_df.empty:
-                print("Warning: No shots data available, returning empty dataframe")
-                return pd.DataFrame()
+                return shots_df
             
-            training_df = shots_df.copy()
+            # Calculate engineered features
+            shots_df = self._calculate_engineered_features(shots_df)
             
-            # Join with preparations if available
-            if not preparations_df.empty:
-                if 'shot_id' in preparations_df.columns:
-                    training_df = training_df.merge(
-                        preparations_df, 
-                        left_on='id', 
-                        right_on='shot_id', 
-                        how='inner', 
-                        suffixes=('', '_prep')
-                    )
-                else:
-                    print("Warning: 'shot_id' column not found in preparations data")
+            # Filter out invalid data
+            shots_df = self._filter_valid_data(shots_df)
             
-            # Join with extractions if available
-            if not extractions_df.empty:
-                if 'shot_id' in extractions_df.columns:
-                    training_df = training_df.merge(
-                        extractions_df, 
-                        left_on='id', 
-                        right_on='shot_id', 
-                        how='inner', 
-                        suffixes=('', '_extr')
-                    )
-                else:
-                    print("Warning: 'shot_id' column not found in extractions data")
-            
-            # Join with bean batches if available
-            if not bean_batches_df.empty and 'beanBatchId' in training_df.columns:
-                training_df = training_df.merge(
-                    bean_batches_df, 
-                    left_on='beanBatchId', 
-                    right_on='id', 
-                    how='left', 
-                    suffixes=('', '_batch')
-                )
-            
-            # Join with beans if available
-            if not beans_df.empty and 'beanId' in training_df.columns:
-                training_df = training_df.merge(
-                    beans_df, 
-                    left_on='beanId', 
-                    right_on='id', 
-                    how='left', 
-                    suffixes=('', '_bean')
-                )
-            
-            # Join with machines if available
-            if not machines_df.empty and 'machineId' in training_df.columns:
-                training_df = training_df.merge(
-                    machines_df, 
-                    left_on='machineId', 
-                    right_on='id', 
-                    how='left', 
-                    suffixes=('', '_machine')
-                )
-            
-            # Join with grinders if available
-            if not grinders_df.empty and 'grinderId' in training_df.columns:
-                training_df = training_df.merge(
-                    grinders_df, 
-                    left_on='grinderId', 
-                    right_on='id', 
-                    how='left', 
-                    suffixes=('', '_grinder')
-                )
-            
-            print(f"Training dataframe shape after joins: {training_df.shape}")
-            
-            # Select available columns (handle missing columns gracefully)
-            available_columns = []
-            required_columns = [
-                # Shot identifiers
-                'id',
-                # Preparation features
-                'dose_grams', 'burr_setting', 'side_hopper', 'basket_type', 
-                'basket_size_grams', 'distribution_method', 'tamp_type', 'tamp_pressure_category',
-                # Extraction features
-                'water_temp_c', 'shot_time_seconds', 'yield_grams', 'avg_pressure_bar',
-                # Bean features
-                'name', 'roaster', 'roastLevel', 'roastDate',
-                # Equipment features
-                'model', 'manufacturer'
-            ]
-            
-            for col in required_columns:
-                # Try different column name variations
-                col_variations = [col, f"{col}_prep", f"{col}_extr", f"{col}_batch", f"{col}_bean", f"{col}_machine", f"{col}_grinder"]
-                for variation in col_variations:
-                    if variation in training_df.columns:
-                        available_columns.append(variation)
-                        break
-            
-            if available_columns:
-                training_df = training_df[available_columns].copy()
-                print(f"Selected {len(available_columns)} columns: {available_columns}")
-            else:
-                print("Warning: No required columns found in training data")
-                return pd.DataFrame()
-            
-            # Calculate engineered features with proper type conversion
-            try:
-                # Convert numeric columns to proper types
-                numeric_columns = ['dose_grams', 'yield_grams', 'shot_time_seconds']
-                for col in numeric_columns:
-                    if col in training_df.columns:
-                        training_df[col] = pd.to_numeric(training_df[col], errors='coerce')
+            print(f"Fetched {len(shots_df)} training samples from API")
+            return shots_df
                 
-                # Calculate engineered features only if we have valid data
-                if all(col in training_df.columns for col in ['dose_grams', 'yield_grams', 'shot_time_seconds']):
-                    # Remove rows with invalid numeric data
-                    valid_mask = (
-                        training_df['dose_grams'].notna() & 
-                        training_df['yield_grams'].notna() & 
-                        training_df['shot_time_seconds'].notna() &
-                        (training_df['dose_grams'] > 0) &
-                        (training_df['shot_time_seconds'] > 0)
-                    )
-                    training_df = training_df[valid_mask].copy()
-                    
-                    if not training_df.empty:
-                        training_df['extraction_ratio'] = training_df['yield_grams'] / training_df['dose_grams']
-                        training_df['flow_rate'] = training_df['yield_grams'] / training_df['shot_time_seconds']
-                        
-                        # Calculate roast age if roastDate is available
-                        if 'roastDate' in training_df.columns:
-                            try:
-                                training_df['roast_age'] = (datetime.now() - pd.to_datetime(training_df['roastDate'])).dt.days
-                            except Exception as e:
-                                print(f"Warning: Could not calculate roast_age: {e}")
-                                training_df['roast_age'] = 30  # Default value
-                        else:
-                            training_df['roast_age'] = 30  # Default value
-                            
-                        print(f"Successfully calculated engineered features for {len(training_df)} records")
-                    else:
-                        print("Warning: No valid records after filtering for engineered features")
-                        return pd.DataFrame()
-                else:
-                    print("Warning: Missing required columns for engineered features")
-                    return pd.DataFrame()
-                    
-            except Exception as e:
-                print(f"Error calculating engineered features: {e}")
-                return pd.DataFrame()
-            
-            # Remove rows with missing critical data
-            critical_columns = ['dose_grams', 'burr_setting', 'side_hopper', 'water_temp_c', 
-                               'shot_time_seconds', 'yield_grams', 'avg_pressure_bar']
-            training_df = training_df.dropna(subset=critical_columns)
-            
-            print(f"Fetched {len(training_df)} training samples from API")
-            return training_df
-            
         except Exception as e:
             print(f"Error fetching training data from API: {e}")
             # Return empty dataframe as fallback
             return pd.DataFrame()
+    
+    def _fetch_shots_data(self, api_base_url: str) -> Dict:
+        """Fetch shots data from API"""
+        try:
+            # API implementation uses eager loading for all related data
+            # This means we get everything in one request
+            shots_response = requests.get(f"{api_base_url}/shots")
+            shots_response.raise_for_status()
+            return shots_response.json()
+        except Exception as e:
+            print(f"Error fetching shots data: {e}")
+            return {}
+    
+    def _get_required_columns(self) -> List[str]:
+        """Get list of required columns for training data"""
+        return [
+            # Shot identifiers
+            'id',
+            # Preparation features
+            'dose_grams', 'burr_setting', 'side_hopper',
+            # Extraction features
+            'water_temp_c', 'shot_time_seconds', 'yield_grams', 'avg_pressure_bar',
+            # Bean features
+            'batch_name', 'roaster_name', 'roast_level', 'roast_date',
+            # Equipment features
+            'machine_model', 'machine_manufacturer'
+        ]
+    
+    def _extract_shot_data(self, shot: Dict) -> Dict:
+        """Extract relevant data from a single shot"""
+        try:
+            return {
+                'id': shot['id'],
+                'dose_grams': shot.get('preparation', {}).get('dose_grams'),
+                'burr_setting': shot.get('preparation', {}).get('burr_setting'),
+                'side_hopper': shot.get('preparation', {}).get('side_hopper'),
+                'water_temp_c': shot.get('extraction', {}).get('water_temp_c'),
+                'shot_time_seconds': shot.get('extraction', {}).get('shot_time_seconds'),
+                'yield_grams': shot.get('extraction', {}).get('yield_grams'),
+                'avg_pressure_bar': shot.get('extraction', {}).get('avg_pressure_bar'),
+                'batch_name': shot.get('beanBatch', {}).get('name'),
+                'roaster_name': shot.get('beanBatch', {}).get('roaster'),
+                'roast_level': shot.get('beanBatch', {}).get('roastLevel'),
+                'roast_date': shot.get('beanBatch', {}).get('roastDate'),
+                'machine_model': shot.get('machine', {}).get('model'),
+                'machine_manufacturer': shot.get('machine', {}).get('manufacturer')
+            }
+        except Exception as e:
+            print(f"Error extracting shot data: {e}")
+            return {}
+    
+    def _create_shots_dataframe(self, shots_data: Dict) -> pd.DataFrame:
+        """Create dataframe from shots data"""
+        try:
+            if not shots_data or 'shots' not in shots_data:
+                print("Warning: No shots data available from API")
+                return pd.DataFrame()
+            
+            required_columns = self._get_required_columns()
+            shots_df = pd.DataFrame(columns=required_columns)
+            
+            for shot in shots_data['shots']:
+                shot_row = self._extract_shot_data(shot)
+                if shot_row:  # Only add if extraction succeeded
+                    shots_df = pd.concat([shots_df, pd.DataFrame([shot_row])], ignore_index=True)
+            
+            return shots_df
+            
+        except Exception as e:
+            print(f"Error creating dataframe for shots data: {e}")
+            return pd.DataFrame()
+    
+    def _convert_numeric_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Convert numeric columns to proper types"""
+        try:
+            numeric_columns = ['dose_grams', 'yield_grams', 'shot_time_seconds']
+            for col in numeric_columns:
+                if col in df.columns:
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
+            return df
+        except Exception as e:
+            print(f"Error converting numeric columns: {e}")
+            return df
+    
+    def _filter_valid_numeric_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Filter out rows with invalid numeric data"""
+        try:
+            if all(col in df.columns for col in ['dose_grams', 'yield_grams', 'shot_time_seconds']):
+                valid_mask = (
+                    df['dose_grams'].notna() & 
+                    df['yield_grams'].notna() & 
+                    df['shot_time_seconds'].notna() &
+                    (df['dose_grams'] > 0) &
+                    (df['shot_time_seconds'] > 0)
+                )
+                return df[valid_mask].copy()
+            else:
+                print("Warning: Missing required columns for numeric validation")
+                return df
+        except Exception as e:
+            print(f"Error filtering valid numeric data: {e}")
+            return df
+    
+    def _calculate_engineered_features(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Calculate engineered features"""
+        try:
+            # Convert numeric columns to proper types
+            df = self._convert_numeric_columns(df)
+            
+            # Filter out invalid numeric data
+            df = self._filter_valid_numeric_data(df)
+            
+            if df.empty:
+                print("Warning: No valid records after numeric filtering")
+                return df
+            
+            # Calculate engineered features
+            df['extraction_ratio'] = df['yield_grams'] / df['dose_grams']
+            df['flow_rate'] = df['yield_grams'] / df['shot_time_seconds']
+            
+            # Calculate roast age
+            df = self._calculate_roast_age(df)
+            
+            print(f"Successfully calculated engineered features for {len(df)} records")
+            return df
+            
+        except Exception as e:
+            print(f"Error calculating engineered features: {e}")
+            return pd.DataFrame()
+    
+    def _calculate_roast_age(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Calculate roast age from roast date"""
+        try:
+            if 'roast_date' in df.columns:
+                df['roast_age'] = (datetime.now() - pd.to_datetime(df['roast_date'])).dt.days
+            else:
+                df['roast_age'] = 30  # Default value
+            return df
+        except Exception as e:
+            print(f"Warning: Could not calculate roast_age: {e}")
+            df['roast_age'] = 30  # Default value
+            return df
+    
+    def _filter_valid_data(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Filter out rows with missing critical data"""
+        try:
+            critical_columns = ['dose_grams', 'burr_setting', 'side_hopper', 'water_temp_c', 
+                              'shot_time_seconds', 'yield_grams', 'avg_pressure_bar']
+            return df.dropna(subset=critical_columns)
+        except Exception as e:
+            print(f"Error filtering valid data: {e}")
+            return df
     
     def extract_features_from_data(self, shot_data: Dict[str, Any]) -> PredictionFeatures:
         """Extract features from shot data"""
@@ -627,6 +526,11 @@ def main():
             
             # Output result as JSON
             print(json.dumps(result, indent=2))
+
+        elif command == 'save':
+            print("Saving models...")
+            service.save_models()
+            print("Models saved successfully!")
             
         elif command == 'help':
             print("Usage: python ml_service.py <command> [options]")

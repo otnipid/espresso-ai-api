@@ -2,13 +2,10 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
   CreateDateColumn,
   UpdateDateColumn,
-  JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { Bean } from './Bean';
 import { Shot } from './Shot';
 
 @Entity('bean_batches')
@@ -16,9 +13,14 @@ export class BeanBatch {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @ManyToOne(() => Bean, bean => bean.beanBatches)
-  @JoinColumn({ name: 'bean_id' })
-  bean!: Bean;
+  @Column({ type: 'text' })
+  name!: string;
+
+  @Column({ type: 'text', nullable: true })
+  roaster?: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  country?: string | null;
 
   @Column({ name: 'roast_date', type: 'date' })
   roastDate!: Date;
@@ -28,9 +30,6 @@ export class BeanBatch {
 
   @Column({ name: 'roast_level', type: 'text', nullable: true })
   roastLevel?: string | null;
-
-  @Column({ name: 'roast_degree', type: 'integer', nullable: true })
-  roastDegree?: number | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })
   createdAt!: Date;

@@ -8,7 +8,6 @@ import { ShotEnvironment } from '../entities/shotEnvironment';
 import { ShotFeedback } from '../entities/shotFeedback';
 import { BeanBatch } from '../entities/BeanBatch';
 import { Machine } from '../entities/Machine';
-import { Bean } from '../entities/Bean';
 
 let testDataSource: DataSource;
 
@@ -27,7 +26,6 @@ const createKubernetesPostgresDataSource = () =>
       ShotEnvironment,
       ShotFeedback,
       Machine,
-      Bean,
       BeanBatch,
     ],
     synchronize: true,
@@ -51,7 +49,6 @@ const createLocalPostgresDataSource = () =>
       ShotEnvironment,
       ShotFeedback,
       Machine,
-      Bean,
       BeanBatch,
     ],
     synchronize: true,
@@ -70,7 +67,6 @@ const createSQLiteDataSource = () =>
       ShotEnvironment,
       ShotFeedback,
       Machine,
-      Bean,
       BeanBatch,
     ],
     synchronize: true,
@@ -165,21 +161,25 @@ export const createTestMachine = async () => {
   return await machineRepository.save(machine);
 };
 
-export const createTestBean = async () => {
-  const beanRepository = testDataSource.getRepository(Bean);
-  const bean = beanRepository.create({
+export const createTestBeanBatch = async () => {
+  const beanBatchRepository = testDataSource.getRepository(BeanBatch);
+  const beanBatch = beanBatchRepository.create({
     name: 'Test Bean',
     roaster: 'Test Roaster',
     country: 'Colombia',
-    region: 'Huila',
+    roastDate: new Date('2024-01-01'),
+    bagOpenDate: new Date('2024-07-01'),
   });
-  return await beanRepository.save(bean);
+  return await beanBatchRepository.save(beanBatch);
 };
 
-export const createTestBeanBatch = async (bean: Bean) => {
+// Legacy function for backward compatibility - now creates a complete bean batch
+export const createTestBeanBatchWithBean = async (beanData?: any) => {
   const beanBatchRepository = testDataSource.getRepository(BeanBatch);
   const beanBatch = beanBatchRepository.create({
-    bean: bean,
+    name: beanData?.name || 'Test Bean',
+    roaster: beanData?.roaster || 'Test Roaster',
+    country: beanData?.country || 'Colombia',
     roastDate: new Date('2024-01-01'),
     bagOpenDate: new Date('2024-07-01'),
   });

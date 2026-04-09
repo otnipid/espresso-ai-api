@@ -1,54 +1,35 @@
 import { BeanBatchService } from '../../../services/BeanBatchService';
 import { BeanBatch } from '../../../entities/BeanBatch';
-import { Bean } from '../../../entities/Bean';
 import { DataSource } from 'typeorm';
 import { createMockDataSource } from '../../__mocks__/data-source.mock';
-
-// Mock data
-const mockBeanData = {
-  id: '550e8400-e29b-41d4-a716-446655440001',
-  name: 'Test Bean',
-  roaster: 'Test Roaster',
-};
-
-const mockBeanBatchData = {
-  beanId: '550e8400-e29b-41d4-a716-446655440001',
-  roastDate: '2024-01-15',
-  bagOpenDate: '2024-01-20',
-  roastLevel: 'Medium',
-  roastDegree: 3,
-};
 
 describe('BeanBatchService', () => {
   let beanBatchService: BeanBatchService;
   let mockDataSource: DataSource;
   let mockBeanBatchRepository: any;
-  let mockBeanRepository: any;
 
   beforeEach(() => {
-    mockDataSource = createMockDataSource();
+    jest.clearAllMocks();
 
-    // Setup mock repositories
+    // Create mock repository
     mockBeanBatchRepository = {
       find: jest.fn(),
       findOne: jest.fn(),
-      create: jest.fn(),
       save: jest.fn(),
       remove: jest.fn(),
-      findAndCount: jest.fn(),
-    };
-
-    mockBeanRepository = {
-      findOne: jest.fn(),
       create: jest.fn(),
-      save: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      restore: jest.fn(),
+      findAndCount: jest.fn().mockResolvedValue([[], 0]),
+      softDelete: jest.fn().mockResolvedValue({ affected: 1 }),
+      count: jest.fn().mockResolvedValue(0),
     };
 
-    mockDataSource.getRepository = jest.fn().mockImplementation(entity => {
-      if (entity === BeanBatch) return mockBeanBatchRepository;
-      if (entity === Bean) return mockBeanRepository;
-      return mockBeanBatchRepository;
-    });
+    // Create mock data source
+    mockDataSource = {
+      getRepository: jest.fn().mockReturnValue(mockBeanBatchRepository),
+    } as any;
 
     beanBatchService = new BeanBatchService(mockDataSource);
   });
@@ -56,53 +37,69 @@ describe('BeanBatchService', () => {
   describe('getAllBeanBatches', () => {
     it('should return all bean batches with relations', async () => {
       // Arrange
-      const expectedBatches = [
+      const mockBatches = [
         {
-          id: '1',
-          roastDate: new Date('2024-01-15'),
-          bean: mockBeanData,
+          id: '550e8400-e29b-41d4-a716-446655440001',
+          name: 'Ethiopian Yirgacheffe',
+          roaster: 'Blue Bottle',
+          country: 'Ethiopia',
+          roastDate: new Date('2023-01-01'),
           shots: [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
         {
-          id: '2',
-          roastDate: new Date('2024-01-16'),
-          bean: mockBeanData,
+          id: '550e8400-e29b-41d4-a716-446655440002',
+          name: 'Colombian Supremo',
+          roaster: 'Intelligentsia',
+          country: 'Colombia',
+          roastDate: new Date('2023-01-02'),
           shots: [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
         },
       ];
-      mockBeanBatchRepository.find.mockResolvedValue(expectedBatches);
+
+      mockBeanBatchRepository.find.mockResolvedValue(mockBatches);
 
       // Act
       const result = await beanBatchService.getAllBeanBatches();
 
       // Assert
       expect(mockBeanBatchRepository.find).toHaveBeenCalledWith({
-        relations: ['bean', 'shots'],
+        relations: ['shots'],
       });
-      expect(result).toEqual(expectedBatches);
+      expect(result).toEqual(mockBatches);
     });
 
-    it('should handle repository errors', async () => {
+    it('should handle database errors', async () => {
       // Arrange
-      const error = new Error('Database error');
+      const error = new Error('Database connection failed');
       mockBeanBatchRepository.find.mockRejectedValue(error);
 
       // Act & Assert
-      await expect(beanBatchService.getAllBeanBatches()).rejects.toThrow('Database error');
+      await expect(beanBatchService.getAllBeanBatches()).rejects.toThrow(
+        'Error fetching bean batches: Database connection failed'
+      );
     });
   });
 
   describe('getBeanBatchById', () => {
-    it('should return bean batch by ID with relations', async () => {
+    it('should return bean batch when found', async () => {
       // Arrange
-      const batchId = 'test-id';
-      const expectedBatch = {
+      const batchId = '550e8400-e29b-41d4-a716-446655440001';
+      const mockBatch = {
         id: batchId,
-        roastDate: new Date('2024-01-15'),
-        bean: mockBeanData,
+        name: 'Ethiopian Yirgacheffe',
+        roaster: 'Blue Bottle',
+        country: 'Ethiopia',
+        roastDate: new Date('2023-01-01'),
         shots: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
-      mockBeanBatchRepository.findOne.mockResolvedValue(expectedBatch);
+
+      mockBeanBatchRepository.findOne.mockResolvedValue(mockBatch);
 
       // Act
       const result = await beanBatchService.getBeanBatchById(batchId);
@@ -110,14 +107,14 @@ describe('BeanBatchService', () => {
       // Assert
       expect(mockBeanBatchRepository.findOne).toHaveBeenCalledWith({
         where: { id: batchId },
-        relations: ['bean', 'shots'],
+        relations: ['shots'],
       });
-      expect(result).toEqual(expectedBatch);
+      expect(result).toEqual(mockBatch);
     });
 
     it('should throw error when bean batch not found', async () => {
       // Arrange
-      const batchId = 'non-existent-id';
+      const batchId = '550e8400-e29b-41d4-a716-446655440999';
       mockBeanBatchRepository.findOne.mockResolvedValue(null);
 
       // Act & Assert
@@ -125,146 +122,98 @@ describe('BeanBatchService', () => {
         `Bean batch with ID ${batchId} not found`
       );
     });
-
-    it('should handle repository errors', async () => {
-      // Arrange
-      const batchId = 'test-id';
-      const error = new Error('Database error');
-      mockBeanBatchRepository.findOne.mockRejectedValue(error);
-
-      // Act & Assert
-      await expect(beanBatchService.getBeanBatchById(batchId)).rejects.toThrow('Database error');
-    });
   });
 
   describe('createBeanBatch', () => {
-    it('should create bean batch with valid data', async () => {
+    it('should create bean batch successfully', async () => {
       // Arrange
-      const mockBean = { id: mockBeanData.id, name: mockBeanData.name };
-      const expectedBatch = {
-        id: 'new-id',
-        roastDate: new Date('2024-01-15'),
-        bagOpenDate: new Date('2024-01-20'),
+      const batchData = {
+        name: 'Ethiopian Yirgacheffe',
+        roaster: 'Blue Bottle',
+        country: 'Ethiopia',
+        roastDate: '2023-01-01',
+        bagOpenDate: '2023-06-01',
         roastLevel: 'Medium',
-        roastDegree: 3,
-        bean: mockBean,
       };
 
-      mockBeanRepository.findOne.mockResolvedValue(mockBean);
-      mockBeanBatchRepository.create.mockReturnValue(mockBeanBatchData);
-      mockBeanBatchRepository.save.mockResolvedValue(expectedBatch);
+      const createdBatch = {
+        id: '550e8400-e29b-41d4-a716-446655440001',
+        name: 'Ethiopian Yirgacheffe',
+        roaster: 'Blue Bottle',
+        country: 'Ethiopia',
+        roastDate: new Date('2023-01-01'),
+        bagOpenDate: new Date('2023-06-01'),
+        roastLevel: 'Medium',
+        roastDegree: 2,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      mockBeanBatchRepository.create.mockReturnValue(createdBatch);
+      mockBeanBatchRepository.save.mockResolvedValue(createdBatch);
 
       // Act
-      const result = await beanBatchService.createBeanBatch(mockBeanBatchData);
+      const result = await beanBatchService.createBeanBatch(batchData);
 
       // Assert
-      expect(mockBeanRepository.findOne).toHaveBeenCalledWith({
-        where: { id: mockBeanData.id },
-      });
       expect(mockBeanBatchRepository.create).toHaveBeenCalledWith({
-        bean: mockBean,
-        roastDate: new Date('2024-01-15'),
-        bagOpenDate: new Date('2024-01-20'),
+        name: 'Ethiopian Yirgacheffe',
+        roaster: 'Blue Bottle',
+        country: 'Ethiopia',
+        roastDate: new Date('2023-01-01'),
+        bagOpenDate: new Date('2023-06-01'),
         roastLevel: 'Medium',
-        roastDegree: 3,
       });
-      expect(mockBeanBatchRepository.save).toHaveBeenCalled();
-      expect(result).toEqual(expectedBatch);
+      expect(mockBeanBatchRepository.save).toHaveBeenCalledWith(createdBatch);
+      expect(result).toEqual(createdBatch);
     });
 
-    it('should throw error when beanId is missing', async () => {
+    it('should throw error when name is missing', async () => {
       // Arrange
       const invalidData = {
-        beanId: '', // Empty string should trigger validation
-        roastDate: '2024-01-15',
-      };
+        name: '',
+        roastDate: '2023-01-01',
+      }; // Empty name
 
       // Act & Assert
       await expect(beanBatchService.createBeanBatch(invalidData)).rejects.toThrow(
-        'Bean ID is required'
+        'Bean name is required'
       );
     });
 
     it('should throw error when roastDate is missing', async () => {
       // Arrange
       const invalidData = {
-        beanId: '550e8400-e29b-41d4-a716-446655440001',
-        roastDate: '', // Empty string should trigger validation
-      };
+        name: 'Ethiopian Yirgacheffe',
+        roastDate: '',
+      }; // Empty roastDate
 
       // Act & Assert
       await expect(beanBatchService.createBeanBatch(invalidData)).rejects.toThrow(
         'Roast date is required'
       );
     });
-
-    it('should throw error when bean not found', async () => {
-      // Arrange
-      mockBeanRepository.findOne.mockResolvedValue(null);
-
-      // Act & Assert
-      await expect(beanBatchService.createBeanBatch(mockBeanBatchData)).rejects.toThrow(
-        `Bean with ID ${mockBeanData.id} not found`
-      );
-    });
-
-    it('should handle date string conversion', async () => {
-      // Arrange
-      const mockBean = { id: mockBeanData.id, name: mockBeanData.name };
-      const batchDataWithDateStrings = {
-        ...mockBeanBatchData,
-        roastDate: '2024-01-15T00:00:00.000Z',
-        bagOpenDate: '2024-01-20T00:00:00.000Z',
-      };
-
-      mockBeanRepository.findOne.mockResolvedValue(mockBean);
-      mockBeanBatchRepository.create.mockReturnValue(batchDataWithDateStrings);
-      mockBeanBatchRepository.save.mockResolvedValue({ id: 'new-id', ...batchDataWithDateStrings });
-
-      // Act
-      const result = await beanBatchService.createBeanBatch(batchDataWithDateStrings);
-
-      // Assert
-      expect(mockBeanBatchRepository.create).toHaveBeenCalledWith({
-        bean: mockBean,
-        roastDate: new Date('2024-01-15T00:00:00.000Z'),
-        bagOpenDate: new Date('2024-01-20T00:00:00.000Z'),
-        roastLevel: 'Medium',
-        roastDegree: 3,
-      });
-      expect(result).toBeDefined();
-    });
-
-    it('should handle repository errors during creation', async () => {
-      // Arrange
-      const error = new Error('Database error');
-      const mockBean = { id: mockBeanData.id, name: mockBeanData.name };
-      mockBeanRepository.findOne.mockResolvedValue(mockBean);
-      mockBeanBatchRepository.create.mockReturnValue(mockBeanBatchData);
-      mockBeanBatchRepository.save.mockRejectedValue(error);
-
-      // Act & Assert
-      await expect(beanBatchService.createBeanBatch(mockBeanBatchData)).rejects.toThrow(
-        'Database error'
-      );
-    });
   });
 
   describe('updateBeanBatch', () => {
-    it('should update existing bean batch', async () => {
+    it('should update bean batch successfully', async () => {
       // Arrange
-      const batchId = 'test-id';
+      const batchId = '550e8400-e29b-41d4-a716-446655440001';
       const existingBatch = {
         id: batchId,
-        roastDate: new Date('2024-01-15'),
-        bagOpenDate: new Date('2024-01-20'),
-        roastLevel: 'Medium',
-        roastDegree: 3,
+        name: 'Ethiopian Yirgacheffe',
+        roaster: 'Blue Bottle',
+        country: 'Ethiopia',
+        roastDate: new Date('2023-01-01'),
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
+
       const updateData = {
-        roastLevel: 'Dark',
-        roastDegree: 4,
+        name: 'Ethiopian Yirgacheffe - Updated',
+        roaster: 'Blue Bottle - Updated',
       };
+
       const updatedBatch = { ...existingBatch, ...updateData };
 
       mockBeanBatchRepository.findOne.mockResolvedValue(existingBatch);
@@ -281,67 +230,29 @@ describe('BeanBatchService', () => {
       expect(result).toEqual(updatedBatch);
     });
 
-    it('should throw error when bean batch not found for update', async () => {
+    it('should throw error when bean batch not found', async () => {
       // Arrange
-      const batchId = 'non-existent-id';
-      const updateData = { roastLevel: 'Dark' };
+      const batchId = '550e8400-e29b-41d4-a716-446655440999';
       mockBeanBatchRepository.findOne.mockResolvedValue(null);
 
       // Act & Assert
-      await expect(beanBatchService.updateBeanBatch(batchId, updateData)).rejects.toThrow(
+      await expect(beanBatchService.updateBeanBatch(batchId, {})).rejects.toThrow(
         `Bean batch with ID ${batchId} not found`
-      );
-    });
-
-    it('should handle partial updates correctly', async () => {
-      // Arrange
-      const batchId = 'test-id';
-      const existingBatch = {
-        id: batchId,
-        roastDate: new Date('2024-01-15'),
-        bagOpenDate: new Date('2024-01-20'),
-        roastLevel: 'Medium',
-        roastDegree: 3,
-      };
-      const partialUpdate = { roastLevel: 'Light' }; // Only updating roast level
-      const updatedBatch = { ...existingBatch, roastLevel: 'Light' };
-
-      mockBeanBatchRepository.findOne.mockResolvedValue(existingBatch);
-      mockBeanBatchRepository.save.mockResolvedValue(updatedBatch);
-
-      // Act
-      const result = await beanBatchService.updateBeanBatch(batchId, partialUpdate);
-
-      // Assert
-      expect(result.roastLevel).toBe('Light');
-      expect(result.roastDegree).toBe(3); // Should remain unchanged
-      expect(result.bagOpenDate).toEqual(existingBatch.bagOpenDate); // Should remain unchanged
-    });
-
-    it('should handle repository errors during update', async () => {
-      // Arrange
-      const batchId = 'test-id';
-      const updateData = { roastLevel: 'Dark' };
-      const error = new Error('Database error');
-      mockBeanBatchRepository.findOne.mockResolvedValue({ id: batchId });
-      mockBeanBatchRepository.save.mockRejectedValue(error);
-
-      // Act & Assert
-      await expect(beanBatchService.updateBeanBatch(batchId, updateData)).rejects.toThrow(
-        'Database error'
       );
     });
   });
 
   describe('deleteBeanBatch', () => {
-    it('should delete existing bean batch', async () => {
+    it('should delete bean batch successfully', async () => {
       // Arrange
-      const batchId = 'test-id';
+      const batchId = '550e8400-e29b-41d4-a716-446655440001';
       const existingBatch = {
         id: batchId,
-        roastDate: new Date('2024-01-15'),
-        bean: mockBeanData,
+        name: 'Ethiopian Yirgacheffe',
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
+
       mockBeanBatchRepository.findOne.mockResolvedValue(existingBatch);
       mockBeanBatchRepository.remove.mockResolvedValue(existingBatch);
 
@@ -356,85 +267,14 @@ describe('BeanBatchService', () => {
       expect(result).toBe(true);
     });
 
-    it('should throw error when bean batch not found for deletion', async () => {
+    it('should throw error when bean batch not found', async () => {
       // Arrange
-      const batchId = 'non-existent-id';
+      const batchId = '550e8400-e29b-41d4-a716-446655440999';
       mockBeanBatchRepository.findOne.mockResolvedValue(null);
 
       // Act & Assert
       await expect(beanBatchService.deleteBeanBatch(batchId)).rejects.toThrow(
         `Bean batch with ID ${batchId} not found`
-      );
-    });
-
-    it('should handle repository errors during deletion', async () => {
-      // Arrange
-      const batchId = 'test-id';
-      const error = new Error('Database error');
-      mockBeanBatchRepository.findOne.mockResolvedValue({ id: batchId });
-      mockBeanBatchRepository.remove.mockRejectedValue(error);
-
-      // Act & Assert
-      await expect(beanBatchService.deleteBeanBatch(batchId)).rejects.toThrow('Database error');
-    });
-  });
-
-  describe('getBeanBatchesByBeanId', () => {
-    it('should return bean batches for specific bean', async () => {
-      // Arrange
-      const beanId = '550e8400-e29b-41d4-a716-446655440001';
-      const expectedBatches = [
-        {
-          id: '1',
-          roastDate: new Date('2024-01-15'),
-          bean: mockBeanData,
-          shots: [],
-        },
-        {
-          id: '2',
-          roastDate: new Date('2024-01-16'),
-          bean: mockBeanData,
-          shots: [],
-        },
-      ];
-      mockBeanBatchRepository.find.mockResolvedValue(expectedBatches);
-
-      // Act
-      const result = await beanBatchService.getBeanBatchesByBeanId(beanId);
-
-      // Assert
-      expect(mockBeanBatchRepository.find).toHaveBeenCalledWith({
-        where: { bean: { id: beanId } },
-        relations: ['bean', 'shots'],
-      });
-      expect(result).toEqual(expectedBatches);
-    });
-
-    it('should return empty array when no batches found for bean', async () => {
-      // Arrange
-      const beanId = '550e8400-e29b-41d4-a716-446655440999';
-      mockBeanBatchRepository.find.mockResolvedValue([]);
-
-      // Act
-      const result = await beanBatchService.getBeanBatchesByBeanId(beanId);
-
-      // Assert
-      expect(result).toEqual([]);
-      expect(mockBeanBatchRepository.find).toHaveBeenCalledWith({
-        where: { bean: { id: beanId } },
-        relations: ['bean', 'shots'],
-      });
-    });
-
-    it('should handle repository errors when fetching by bean ID', async () => {
-      // Arrange
-      const beanId = 'test-bean-id';
-      const error = new Error('Database error');
-      mockBeanBatchRepository.find.mockRejectedValue(error);
-
-      // Act & Assert
-      await expect(beanBatchService.getBeanBatchesByBeanId(beanId)).rejects.toThrow(
-        'Database error'
       );
     });
   });

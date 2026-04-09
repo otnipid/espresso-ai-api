@@ -7,7 +7,6 @@ import { Shot } from '../entities/Shot';
 import { ShotPreparation } from '../entities/ShotPreparation';
 import { ShotExtraction } from '../entities/ShotExtraction';
 import { BeanBatch } from '../entities/BeanBatch';
-import { Bean } from '../entities/Bean';
 import { Machine } from '../entities/Machine';
 import { Grinder } from '../entities/Grinder';
 import { v4 as uuidv4 } from 'uuid';
@@ -62,7 +61,6 @@ export class PredictionService {
     const prepRepository = AppDataSource.getRepository(ShotPreparation);
     const extractionRepository = AppDataSource.getRepository(ShotExtraction);
     const batchRepository = AppDataSource.getRepository(BeanBatch);
-    const beanRepository = AppDataSource.getRepository(Bean);
     const machineRepository = AppDataSource.getRepository(Machine);
     const grinderRepository = AppDataSource.getRepository(Grinder);
 
@@ -86,10 +84,9 @@ export class PredictionService {
 
     const beanBatch = await batchRepository.findOne({
       where: { id: shot.beanBatch?.id },
-      relations: ['bean'],
     });
 
-    const bean = beanBatch?.bean;
+    const bean = beanBatch;
 
     const machine = await machineRepository.findOne({
       where: { id: shot.machine?.id },

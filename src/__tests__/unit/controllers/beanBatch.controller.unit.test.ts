@@ -15,7 +15,7 @@ describe('BeanBatchController', () => {
     // Create a fresh mock for each test
     mockBeanBatchService = {
       getAllBeanBatches: jest.fn(),
-      getBeanBatchById: jest.fn(),
+      getBeanBatchById: jest.fn(() => Promise.resolve({})), // Add this line
       createBeanBatch: jest.fn(),
       updateBeanBatch: jest.fn(),
       deleteBeanBatch: jest.fn(),
@@ -51,16 +51,20 @@ describe('BeanBatchController', () => {
       const mockBatches = [
         {
           id: '1',
+          name: 'Ethiopian Yirgacheffe',
+          roaster: 'Blue Bottle',
+          country: 'Ethiopia',
           roastDate: new Date('2023-01-01'),
-          bean: { id: '1' },
           shots: [],
           createdAt: new Date(),
           updatedAt: new Date(),
         } as any,
         {
           id: '2',
+          name: 'Colombian Supremo',
+          roaster: 'Intelligentsia',
+          country: 'Colombia',
           roastDate: new Date('2023-01-02'),
-          bean: { id: '2' },
           shots: [],
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -96,8 +100,10 @@ describe('BeanBatchController', () => {
       // Arrange
       const mockBatch = {
         id: '1',
+        name: 'Ethiopian Yirgacheffe',
+        roaster: 'Blue Bottle',
+        country: 'Ethiopia',
         roastDate: new Date('2023-01-01'),
-        bean: { id: '1' },
         shots: [],
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -145,17 +151,20 @@ describe('BeanBatchController', () => {
     it('should create bean batch successfully', async () => {
       // Arrange
       const batchData = {
-        beanId: '1',
+        name: 'Ethiopian Yirgacheffe',
+        roaster: 'Blue Bottle',
+        country: 'Ethiopia',
         roastDate: '2023-01-01',
         bagOpenDate: '2023-06-01',
         roastLevel: 'Medium',
-        roastDegree: 2,
       };
 
       mockRequest.body = batchData;
       const createdBatch = {
         id: '1',
-        bean: { id: '1' },
+        name: 'Ethiopian Yirgacheffe',
+        roaster: 'Blue Bottle',
+        country: 'Ethiopia',
         roastDate: new Date('2023-01-01'),
         bagOpenDate: new Date('2023-06-01'),
         shots: [],
@@ -173,11 +182,11 @@ describe('BeanBatchController', () => {
       expect(mockResponse.json).toHaveBeenCalledWith(createdBatch);
     });
 
-    it('should handle missing beanId validation', async () => {
+    it('should handle missing name validation', async () => {
       // Arrange
-      const invalidData = { roastDate: '2023-01-01' }; // Missing beanId
+      const invalidData = { roastDate: '2023-01-01' }; // Missing name
       mockRequest.body = invalidData;
-      const error = new Error('Bean ID and roast date are required');
+      const error = new Error('Bean name and roast date are required');
       mockBeanBatchService.createBeanBatch.mockRejectedValue(error);
 
       // Act
@@ -186,15 +195,15 @@ describe('BeanBatchController', () => {
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Bean ID and roast date are required',
+        message: 'Bean name and roast date are required',
       });
     });
 
     it('should handle missing roastDate validation', async () => {
       // Arrange
-      const invalidData = { beanId: '1' }; // Missing roastDate
+      const invalidData = { name: 'Ethiopian Yirgacheffe' }; // Missing roastDate
       mockRequest.body = invalidData;
-      const error = new Error('Bean ID and roast date are required');
+      const error = new Error('Bean name and roast date are required');
       mockBeanBatchService.createBeanBatch.mockRejectedValue(error);
 
       // Act
@@ -203,13 +212,13 @@ describe('BeanBatchController', () => {
       // Assert
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Bean ID and roast date are required',
+        message: 'Bean name and roast date are required',
       });
     });
 
     it('should handle service errors', async () => {
       // Arrange
-      const batchData = { beanId: '1', roastDate: '2023-01-01' };
+      const batchData = { name: 'Ethiopian Yirgacheffe', roastDate: '2023-01-01' };
       mockRequest.body = batchData;
       const error = new Error('Validation failed');
       mockBeanBatchService.createBeanBatch.mockRejectedValue(error);
@@ -224,7 +233,7 @@ describe('BeanBatchController', () => {
 
     it('should handle errors without message', async () => {
       // Arrange
-      const batchData = { beanId: '1', roastDate: '2023-01-01' };
+      const batchData = { name: 'Ethiopian Yirgacheffe', roastDate: '2023-01-01' };
       mockRequest.body = batchData;
       const error = new Error();
       mockBeanBatchService.createBeanBatch.mockRejectedValue(error);
@@ -242,10 +251,12 @@ describe('BeanBatchController', () => {
     it('should update bean batch successfully', async () => {
       // Arrange
       const updateData = {
+        name: 'Ethiopian Yirgacheffe - Updated',
+        roaster: 'Blue Bottle - Updated',
+        country: 'Ethiopia',
         roastDate: '2023-01-02',
         bagOpenDate: '2023-06-02',
         roastLevel: 'Dark',
-        roastDegree: 3,
       };
 
       mockRequest.params = { id: '1' };
@@ -264,7 +275,7 @@ describe('BeanBatchController', () => {
     it('should handle partial updates', async () => {
       // Arrange
       const updateData = {
-        roastDate: '2023-01-02', // Only update roastDate
+        name: 'Ethiopian Yirgacheffe - Updated', // Only update name
       };
 
       mockRequest.params = { id: '1' };
@@ -296,7 +307,7 @@ describe('BeanBatchController', () => {
 
     it('should handle service errors', async () => {
       // Arrange
-      const updateData = { roastDate: '2023-01-01' };
+      const updateData = { name: 'Ethiopian Yirgacheffe' };
       mockRequest.params = { id: '1' };
       mockRequest.body = updateData;
       const error = new Error('Update failed');
@@ -312,7 +323,7 @@ describe('BeanBatchController', () => {
 
     it('should handle errors without message', async () => {
       // Arrange
-      const updateData = { roastDate: '2023-01-01' };
+      const updateData = { name: 'Ethiopian Yirgacheffe' };
       mockRequest.params = { id: '1' };
       mockRequest.body = updateData;
       const error = new Error();

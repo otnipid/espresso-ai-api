@@ -2,23 +2,20 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } 
 import { PostgresContainerManager, type TestDatabase } from '../setup.integration';
 import { getDataSource } from '../../data-source';
 import { ShotService } from '../../services/ShotService';
-import { Bean } from '../../entities/Bean';
 import { BeanBatch } from '../../entities/BeanBatch';
 import { Machine } from '../../entities/Machine';
 import { User } from '../../entities/User';
 import { Grinder } from '../../entities/Grinder';
-import { Repository } from 'typeorm';
 import { Shot } from '../../entities/Shot';
+import { Repository } from 'typeorm';
 
-// This is crucial: tell Vitest to replace the real '../../data-source' module
-// with our mock, so we can control what getDataSource() returns in tests.
+// Mock the data-source module to use our test database
 vi.mock('../../data-source');
 
 describe('ShotService Integration Tests', () => {
   const containerManager = PostgresContainerManager.getInstance();
   let testDb: TestDatabase;
   let shotService: ShotService;
-  let beanRepository: Repository<Bean>;
   let beanBatchRepository: Repository<BeanBatch>;
   let machineRepository: Repository<Machine>;
   let userRepository: Repository<User>;
@@ -28,6 +25,11 @@ describe('ShotService Integration Tests', () => {
   beforeAll(async () => {
     await containerManager.initialize();
   }, 60000); // Increase timeout for container init
+
+  // Stop single container ONCE after all tests in this file are done
+  afterAll(async () => {
+    await containerManager.teardown();
+  }, 60000); // Increase timeout for container teardown
 
   // Restore snapshot and get a fresh DB connection BEFORE EACH test
   beforeEach(async () => {
@@ -40,7 +42,6 @@ describe('ShotService Integration Tests', () => {
     shotService = new ShotService(testDb.dataSource);
 
     // Get repositories for test data setup
-    beanRepository = testDb.dataSource.getRepository(Bean);
     beanBatchRepository = testDb.dataSource.getRepository(BeanBatch);
     machineRepository = testDb.dataSource.getRepository(Machine);
     userRepository = testDb.dataSource.getRepository(User);
@@ -53,42 +54,30 @@ describe('ShotService Integration Tests', () => {
     vi.clearAllMocks(); // Reset mocks between tests
   });
 
-  // Stop single container ONCE after all tests in this file are done
-  afterAll(async () => {
-    await containerManager.teardown();
-  }, 60000); // Increase timeout for container teardown
-
-  describe('Shot Creation', () => {
-    it('should create a shot with valid data', async () => {
+  describe('createShot', () => {
+    it('should create shot with all related entities', async () => {
       // Arrange: Create test data
-      const user = userRepository.create({
-        name: 'Test User',
-      });
+      const user = userRepository.create({ name: 'Test User' });
       const savedUser = await userRepository.save(user);
 
       const machine = machineRepository.create({
-        model: 'Test Machine Model',
-        firmware_version: '1.0.0',
+        model: 'La Marzocco Linea Mini',
+        manufacturer: 'La Marzocco',
       });
       const savedMachine = await machineRepository.save(machine);
 
-      const bean = beanRepository.create({
-        name: 'Test Bean',
-        roaster: 'Test Roaster',
-        country: 'Colombia',
-        region: 'Huila',
-      });
-      const savedBean = await beanRepository.save(bean);
-
       const beanBatch = beanBatchRepository.create({
-        bean: savedBean,
+        name: 'Ethiopian Yirgacheffe',
+        roaster: 'Blue Bottle Coffee',
+        country: 'Ethiopia',
         roastDate: new Date('2024-01-01'),
         bagOpenDate: new Date('2024-07-01'),
       });
       const savedBeanBatch = await beanBatchRepository.save(beanBatch);
 
       const grinder = grinderRepository.create({
-        model: 'Test Grinder',
+        model: 'Baratza Vario',
+        manufacturer: 'Baratza',
       });
       const savedGrinder = await grinderRepository.save(grinder);
 
@@ -119,41 +108,88 @@ describe('ShotService Integration Tests', () => {
       expect(shots[0].user_id).toBe(savedUser.id);
     });
 
-    it('should throw error for invalid user ID', async () => {
+    it('should throw error when user does not exist', async () => {
+      // Arrange: Create test data with non-existent user
+      const machine = machineRepository.create({
+        model: 'La Marzocco Linea Mini',
+        manufacturer: 'La Marzocco',
+      });
+      const savedMachine = await machineRepository.save(machine);
+
+      const beanBatch = beanBatchRepository.create({
+        name: 'Test Bean Batch',
+        roastDate: new Date('2024-01-01'),
+      });
+      const savedBeanBatch = await beanBatchRepository.save(beanBatch);
+
+      const grinder = grinderRepository.create({
+        model: 'Baratza Vario',
+        manufacturer: 'Baratza',
+      });
+      const savedGrinder = await grinderRepository.save(grinder);
+
       const shotData = {
         userId: '00000000-0000-0000-0000-000000000000', // Valid UUID format but non-existent
-        machineId: '00000000-0000-0000-0000-000000000000',
-        beanBatchId: '00000000-0000-0000-0000-000000000000',
-        grinderId: '00000000-0000-0000-0000-000000000000',
+        machineId: savedMachine.id,
+        beanBatchId: savedBeanBatch.id,
+        grinderId: savedGrinder.id,
         shot_type: 'espresso' as Shot['shot_type'],
+        pulled_at: new Date(),
       };
 
+      // Act & Assert: Should throw error for non-existent user
       await expect(shotService.createShot(shotData)).rejects.toThrow(
         'User with ID 00000000-0000-0000-0000-000000000000 not found'
       );
     });
 
-    it('should throw error for invalid machine ID', async () => {
-      // Create valid entities first
+    it('should throw error when bean batch does not exist', async () => {
+      // Arrange: Create test data with non-existent bean batch
       const user = userRepository.create({ name: 'Test User' });
       const savedUser = await userRepository.save(user);
 
-      const bean = beanRepository.create({
-        name: 'Test Bean',
-        roaster: 'Test Roaster',
-        country: 'Colombia',
-        region: 'Huila',
+      const machine = machineRepository.create({
+        model: 'La Marzocco Linea Mini',
+        manufacturer: 'La Marzocco',
       });
-      const savedBean = await beanRepository.save(bean);
+      const savedMachine = await machineRepository.save(machine);
+
+      const grinder = grinderRepository.create({
+        model: 'Baratza Vario',
+        manufacturer: 'Baratza',
+      });
+      const savedGrinder = await grinderRepository.save(grinder);
+
+      const shotData = {
+        userId: savedUser.id,
+        machineId: savedMachine.id,
+        beanBatchId: '00000000-0000-0000-0000-000000000000', // Valid UUID format but non-existent
+        grinderId: savedGrinder.id,
+        shot_type: 'espresso' as Shot['shot_type'],
+        pulled_at: new Date(),
+      };
+
+      // Act & Assert: Should throw error for non-existent bean batch
+      await expect(shotService.createShot(shotData)).rejects.toThrow(
+        'BeanBatch with ID 00000000-0000-0000-0000-000000000000 not found'
+      );
+    });
+
+    it('should throw error when machine does not exist', async () => {
+      // Arrange: Create test data with non-existent machine
+      const user = userRepository.create({ name: 'Test User' });
+      const savedUser = await userRepository.save(user);
 
       const beanBatch = beanBatchRepository.create({
-        bean: savedBean,
+        name: 'Test Bean Batch',
         roastDate: new Date('2024-01-01'),
-        bagOpenDate: new Date('2024-07-01'),
       });
       const savedBeanBatch = await beanBatchRepository.save(beanBatch);
 
-      const grinder = grinderRepository.create({ model: 'Test Grinder' });
+      const grinder = grinderRepository.create({
+        model: 'Baratza Vario',
+        manufacturer: 'Baratza',
+      });
       const savedGrinder = await grinderRepository.save(grinder);
 
       const shotData = {
@@ -162,43 +198,71 @@ describe('ShotService Integration Tests', () => {
         beanBatchId: savedBeanBatch.id,
         grinderId: savedGrinder.id,
         shot_type: 'espresso' as Shot['shot_type'],
+        pulled_at: new Date(),
       };
 
+      // Act & Assert: Should throw error for non-existent machine
       await expect(shotService.createShot(shotData)).rejects.toThrow(
         'Machine with ID 00000000-0000-0000-0000-000000000000 not found'
       );
     });
-  });
 
-  describe('Shot Retrieval', () => {
-    it('should retrieve a shot by ID', async () => {
-      // Arrange: Create test data and shot
+    it('should throw error when grinder does not exist', async () => {
+      // Arrange: Create test data with non-existent grinder
       const user = userRepository.create({ name: 'Test User' });
       const savedUser = await userRepository.save(user);
 
       const machine = machineRepository.create({
-        model: 'Test Machine Model',
-        firmware_version: '1.0.0',
+        model: 'La Marzocco Linea Mini',
+        manufacturer: 'La Marzocco',
       });
       const savedMachine = await machineRepository.save(machine);
 
-      const bean = beanRepository.create({
-        name: 'Test Bean',
-        roaster: 'Test Roaster',
-        country: 'Colombia',
-        region: 'Huila',
+      const beanBatch = beanBatchRepository.create({
+        name: 'Test Bean Batch',
+        roastDate: new Date('2024-01-01'),
       });
-      const savedBean = await beanRepository.save(bean);
+      const savedBeanBatch = await beanBatchRepository.save(beanBatch);
+
+      const shotData = {
+        userId: savedUser.id,
+        machineId: savedMachine.id,
+        beanBatchId: savedBeanBatch.id,
+        grinderId: '00000000-0000-0000-0000-000000000000', // Valid UUID format but non-existent
+        shot_type: 'espresso' as Shot['shot_type'],
+        pulled_at: new Date(),
+      };
+
+      // Act & Assert: Should throw error for non-existent grinder
+      await expect(shotService.createShot(shotData)).rejects.toThrow(
+        'Grinder with ID 00000000-0000-0000-0000-000000000000 not found'
+      );
+    });
+  });
+
+  describe('getShotById', () => {
+    it('should return shot when found', async () => {
+      // Arrange: Create test data
+      const user = userRepository.create({ name: 'Test User' });
+      const savedUser = await userRepository.save(user);
+
+      const machine = machineRepository.create({
+        model: 'La Marzocco Linea Mini',
+        manufacturer: 'La Marzocco',
+      });
+      const savedMachine = await machineRepository.save(machine);
 
       const beanBatch = beanBatchRepository.create({
-        bean: savedBean,
+        name: 'Test Bean Batch',
+        roaster: 'Test Roaster',
+        country: 'Colombia',
         roastDate: new Date('2024-01-01'),
-        bagOpenDate: new Date('2024-07-01'),
       });
       const savedBeanBatch = await beanBatchRepository.save(beanBatch);
 
       const grinder = grinderRepository.create({
-        model: 'Test Grinder',
+        model: 'Baratza Vario',
+        manufacturer: 'Baratza',
       });
       const savedGrinder = await grinderRepository.save(grinder);
 
@@ -213,52 +277,240 @@ describe('ShotService Integration Tests', () => {
 
       const createdShot = await shotService.createShot(shotData);
 
-      // Act: Retrieve shot
+      // Act: Get shot by ID
       const result = await shotService.getShotById(createdShot.id);
 
-      // Assert
+      // Assert: Verify shot is returned
       expect(result).toBeDefined();
       expect(result.id).toBe(createdShot.id);
       expect(result.user.id).toBe(savedUser.id);
       expect(result.machine.id).toBe(savedMachine.id);
+      expect(result.beanBatch.id).toBe(savedBeanBatch.id);
+      expect(result.beanBatch.name).toBe('Test Bean Batch');
+      expect(result.beanBatch.roaster).toBe('Test Roaster');
+      expect(result.beanBatch.country).toBe('Colombia');
+      expect(result.grinder.id).toBe(savedGrinder.id);
     });
 
-    it('should return null for non-existent shot ID', async () => {
-      await expect(shotService.getShotById('00000000-0000-0000-0000-000000000000')).rejects.toThrow(
-        'Shot with ID 00000000-0000-0000-0000-000000000000 not found'
+    it('should throw error when shot not found', async () => {
+      // Act & Assert: Should throw error for non-existent shot
+      await expect(shotService.getShotById('550e8400-e29b-41d4-a716-446655440002')).rejects.toThrow(
+        'Shot with ID 550e8400-e29b-41d4-a716-446655440002 not found'
       );
     });
   });
 
-  describe('Shot Statistics', () => {
-    it('should get shot statistics for filtering', async () => {
+  describe('getShots', () => {
+    it('should return all shots', async () => {
+      // Arrange: Create test data with multiple shots
+      const user = userRepository.create({ name: 'Test User' });
+      const savedUser = await userRepository.save(user);
+
+      const machine = machineRepository.create({
+        model: 'La Marzocco Linea Mini',
+        manufacturer: 'La Marzocco',
+      });
+      const savedMachine = await machineRepository.save(machine);
+
+      const beanBatch1 = beanBatchRepository.create({
+        name: 'Ethiopian Bean',
+        roaster: 'Blue Bottle',
+        country: 'Ethiopia',
+        roastDate: new Date('2024-01-01'),
+      });
+      const savedBeanBatch1 = await beanBatchRepository.save(beanBatch1);
+
+      const beanBatch2 = beanBatchRepository.create({
+        name: 'Colombian Bean',
+        roaster: 'Intelligentsia',
+        country: 'Colombia',
+        roastDate: new Date('2024-02-01'),
+      });
+      const savedBeanBatch2 = await beanBatchRepository.save(beanBatch2);
+
+      const grinder = grinderRepository.create({
+        model: 'Baratza Vario',
+        manufacturer: 'Baratza',
+      });
+      const savedGrinder = await grinderRepository.save(grinder);
+
+      const shotData1 = {
+        userId: savedUser.id,
+        machineId: savedMachine.id,
+        beanBatchId: savedBeanBatch1.id,
+        grinderId: savedGrinder.id,
+        shot_type: 'espresso' as Shot['shot_type'],
+        pulled_at: new Date(),
+      };
+
+      const shotData2 = {
+        userId: savedUser.id,
+        machineId: savedMachine.id,
+        beanBatchId: savedBeanBatch2.id,
+        grinderId: savedGrinder.id,
+        shot_type: 'ristretto' as Shot['shot_type'],
+        pulled_at: new Date(),
+      };
+
+      await shotService.createShot(shotData1);
+      await shotService.createShot(shotData2);
+
+      // Act: Get all shots
+      const result = await shotService.getShots();
+
+      // Assert: Verify all shots are returned
+      expect(result.shots).toHaveLength(2);
+      expect(result.total).toBe(2);
+      expect(result.shots[0].shot_type).toBe('espresso');
+      expect(result.shots[1].shot_type).toBe('ristretto');
+      expect(result.shots[0].beanBatch.name).toBe('Ethiopian Bean');
+      expect(result.shots[1].beanBatch.name).toBe('Colombian Bean');
+    });
+
+    it('should return empty array when no shots exist', async () => {
+      // Act: Get all shots
+      const result = await shotService.getShots();
+
+      // Assert: Should return empty array
+      expect(result.shots).toHaveLength(0);
+      expect(result.total).toBe(0);
+    });
+  });
+
+  describe('updateShot', () => {
+    it('should update existing shot', async () => {
       // Arrange: Create test data
       const user = userRepository.create({ name: 'Test User' });
       const savedUser = await userRepository.save(user);
 
       const machine = machineRepository.create({
-        model: 'Test Machine Model',
-        firmware_version: '1.0.0',
+        model: 'La Marzocco Linea Mini',
+        manufacturer: 'La Marzocco',
       });
       const savedMachine = await machineRepository.save(machine);
 
-      const bean = beanRepository.create({
-        name: 'Test Bean',
-        roaster: 'Test Roaster',
-        country: 'Colombia',
-        region: 'Huila',
-      });
-      const savedBean = await beanRepository.save(bean);
-
       const beanBatch = beanBatchRepository.create({
-        bean: savedBean,
+        name: 'Test Bean Batch',
         roastDate: new Date('2024-01-01'),
-        bagOpenDate: new Date('2024-07-01'),
       });
       const savedBeanBatch = await beanBatchRepository.save(beanBatch);
 
       const grinder = grinderRepository.create({
-        model: 'Test Grinder',
+        model: 'Baratza Vario',
+        manufacturer: 'Baratza',
+      });
+      const savedGrinder = await grinderRepository.save(grinder);
+
+      const shotData = {
+        userId: savedUser.id,
+        machineId: savedMachine.id,
+        beanBatchId: savedBeanBatch.id,
+        grinderId: savedGrinder.id,
+        shot_type: 'espresso' as Shot['shot_type'],
+        pulled_at: new Date(),
+      };
+
+      const createdShot = await shotService.createShot(shotData);
+
+      const updateData = {
+        shot_type: 'lungo' as Shot['shot_type'],
+        success: true,
+      };
+
+      // Act: Update shot
+      const result = await shotService.updateShot(createdShot.id, updateData);
+
+      // Assert: Verify shot was updated
+      expect(result).toBeDefined();
+      expect(result.id).toBe(createdShot.id);
+      expect(result.shot_type).toBe('lungo');
+      expect(result.success).toBe(true);
+    });
+
+    it('should throw error when updating non-existent shot', async () => {
+      // Act & Assert: Should throw error for non-existent shot
+      const updateData = {
+        shot_type: 'lungo' as Shot['shot_type'],
+      };
+      await expect(
+        shotService.updateShot('550e8400-e29b-41d4-a716-446655440003', updateData)
+      ).rejects.toThrow('Shot with ID 550e8400-e29b-41d4-a716-446655440003 not found');
+    });
+  });
+
+  describe('deleteShot', () => {
+    it('should delete existing shot', async () => {
+      // Arrange: Create test data
+      const user = userRepository.create({ name: 'Test User' });
+      const savedUser = await userRepository.save(user);
+
+      const machine = machineRepository.create({
+        model: 'La Marzocco Linea Mini',
+        manufacturer: 'La Marzocco',
+      });
+      const savedMachine = await machineRepository.save(machine);
+
+      const beanBatch = beanBatchRepository.create({
+        name: 'Test Bean Batch',
+        roastDate: new Date('2024-01-01'),
+      });
+      const savedBeanBatch = await beanBatchRepository.save(beanBatch);
+
+      const grinder = grinderRepository.create({
+        model: 'Baratza Vario',
+        manufacturer: 'Baratza',
+      });
+      const savedGrinder = await grinderRepository.save(grinder);
+
+      const shotData = {
+        userId: savedUser.id,
+        machineId: savedMachine.id,
+        beanBatchId: savedBeanBatch.id,
+        grinderId: savedGrinder.id,
+        shot_type: 'espresso' as Shot['shot_type'],
+        pulled_at: new Date(),
+      };
+
+      const createdShot = await shotService.createShot(shotData);
+
+      // Act: Delete shot
+      const result = await shotService.softDeleteShot(createdShot.id);
+
+      // Assert: Verify deletion was successful
+      expect(result).toBe(true);
+
+      // Verify shot is soft deleted (getShotById filters out soft-deleted shots)
+      await expect(shotService.getShotById(createdShot.id)).rejects.toThrow('Shot with ID');
+    });
+
+    it('should throw error when deleting non-existent shot', async () => {
+      // Act & Assert: Should return false for non-existent shot
+      const result = await shotService.softDeleteShot('550e8400-e29b-41d4-a716-446655440004');
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('getShotStatistics', () => {
+    it('should return statistics for machine and bean batch', async () => {
+      // Arrange: Create test data
+      const user = userRepository.create({ name: 'Test User' });
+      const savedUser = await userRepository.save(user);
+
+      const machine = machineRepository.create({
+        model: 'La Marzocco Linea Mini',
+        manufacturer: 'La Marzocco',
+      });
+      const savedMachine = await machineRepository.save(machine);
+
+      const beanBatch = beanBatchRepository.create({
+        name: 'Test Bean Batch',
+        roastDate: new Date('2024-01-01'),
+      });
+      const savedBeanBatch = await beanBatchRepository.save(beanBatch);
+
+      const grinder = grinderRepository.create({
+        model: 'Baratza Vario',
+        manufacturer: 'Baratza',
       });
       const savedGrinder = await grinderRepository.save(grinder);
 
@@ -269,7 +521,6 @@ describe('ShotService Integration Tests', () => {
         grinderId: savedGrinder.id,
         shot_type: 'espresso' as Shot['shot_type'],
         pulled_at: new Date(),
-        success: true,
       };
 
       const shotData2 = {
@@ -279,7 +530,6 @@ describe('ShotService Integration Tests', () => {
         grinderId: savedGrinder.id,
         shot_type: 'espresso' as Shot['shot_type'],
         pulled_at: new Date(),
-        success: false,
       };
 
       await shotService.createShot(shotData1);
@@ -291,582 +541,37 @@ describe('ShotService Integration Tests', () => {
         beanBatchId: savedBeanBatch.id,
       });
 
-      // Assert: Should have 2 total shots, 1 successful, 1 failed
+      // Assert: Should have 2 total shots
       expect(stats.total).toBe(2);
-      expect(stats.successful).toBe(1);
-      expect(stats.failed).toBe(1);
-      expect(stats.successRate).toBe(50);
+      expect(stats.successful).toBe(0); // No shots marked as successful
+      expect(stats.failed).toBe(2);
     });
-  });
 
-  describe('Basic CRUD Operations', () => {
-    it('should create and retrieve a basic shot', async () => {
-      // Create test data
-      const user = userRepository.create({ name: 'Test User' });
-      const savedUser = await userRepository.save(user);
-
+    it('should return empty statistics when no shots exist', async () => {
+      // Arrange: Create test data
       const machine = machineRepository.create({
-        model: 'Test Machine Model',
-        firmware_version: '1.0.0',
+        model: 'La Marzocco Linea Mini',
+        manufacturer: 'La Marzocco',
       });
       const savedMachine = await machineRepository.save(machine);
 
-      const bean = beanRepository.create({
-        name: 'Test Bean',
-        roaster: 'Test Roaster',
-        country: 'Colombia',
-        region: 'Huila',
-      });
-      const savedBean = await beanRepository.save(bean);
-
       const beanBatch = beanBatchRepository.create({
-        bean: savedBean,
+        name: 'Test Bean Batch',
         roastDate: new Date('2024-01-01'),
-        bagOpenDate: new Date('2024-07-01'),
       });
       const savedBeanBatch = await beanBatchRepository.save(beanBatch);
 
-      const grinder = grinderRepository.create({
-        model: 'Test Grinder',
-      });
-      const savedGrinder = await grinderRepository.save(grinder);
-
-      // Create shot data
-      const shotData = {
-        userId: user.id,
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
-        grinderId: grinder.id,
-        shot_type: 'normale' as const,
-        pulled_at: new Date(),
-        success: true,
-      };
-
-      // Create the shot
-      const createdShot = await shotService.createShot(shotData);
-
-      // Verify the shot was created
-      expect(createdShot).toBeDefined();
-      expect(createdShot.id).toBeDefined();
-      expect(createdShot.shot_type).toBe('normale');
-      expect(createdShot.success).toBe(true);
-
-      // Retrieve the shot
-      const retrievedShot = await shotService.getShotById(createdShot.id);
-
-      // Verify the retrieved shot
-      expect(retrievedShot).toBeDefined();
-      expect(retrievedShot.id).toBe(createdShot.id);
-      expect(retrievedShot.shot_type).toBe('normale');
-      expect(retrievedShot.success).toBe(true);
-    });
-
-    it('should handle pagination correctly', async () => {
-      // Create test data
-      const user = userRepository.create({ name: 'Test User' });
-      const savedUser = await userRepository.save(user);
-
-      const machine = machineRepository.create({
-        model: 'Test Machine Model',
-        firmware_version: '1.0.0',
-      });
-      const savedMachine = await machineRepository.save(machine);
-
-      const bean = beanRepository.create({
-        name: 'Test Bean',
-        roaster: 'Test Roaster',
-        country: 'Colombia',
-        region: 'Huila',
-      });
-      const savedBean = await beanRepository.save(bean);
-
-      const beanBatch = beanBatchRepository.create({
-        bean: savedBean,
-        roastDate: new Date('2024-01-01'),
-        bagOpenDate: new Date('2024-07-01'),
-      });
-      const savedBeanBatch = await beanBatchRepository.save(beanBatch);
-
-      const grinder = grinderRepository.create({
-        model: 'Test Grinder',
-      });
-      const savedGrinder = await grinderRepository.save(grinder);
-
-      // Create shot data
-      const shotData = {
-        userId: user.id,
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
-        grinderId: grinder.id,
-        shot_type: 'normale' as const,
-        pulled_at: new Date(),
-        success: true,
-      };
-
-      // Create multiple shots
-      for (let i = 0; i < 5; i++) {
-        await shotService.createShot({
-          userId: savedUser.id,
-          machineId: savedMachine.id,
-          beanBatchId: savedBeanBatch.id,
-          grinderId: savedGrinder.id,
-          shot_type: 'normale' as const,
-          success: i % 2 === 0, // Alternate success
-        });
-      }
-
-      // Test pagination
-      const page1 = await shotService.getShots({ page: 1, limit: 2 });
-      const page2 = await shotService.getShots({ page: 2, limit: 2 });
-      const page3 = await shotService.getShots({ page: 3, limit: 2 });
-
-      // Verify pagination results
-      expect(page1.shots).toHaveLength(2);
-      expect(page2.shots).toHaveLength(2);
-      expect(page3.shots).toHaveLength(1);
-      expect(page1.total).toBe(5);
-      expect(page2.total).toBe(5);
-      expect(page3.total).toBe(5);
-      expect(page1.totalPages).toBe(3);
-      expect(page2.totalPages).toBe(3);
-      expect(page3.totalPages).toBe(3);
-    });
-
-    it('should filter shots by success status', async () => {
-      // Create test data
-      const user = userRepository.create({ name: 'Test User' });
-      const savedUser = await userRepository.save(user);
-
-      const machine = machineRepository.create({
-        model: 'Test Machine Model',
-        firmware_version: '1.0.0',
-      });
-      const savedMachine = await machineRepository.save(machine);
-
-      const bean = beanRepository.create({
-        name: 'Test Bean',
-        roaster: 'Test Roaster',
-        country: 'Colombia',
-        region: 'Huila',
-      });
-      const savedBean = await beanRepository.save(bean);
-
-      const beanBatch = beanBatchRepository.create({
-        bean: savedBean,
-        roastDate: new Date('2024-01-01'),
-        bagOpenDate: new Date('2024-07-01'),
-      });
-      const savedBeanBatch = await beanBatchRepository.save(beanBatch);
-
-      const grinder = grinderRepository.create({
-        model: 'Test Grinder',
-      });
-      const savedGrinder = await grinderRepository.save(grinder);
-
-      // Create shot data
-      const shotData = {
-        userId: user.id,
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
-        grinderId: grinder.id,
-        shot_type: 'normale' as const,
-        pulled_at: new Date(),
-        success: true,
-      };
-
-      // Create shots with different success statuses
-      await shotService.createShot({
-        userId: user.id,
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
-        grinderId: grinder.id,
-        shot_type: 'normale' as const,
-        success: true,
-      });
-
-      await shotService.createShot({
-        userId: user.id,
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
-        grinderId: grinder.id,
-        shot_type: 'normale' as const,
-        success: false,
-      });
-
-      // Test filtering
-      const successfulShots = await shotService.getShots({ success: true });
-      const failedShots = await shotService.getShots({ success: false });
-
-      // Verify filtering results
-      expect(successfulShots.shots).toHaveLength(1);
-      expect(successfulShots.shots[0].success).toBe(true);
-      expect(failedShots.shots).toHaveLength(1);
-      expect(failedShots.shots[0].success).toBe(false);
-    });
-
-    it('should update a shot successfully', async () => {
-      // Create test data
-      const user = userRepository.create({ name: 'Test User' });
-      const savedUser = await userRepository.save(user);
-
-      const machine = machineRepository.create({
-        model: 'Test Machine Model',
-        firmware_version: '1.0.0',
-      });
-      const savedMachine = await machineRepository.save(machine);
-
-      const bean = beanRepository.create({
-        name: 'Test Bean',
-        roaster: 'Test Roaster',
-        country: 'Colombia',
-        region: 'Huila',
-      });
-      const savedBean = await beanRepository.save(bean);
-
-      const beanBatch = beanBatchRepository.create({
-        bean: savedBean,
-        roastDate: new Date('2024-01-01'),
-        bagOpenDate: new Date('2024-07-01'),
-      });
-      const savedBeanBatch = await beanBatchRepository.save(beanBatch);
-
-      const grinder = grinderRepository.create({
-        model: 'Test Grinder',
-      });
-      const savedGrinder = await grinderRepository.save(grinder);
-
-      // Create shot data
-      const shotData = {
-        userId: user.id,
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
-        grinderId: grinder.id,
-        shot_type: 'normale' as const,
-        pulled_at: new Date(),
-        success: true,
-      };
-
-      // Create the shot
-      const createdShot = await shotService.createShot({
-        userId: user.id,
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
-        grinderId: grinder.id,
-        shot_type: 'normale' as const,
-        success: true,
-      });
-
-      // Update the shot
-      const updatedShot = await shotService.updateShot(createdShot.id, {
-        success: false,
-      });
-
-      // Verify the update
-      expect(updatedShot.id).toBe(createdShot.id);
-      expect(updatedShot.success).toBe(false);
-    });
-
-    it('should handle soft delete and restore', async () => {
-      // Create test data
-      const user = userRepository.create({ name: 'Test User' });
-      const savedUser = await userRepository.save(user);
-
-      const machine = machineRepository.create({
-        model: 'Test Machine Model',
-        firmware_version: '1.0.0',
-      });
-      const savedMachine = await machineRepository.save(machine);
-
-      const bean = beanRepository.create({
-        name: 'Test Bean',
-        roaster: 'Test Roaster',
-        country: 'Colombia',
-        region: 'Huila',
-      });
-      const savedBean = await beanRepository.save(bean);
-
-      const beanBatch = beanBatchRepository.create({
-        bean: savedBean,
-        roastDate: new Date('2024-01-01'),
-        bagOpenDate: new Date('2024-07-01'),
-      });
-      const savedBeanBatch = await beanBatchRepository.save(beanBatch);
-
-      const grinder = grinderRepository.create({
-        model: 'Test Grinder',
-      });
-      const savedGrinder = await grinderRepository.save(grinder);
-
-      // Create shot data
-      const shotData = {
-        userId: user.id,
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
-        grinderId: grinder.id,
-        shot_type: 'normale' as const,
-        pulled_at: new Date(),
-        success: true,
-      };
-
-      // Create a shot
-      const createdShot = await shotService.createShot({
-        userId: user.id,
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
-        grinderId: grinder.id,
-        shot_type: 'normale' as const,
-        success: true,
-      });
-
-      // Soft delete the shot
-      const deleteResult = await shotService.softDeleteShot(createdShot.id);
-      expect(deleteResult).toBe(true);
-
-      // Verify shot is not found in regular queries
-      await expect(shotService.getShotById(createdShot.id)).rejects.toThrow();
-
-      // Restore the shot
-      const restoredShot = await shotService.restoreShot(createdShot.id);
-      expect(restoredShot.id).toBe(createdShot.id);
-
-      // Verify shot can be found again
-      const foundShot = await shotService.getShotById(createdShot.id);
-      expect(foundShot.id).toBe(createdShot.id);
-    });
-
-    it('should calculate shot statistics correctly', async () => {
-      // Create test data
-      const user = userRepository.create({ name: 'Test User' });
-      const savedUser = await userRepository.save(user);
-
-      const machine = machineRepository.create({
-        model: 'Test Machine Model',
-        firmware_version: '1.0.0',
-      });
-      const savedMachine = await machineRepository.save(machine);
-
-      const bean = beanRepository.create({
-        name: 'Test Bean',
-        roaster: 'Test Roaster',
-        country: 'Colombia',
-        region: 'Huila',
-      });
-      const savedBean = await beanRepository.save(bean);
-
-      const beanBatch = beanBatchRepository.create({
-        bean: savedBean,
-        roastDate: new Date('2024-01-01'),
-        bagOpenDate: new Date('2024-07-01'),
-      });
-      const savedBeanBatch = await beanBatchRepository.save(beanBatch);
-
-      const grinder = grinderRepository.create({
-        model: 'Test Grinder',
-      });
-      const savedGrinder = await grinderRepository.save(grinder);
-
-      // Create shot data
-      const shotData = {
-        userId: user.id,
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
-        grinderId: grinder.id,
-        shot_type: 'normale' as const,
-        pulled_at: new Date(),
-        success: true,
-      };
-
-      // Create shots with known success rates
-      await shotService.createShot({
-        userId: user.id,
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
-        grinderId: grinder.id,
-        shot_type: 'normale' as const,
-        success: true,
-      });
-
-      await shotService.createShot({
-        userId: user.id,
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
-        grinderId: grinder.id,
-        shot_type: 'normale' as const,
-        success: true,
-      });
-
-      await shotService.createShot({
-        userId: user.id,
-        machineId: machine.id,
-        beanBatchId: beanBatch.id,
-        grinderId: grinder.id,
-        shot_type: 'normale' as const,
-        success: false,
-      });
-
-      // Get statistics
-      const stats = await shotService.getShotStatistics();
-
-      // Verify statistics
-      expect(stats.total).toBe(3);
-      expect(stats.successful).toBe(2);
-      expect(stats.failed).toBe(1);
-      expect(stats.successRate).toBeCloseTo(66.67, 1);
-    });
-  });
-
-  describe('Error Handling', () => {
-    it('should throw error when creating shot with invalid machine', async () => {
-      // Create test data
-      const user = userRepository.create({ name: 'Test User' });
-      const savedUser = await userRepository.save(user);
-
-      const machine = machineRepository.create({
-        model: 'Test Machine Model',
-        firmware_version: '1.0.0',
-      });
-      const savedMachine = await machineRepository.save(machine);
-
-      const bean = beanRepository.create({
-        name: 'Test Bean',
-        roaster: 'Test Roaster',
-        country: 'Colombia',
-        region: 'Huila',
-      });
-      const savedBean = await beanRepository.save(bean);
-
-      const beanBatch = beanBatchRepository.create({
-        bean: savedBean,
-        roastDate: new Date('2024-01-01'),
-        bagOpenDate: new Date('2024-07-01'),
-      });
-      const savedBeanBatch = await beanBatchRepository.save(beanBatch);
-
-      const grinder = grinderRepository.create({
-        model: 'Test Grinder',
-      });
-      const savedGrinder = await grinderRepository.save(grinder);
-
-      // Create shot data
-      const shotData = {
-        userId: user.id,
-        machineId: '550e8400-e29b-41d4-a716-446655440000', // Valid UUID format but doesn't exist
-        beanBatchId: beanBatch.id,
-        grinderId: grinder.id,
-        shot_type: 'normale' as const,
-      };
-
-      await expect(shotService.createShot(shotData)).rejects.toThrow(
-        'Machine with ID 550e8400-e29b-41d4-a716-446655440000 not found'
-      );
-    });
-
-    it('should throw error when creating shot with invalid bean batch', async () => {
-      // Create test data
-      const user = userRepository.create({ name: 'Test User' });
-      const savedUser = await userRepository.save(user);
-
-      const machine = machineRepository.create({
-        model: 'Test Machine Model',
-        firmware_version: '1.0.0',
-      });
-      const savedMachine = await machineRepository.save(machine);
-
-      const grinder = grinderRepository.create({
-        model: 'Test Grinder',
-      });
-      const savedGrinder = await grinderRepository.save(grinder);
-
-      // Create shot data
-      const shotData = {
-        userId: user.id,
-        machineId: machine.id,
-        beanBatchId: '550e8400-e29b-41d4-a716-446655440001', // Valid UUID format but doesn't exist
-        grinderId: grinder.id,
-        shot_type: 'normale' as const,
-      };
-
-      await expect(shotService.createShot(shotData)).rejects.toThrow(
-        'BeanBatch with ID 550e8400-e29b-41d4-a716-446655440001 not found'
-      );
-    });
-
-    it('should throw error when getting non-existent shot', async () => {
-      await expect(shotService.getShotById('550e8400-e29b-41d4-a716-446655440002')).rejects.toThrow(
-        'Shot with ID 550e8400-e29b-41d4-a716-446655440002 not found'
-      );
-    });
-
-    it('should throw error when updating non-existent shot', async () => {
-      await expect(
-        shotService.updateShot('550e8400-e29b-41d4-a716-446655440003', {})
-      ).rejects.toThrow('Shot with ID 550e8400-e29b-41d4-a716-446655440003 not found');
-    });
-
-    it('should return false when soft deleting non-existent shot', async () => {
-      const result = await shotService.softDeleteShot('550e8400-e29b-41d4-a716-446655440004');
-      expect(result).toBe(false);
-    });
-
-    it('should return false when hard deleting non-existent shot', async () => {
-      const result = await shotService.hardDeleteShot('550e8400-e29b-41d4-a716-446655440005');
-      expect(result).toBe(false);
-    });
-
-    it('should throw error when restoring non-existent shot', async () => {
-      await expect(shotService.restoreShot('550e8400-e29b-41d4-a716-446655440006')).rejects.toThrow(
-        'Shot with ID 550e8400-e29b-41d4-a716-446655440006 not found'
-      );
-    });
-  });
-
-  describe('createShot', () => {
-    it('should use current date when pulled_at is not provided', async () => {
-      // Create test data
-      const user = userRepository.create({ name: 'Test User' });
-      const savedUser = await userRepository.save(user);
-
-      const machine = machineRepository.create({
-        model: 'Test Machine Model',
-        firmware_version: '1.0.0',
-      });
-      const savedMachine = await machineRepository.save(machine);
-
-      const bean = beanRepository.create({
-        name: 'Test Bean',
-        roaster: 'Test Roaster',
-        country: 'Colombia',
-        region: 'Huila',
-      });
-      const savedBean = await beanRepository.save(bean);
-
-      const beanBatch = beanBatchRepository.create({
-        bean: savedBean,
-        roastDate: new Date('2024-01-01'),
-        bagOpenDate: new Date('2024-07-01'),
-      });
-      const savedBeanBatch = await beanBatchRepository.save(beanBatch);
-
-      const grinder = grinderRepository.create({
-        model: 'Test Grinder',
-      });
-      const savedGrinder = await grinderRepository.save(grinder);
-
-      const shotData = {
-        userId: savedUser.id,
+      // Act: Get statistics
+      const stats = await shotService.getShotStatistics({
         machineId: savedMachine.id,
         beanBatchId: savedBeanBatch.id,
-        grinderId: savedGrinder.id,
-        shot_type: 'normale' as const,
-      };
+      });
 
-      const beforeCreate = new Date();
-      const result = await shotService.createShot(shotData);
-      const afterCreate = new Date();
-
-      expect(result.pulled_at).toBeDefined();
-      expect(result.pulled_at.getTime()).toBeGreaterThanOrEqual(beforeCreate.getTime());
-      expect(result.pulled_at.getTime()).toBeLessThanOrEqual(afterCreate.getTime());
+      // Assert: Should have 0 total shots
+      expect(stats.total).toBe(0);
+      expect(stats.successful).toBe(0);
+      expect(stats.failed).toBe(0);
+      expect(stats.successRate).toBe(0);
     });
   });
 });

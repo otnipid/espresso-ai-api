@@ -336,7 +336,7 @@ class DataLoader:
             else:
                 pulled_at = None
             
-            # Check if shot already exists
+            # Check if shot exists
             shot_key = f"{pulled_at}_{bean_batch_id}"
             if shot_key in existing_shots:
                 self.shot_ids[index] = existing_shots[shot_key]
@@ -406,6 +406,7 @@ class DataLoader:
             try:
                 response = self.session.post(
                     f"{self.api_base_url}/preparations",
+                    json=prep_data
                 )
                 
                 if response.status_code == 201:
