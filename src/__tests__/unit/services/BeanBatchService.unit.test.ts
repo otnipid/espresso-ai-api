@@ -170,9 +170,9 @@ describe('BeanBatchService', () => {
 
     it('should throw error when name is missing', async () => {
       // Arrange
-      const invalidData = { 
-        name: '', 
-        roastDate: '2023-01-01' 
+      const invalidData = {
+        name: '',
+        roastDate: '2023-01-01',
       }; // Empty name
 
       // Act & Assert
@@ -183,9 +183,9 @@ describe('BeanBatchService', () => {
 
     it('should throw error when roastDate is missing', async () => {
       // Arrange
-      const invalidData = { 
+      const invalidData = {
         name: 'Ethiopian Yirgacheffe',
-        roastDate: '' 
+        roastDate: '',
       }; // Empty roastDate
 
       // Act & Assert

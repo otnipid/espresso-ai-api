@@ -86,7 +86,7 @@ export class PredictionService {
       where: { id: shot.beanBatch?.id },
     });
 
-    const bean = beanBatch; 
+    const bean = beanBatch;
 
     const machine = await machineRepository.findOne({
       where: { id: shot.machine?.id },

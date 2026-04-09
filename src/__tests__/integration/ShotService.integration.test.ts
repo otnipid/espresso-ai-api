@@ -138,7 +138,9 @@ describe('ShotService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for non-existent user
-      await expect(shotService.createShot(shotData)).rejects.toThrow('User with ID 00000000-0000-0000-0000-000000000000 not found');
+      await expect(shotService.createShot(shotData)).rejects.toThrow(
+        'User with ID 00000000-0000-0000-0000-000000000000 not found'
+      );
     });
 
     it('should throw error when bean batch does not exist', async () => {
@@ -168,7 +170,9 @@ describe('ShotService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for non-existent bean batch
-      await expect(shotService.createShot(shotData)).rejects.toThrow('BeanBatch with ID 00000000-0000-0000-0000-000000000000 not found');
+      await expect(shotService.createShot(shotData)).rejects.toThrow(
+        'BeanBatch with ID 00000000-0000-0000-0000-000000000000 not found'
+      );
     });
 
     it('should throw error when machine does not exist', async () => {
@@ -198,7 +202,9 @@ describe('ShotService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for non-existent machine
-      await expect(shotService.createShot(shotData)).rejects.toThrow('Machine with ID 00000000-0000-0000-0000-000000000000 not found');
+      await expect(shotService.createShot(shotData)).rejects.toThrow(
+        'Machine with ID 00000000-0000-0000-0000-000000000000 not found'
+      );
     });
 
     it('should throw error when grinder does not exist', async () => {
@@ -228,7 +234,9 @@ describe('ShotService Integration Tests', () => {
       };
 
       // Act & Assert: Should throw error for non-existent grinder
-      await expect(shotService.createShot(shotData)).rejects.toThrow('Grinder with ID 00000000-0000-0000-0000-000000000000 not found');
+      await expect(shotService.createShot(shotData)).rejects.toThrow(
+        'Grinder with ID 00000000-0000-0000-0000-000000000000 not found'
+      );
     });
   });
 
@@ -286,9 +294,9 @@ describe('ShotService Integration Tests', () => {
 
     it('should throw error when shot not found', async () => {
       // Act & Assert: Should throw error for non-existent shot
-      await expect(
-        shotService.getShotById('550e8400-e29b-41d4-a716-446655440002')
-      ).rejects.toThrow('Shot with ID 550e8400-e29b-41d4-a716-446655440002 not found');
+      await expect(shotService.getShotById('550e8400-e29b-41d4-a716-446655440002')).rejects.toThrow(
+        'Shot with ID 550e8400-e29b-41d4-a716-446655440002 not found'
+      );
     });
   });
 
@@ -472,9 +480,7 @@ describe('ShotService Integration Tests', () => {
       expect(result).toBe(true);
 
       // Verify shot is soft deleted (getShotById filters out soft-deleted shots)
-      await expect(
-        shotService.getShotById(createdShot.id)
-      ).rejects.toThrow('Shot with ID');
+      await expect(shotService.getShotById(createdShot.id)).rejects.toThrow('Shot with ID');
     });
 
     it('should throw error when deleting non-existent shot', async () => {

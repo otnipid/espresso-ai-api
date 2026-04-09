@@ -428,9 +428,9 @@ describe('BeanBatchService Integration Tests', () => {
       expect(result).toBe(true);
 
       // Verify bean batch no longer exists
-      await expect(
-        beanBatchService.getBeanBatchById(createdBatch.id)
-      ).rejects.toThrow('Bean batch with ID');
+      await expect(beanBatchService.getBeanBatchById(createdBatch.id)).rejects.toThrow(
+        'Bean batch with ID'
+      );
     });
 
     it('should throw error when deleting non-existent bean batch', async () => {
