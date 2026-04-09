@@ -10,6 +10,9 @@ export class Machine {
   model!: string;
 
   @Column({ type: 'text', nullable: true })
+  manufacturer?: string | null;
+
+  @Column({ type: 'text', nullable: true })
   firmware_version?: string | null;
 
   @CreateDateColumn({ type: 'timestamp' })
