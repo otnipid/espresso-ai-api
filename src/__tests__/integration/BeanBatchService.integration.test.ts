@@ -3,18 +3,15 @@ import { PostgresContainerManager, type TestDatabase } from '../setup.integratio
 import { getDataSource } from '../../data-source';
 import { BeanBatchService } from '../../services/BeanBatchService';
 import { BeanBatch } from '../../entities/BeanBatch';
-import { Bean } from '../../entities/Bean';
 import { Repository } from 'typeorm';
 
-// This is crucial: tell Vitest to replace the real '../../data-source' module
-// with our mock, so we can control what getDataSource() returns in tests.
+// Mock the data-source module to use our test database
 vi.mock('../../data-source');
 
 describe('BeanBatchService Integration Tests', () => {
   const containerManager = PostgresContainerManager.getInstance();
   let testDb: TestDatabase;
   let beanBatchService: BeanBatchService;
-  let beanRepository: Repository<Bean>;
   let beanBatchRepository: Repository<BeanBatch>;
 
   // Start single container ONCE before all tests in this file
@@ -37,8 +34,7 @@ describe('BeanBatchService Integration Tests', () => {
     // Initialize service with mocked DataSource
     beanBatchService = new BeanBatchService(testDb.dataSource);
 
-    // Get repositories for test data setup
-    beanRepository = testDb.dataSource.getRepository(Bean);
+    // Get repository for test data setup
     beanBatchRepository = testDb.dataSource.getRepository(BeanBatch);
   });
 
@@ -50,26 +46,20 @@ describe('BeanBatchService Integration Tests', () => {
 
   describe('createBeanBatch', () => {
     it('should create a bean batch with all fields', async () => {
-      // Arrange: Create test data using repositories
-      const bean = beanRepository.create({
-        name: 'Test Ethiopian Bean',
-        roaster: 'Test Roaster Co',
+      // Arrange: Create test data
+      const beanBatchData = {
+        name: 'Ethiopian Yirgacheffe',
+        roaster: 'Blue Bottle Coffee',
         country: 'Ethiopia',
         region: 'Yirgacheffe',
         farm: 'Test Farm',
         varietal: 'Heirloom',
-        processing_method: 'Washed',
-        altitude_m: 1800,
-        density_category: 'Medium',
-      });
-      const savedBean = await beanRepository.save(bean);
-
-      const beanBatchData = {
-        beanId: savedBean.id,
+        processingMethod: 'Washed',
+        altitudeM: 1800,
+        densityCategory: 'Medium',
         roastDate: '2024-01-15',
         bagOpenDate: '2024-01-20',
         roastLevel: 'Medium',
-        roastDegree: 85,
       };
 
       // Act: Call service method
@@ -78,34 +68,44 @@ describe('BeanBatchService Integration Tests', () => {
       // Assert: Verify bean batch was created
       expect(result).toBeDefined();
       expect(result.id).toBeDefined();
-      expect(result.bean.id).toBe(savedBean.id);
+      expect(result.name).toBe('Ethiopian Yirgacheffe');
+      expect(result.roaster).toBe('Blue Bottle Coffee');
+      expect(result.country).toBe('Ethiopia');
       expect(result.roastDate).toBeInstanceOf(Date);
       expect(result.bagOpenDate).toBeInstanceOf(Date);
       expect(result.roastLevel).toBe('Medium');
-      expect(result.roastDegree).toBe(85); // Service converts to integer
+    });
+
+    it('should create a bean batch with minimal required fields', async () => {
+      // Arrange: Create test data with only required fields
+      const beanBatchData = {
+        name: 'Colombian Supremo',
+        roastDate: '2024-02-10',
+      };
+
+      // Act: Call service method
+      const result = await beanBatchService.createBeanBatch(beanBatchData);
+
+      // Assert: Verify bean batch was created with minimal data
+      expect(result).toBeDefined();
+      expect(result.id).toBeDefined();
+      expect(result.name).toBe('Colombian Supremo');
+      expect(result.roaster).toBeNull();
+      expect(result.country).toBeNull();
+      expect(result.roastDate).toBeInstanceOf(Date);
+      expect(result.bagOpenDate).toBeNull();
+      expect(result.roastLevel).toBeNull();
     });
 
     it('should handle null values correctly', async () => {
       // Arrange: Create test data with null values
-      const bean = beanRepository.create({
-        name: 'Test Colombian Bean',
-        roaster: 'Test Roaster Co',
-        country: 'Colombia',
-        region: 'Huila',
-        farm: 'Test Farm',
-        varietal: 'Caturra',
-        processing_method: 'Natural',
-        altitude_m: 1600,
-        density_category: 'Medium',
-      });
-      const savedBean = await beanRepository.save(bean);
-
       const beanBatchData = {
-        beanId: savedBean.id,
-        roastDate: '2024-02-10',
+        name: 'Kenyan AA',
+        roaster: null,
+        country: null,
+        roastDate: '2024-03-05',
         bagOpenDate: null,
         roastLevel: null,
-        roastDegree: null,
       };
 
       // Act: Call service method
@@ -114,34 +114,23 @@ describe('BeanBatchService Integration Tests', () => {
       // Assert: Verify null values are handled correctly
       expect(result).toBeDefined();
       expect(result.id).toBeDefined();
-      expect(result.bean.id).toBe(savedBean.id);
+      expect(result.name).toBe('Kenyan AA');
+      expect(result.roaster).toBeNull();
+      expect(result.country).toBeNull();
       expect(result.roastDate).toBeInstanceOf(Date);
       expect(result.bagOpenDate).toBeNull();
       expect(result.roastLevel).toBeNull();
-      expect(result.roastDegree).toBeNull();
     });
 
     it('should handle Date objects correctly', async () => {
       // Arrange: Create test data with Date objects
-      const bean = beanRepository.create({
-        name: 'Test Kenyan Bean',
-        roaster: 'Test Roaster Co',
-        country: 'Kenya',
-        region: 'Nyeri',
-        farm: 'Test Farm',
-        varietal: 'SL28',
-        processing_method: 'Washed',
-        altitude_m: 1700,
-        density_category: 'High',
-      });
-      const savedBean = await beanRepository.save(bean);
-
       const beanBatchData = {
-        beanId: savedBean.id,
-        roastDate: new Date('2024-03-05'),
-        bagOpenDate: new Date('2024-03-10'),
+        name: 'Guatemala Antigua',
+        roaster: 'Stumptown Coffee',
+        country: 'Guatemala',
+        roastDate: new Date('2024-04-10'),
+        bagOpenDate: new Date('2024-04-15'),
         roastLevel: 'Light',
-        roastDegree: 78,
       };
 
       // Act: Call service method
@@ -150,66 +139,43 @@ describe('BeanBatchService Integration Tests', () => {
       // Assert: Verify Date objects are handled correctly
       expect(result).toBeDefined();
       expect(result.id).toBeDefined();
-      expect(result.bean.id).toBe(savedBean.id);
+      expect(result.name).toBe('Guatemala Antigua');
       expect(result.roastDate).toBeInstanceOf(Date);
       expect(result.bagOpenDate).toBeInstanceOf(Date);
       expect(result.roastLevel).toBe('Light');
-      expect(result.roastDegree).toBe(78.0);
     });
 
-    it('should throw error when bean does not exist', async () => {
-      // Arrange: Create bean batch data for non-existent bean
+    it('should throw error when name is missing', async () => {
+      // Arrange: Create bean batch data with missing name
       const beanBatchData = {
-        beanId: '550e8400-e29b-41d4-a716-446655440001', // Valid UUID format
+        name: '', // Empty name
         roastDate: '2024-01-15',
-        bagOpenDate: '2024-01-20',
-        roastLevel: 'Medium',
-        roastDegree: 85,
       };
 
-      // Act & Assert: Should throw error for non-existent bean
+      // Act & Assert: Should throw error for missing name
       await expect(beanBatchService.createBeanBatch(beanBatchData)).rejects.toThrow(
-        'Bean with ID 550e8400-e29b-41d4-a716-446655440001 not found'
+        'Bean name is required'
       );
     });
 
-    it('should throw error when required fields are missing', async () => {
-      // Arrange: Create bean batch data with missing required fields
+    it('should throw error when roast date is missing', async () => {
+      // Arrange: Create bean batch data with missing roast date
       const beanBatchData = {
-        beanId: '', // Empty bean ID
+        name: 'Test Bean',
         roastDate: '', // Empty roast date
-        bagOpenDate: '2024-01-20',
-        roastLevel: 'Medium',
-        roastDegree: 85,
       };
 
-      // Act & Assert: Should throw error for missing required fields
+      // Act & Assert: Should throw error for missing roast date
       await expect(beanBatchService.createBeanBatch(beanBatchData)).rejects.toThrow(
-        'Bean ID is required'
+        'Roast date is required'
       );
     });
 
     it('should throw error when roast date is invalid', async () => {
-      // Arrange: Create test data
-      const bean = beanRepository.create({
-        name: 'Test Bean',
-        roaster: 'Test Roaster',
-        country: 'Test Country',
-        region: 'Test Region',
-        farm: 'Test Farm',
-        varietal: 'Test Varietal',
-        processing_method: 'Test Method',
-        altitude_m: 1500,
-        density_category: 'Medium',
-      });
-      const savedBean = await beanRepository.save(bean);
-
+      // Arrange: Create test data with invalid date
       const beanBatchData = {
-        beanId: savedBean.id,
+        name: 'Test Bean',
         roastDate: 'invalid-date', // Invalid date format
-        bagOpenDate: '2024-01-20',
-        roastLevel: 'Medium',
-        roastDegree: 85,
       };
 
       // Act & Assert: Should throw error for invalid date
@@ -217,41 +183,45 @@ describe('BeanBatchService Integration Tests', () => {
         'Invalid roast date format'
       );
     });
+
+    it('should throw error when bag open date is invalid', async () => {
+      // Arrange: Create test data with invalid bag open date
+      const beanBatchData = {
+        name: 'Test Bean',
+        roastDate: '2024-01-15',
+        bagOpenDate: 'invalid-date', // Invalid date format
+      };
+
+      // Act & Assert: Should throw error for invalid date
+      await expect(beanBatchService.createBeanBatch(beanBatchData)).rejects.toThrow(
+        'Invalid bag open date format'
+      );
+    });
   });
 
   describe('getBeanBatchById', () => {
     it('should return bean batch when found', async () => {
       // Arrange: Create test data
-      const bean = beanRepository.create({
-        name: 'Test Bean',
+      const beanBatchData = {
+        name: 'Test Bean Batch',
         roaster: 'Test Roaster',
         country: 'Test Country',
-        region: 'Test Region',
-        farm: 'Test Farm',
-        varietal: 'Test Varietal',
-        processing_method: 'Test Method',
-        altitude_m: 1500,
-        density_category: 'Medium',
-      });
-      const savedBean = await beanRepository.save(bean);
-
-      const beanBatch = await beanBatchService.createBeanBatch({
-        beanId: savedBean.id,
         roastDate: '2024-01-15',
-        bagOpenDate: '2024-01-20',
         roastLevel: 'Medium',
-        roastDegree: 85,
-      });
+      };
+
+      const createdBatch = await beanBatchService.createBeanBatch(beanBatchData);
 
       // Act: Get bean batch by ID
-      const result = await beanBatchService.getBeanBatchById(beanBatch.id);
+      const result = await beanBatchService.getBeanBatchById(createdBatch.id);
 
       // Assert: Verify bean batch is returned
       expect(result).toBeDefined();
-      expect(result.id).toBe(beanBatch.id);
-      expect(result.bean.id).toBe(savedBean.id);
+      expect(result.id).toBe(createdBatch.id);
+      expect(result.name).toBe('Test Bean Batch');
+      expect(result.roaster).toBe('Test Roaster');
+      expect(result.country).toBe('Test Country');
       expect(result.roastLevel).toBe('Medium');
-      expect(result.roastDegree).toBe(85); // Service converts to integer
     });
 
     it('should throw error when bean batch not found', async () => {
@@ -265,46 +235,20 @@ describe('BeanBatchService Integration Tests', () => {
   describe('getAllBeanBatches', () => {
     it('should return all bean batches', async () => {
       // Arrange: Create test data with multiple bean batches
-      const bean1 = beanRepository.create({
+      const beanBatch1 = await beanBatchService.createBeanBatch({
         name: 'Test Bean 1',
         roaster: 'Test Roaster 1',
         country: 'Country 1',
-        region: 'Region 1',
-        farm: 'Farm 1',
-        varietal: 'Varietal 1',
-        processing_method: 'Method 1',
-        altitude_m: 1500,
-        density_category: 'Medium',
-      });
-      const savedBean1 = await beanRepository.save(bean1);
-
-      const bean2 = beanRepository.create({
-        name: 'Test Bean 2',
-        roaster: 'Test Roaster 2',
-        country: 'Country 2',
-        region: 'Region 2',
-        farm: 'Farm 2',
-        varietal: 'Varietal 2',
-        processing_method: 'Method 2',
-        altitude_m: 1600,
-        density_category: 'High',
-      });
-      const savedBean2 = await beanRepository.save(bean2);
-
-      const beanBatch1 = await beanBatchService.createBeanBatch({
-        beanId: savedBean1.id,
         roastDate: '2024-01-15',
-        bagOpenDate: '2024-01-20',
         roastLevel: 'Medium',
-        roastDegree: 85,
       });
 
       const beanBatch2 = await beanBatchService.createBeanBatch({
-        beanId: savedBean2.id,
+        name: 'Test Bean 2',
+        roaster: 'Test Roaster 2',
+        country: 'Country 2',
         roastDate: '2024-02-10',
-        bagOpenDate: '2024-02-15',
         roastLevel: 'Light',
-        roastDegree: 78,
       });
 
       // Act: Get all bean batches
@@ -327,150 +271,65 @@ describe('BeanBatchService Integration Tests', () => {
     });
   });
 
-  describe('getBeanBatchesByBeanId', () => {
-    it('should return all bean batches for a specific bean', async () => {
-      // Arrange: Create test data with multiple bean batches for same bean
-      const bean = beanRepository.create({
-        name: 'Test Bean',
-        roaster: 'Test Roaster',
-        country: 'Test Country',
-        region: 'Test Region',
-        farm: 'Test Farm',
-        varietal: 'Test Varietal',
-        processing_method: 'Test Method',
-        altitude_m: 1500,
-        density_category: 'Medium',
-      });
-      const savedBean = await beanRepository.save(bean);
-
-      const beanBatch1 = await beanBatchService.createBeanBatch({
-        beanId: savedBean.id,
-        roastDate: '2024-01-15',
-        bagOpenDate: '2024-01-20',
-        roastLevel: 'Medium',
-        roastDegree: 85,
-      });
-
-      const beanBatch2 = await beanBatchService.createBeanBatch({
-        beanId: savedBean.id,
-        roastDate: '2024-02-10',
-        bagOpenDate: '2024-02-15',
-        roastLevel: 'Light',
-        roastDegree: 78,
-      });
-
-      // Act: Get bean batches for specific bean
-      const result = await beanBatchService.getBeanBatchesByBeanId(savedBean.id);
-
-      // Assert: Verify all bean batches for the bean are returned
-      expect(result).toHaveLength(2);
-      expect(result[0].id).toBe(beanBatch1.id);
-      expect(result[1].id).toBe(beanBatch2.id);
-      expect(result[0].bean.id).toBe(savedBean.id);
-      expect(result[1].bean.id).toBe(savedBean.id);
-    });
-
-    it('should return empty array when no bean batches exist for bean', async () => {
-      // Arrange: Create bean without bean batches
-      const bean = beanRepository.create({
-        name: 'Test Bean',
-        roaster: 'Test Roaster',
-        country: 'Test Country',
-        region: 'Test Region',
-        farm: 'Test Farm',
-        varietal: 'Test Varietal',
-        processing_method: 'Test Method',
-        altitude_m: 1500,
-        density_category: 'Medium',
-      });
-      const savedBean = await beanRepository.save(bean);
-
-      // Act: Get bean batches for bean
-      const result = await beanBatchService.getBeanBatchesByBeanId(savedBean.id);
-
-      // Assert: Should return empty array
-      expect(result).toHaveLength(0);
-    });
-  });
-
   describe('updateBeanBatch', () => {
     it('should update existing bean batch', async () => {
       // Arrange: Create test data
-      const bean = beanRepository.create({
-        name: 'Test Bean',
-        roaster: 'Test Roaster',
-        country: 'Test Country',
-        region: 'Test Region',
-        farm: 'Test Farm',
-        varietal: 'Test Varietal',
-        processing_method: 'Test Method',
-        altitude_m: 1500,
-        density_category: 'Medium',
-      });
-      const savedBean = await beanRepository.save(bean);
-
-      const beanBatch = await beanBatchService.createBeanBatch({
-        beanId: savedBean.id,
+      const beanBatchData = {
+        name: 'Original Bean',
+        roaster: 'Original Roaster',
+        country: 'Original Country',
         roastDate: '2024-01-15',
-        bagOpenDate: '2024-01-20',
         roastLevel: 'Medium',
-        roastDegree: 85,
-      });
+      };
+
+      const createdBatch = await beanBatchService.createBeanBatch(beanBatchData);
 
       const updateData = {
-        roastDate: '2024-01-16',
-        bagOpenDate: '2024-01-21',
+        name: 'Updated Bean',
+        roaster: 'Updated Roaster',
+        country: 'Updated Country',
         roastLevel: 'Dark',
       };
 
       // Act: Update bean batch
-      const result = await beanBatchService.updateBeanBatch(beanBatch.id, updateData);
+      const result = await beanBatchService.updateBeanBatch(createdBatch.id, updateData);
 
       // Assert: Verify bean batch was updated
       expect(result).toBeDefined();
-      expect(result.id).toBe(beanBatch.id);
-      expect(result.roastDate).toBeInstanceOf(Date);
-      expect(result.bagOpenDate).toBeInstanceOf(Date);
+      expect(result.id).toBe(createdBatch.id);
+      expect(result.name).toBe('Updated Bean');
+      expect(result.roaster).toBe('Updated Roaster');
+      expect(result.country).toBe('Updated Country');
       expect(result.roastLevel).toBe('Dark');
-      expect(result.roastDegree).toBe(85); // Should remain unchanged
+      expect(result.roastDate).toBe('2024-01-15'); // Service returns date string
     });
 
     it('should handle partial updates correctly', async () => {
       // Arrange: Create test data
-      const bean = beanRepository.create({
-        name: 'Test Bean',
-        roaster: 'Test Roaster',
-        country: 'Test Country',
-        region: 'Test Region',
-        farm: 'Test Farm',
-        varietal: 'Test Varietal',
-        processing_method: 'Test Method',
-        altitude_m: 1500,
-        density_category: 'Medium',
-      });
-      const savedBean = await beanRepository.save(bean);
-
-      const beanBatch = await beanBatchService.createBeanBatch({
-        beanId: savedBean.id,
+      const beanBatchData = {
+        name: 'Original Bean',
+        roaster: 'Original Roaster',
+        country: 'Original Country',
         roastDate: '2024-01-15',
-        bagOpenDate: '2024-01-20',
         roastLevel: 'Medium',
-        roastDegree: 85,
-      });
+      };
+
+      const createdBatch = await beanBatchService.createBeanBatch(beanBatchData);
 
       const updateData = {
         roastLevel: 'Light',
       };
 
       // Act: Update bean batch partially
-      const result = await beanBatchService.updateBeanBatch(beanBatch.id, updateData);
+      const result = await beanBatchService.updateBeanBatch(createdBatch.id, updateData);
 
       // Assert: Verify only specified fields were updated
       expect(result).toBeDefined();
-      expect(result.id).toBe(beanBatch.id);
-      expect(result.roastLevel).toBe('Light');
-      expect(result.roastDegree).toBe(85); // Should remain unchanged
-      expect(result.bagOpenDate).toBe('2024-01-20'); // Service returns date string
+      expect(result.id).toBe(createdBatch.id);
+      expect(result.name).toBe('Original Bean'); // Should remain unchanged
+      expect(result.roaster).toBe('Original Roaster'); // Should remain unchanged
+      expect(result.country).toBe('Original Country'); // Should remain unchanged
+      expect(result.roastLevel).toBe('Light'); // Should be updated
     });
 
     it('should throw error when updating non-existent bean batch', async () => {
@@ -485,75 +344,93 @@ describe('BeanBatchService Integration Tests', () => {
 
     it('should handle null values in updates', async () => {
       // Arrange: Create test data
-      const bean = beanRepository.create({
+      const beanBatchData = {
         name: 'Test Bean',
         roaster: 'Test Roaster',
         country: 'Test Country',
-        region: 'Test Region',
-        farm: 'Test Farm',
-        varietal: 'Test Varietal',
-        processing_method: 'Test Method',
-        altitude_m: 1500,
-        density_category: 'Medium',
-      });
-      const savedBean = await beanRepository.save(bean);
-
-      const beanBatch = await beanBatchService.createBeanBatch({
-        beanId: savedBean.id,
         roastDate: '2024-01-15',
-        bagOpenDate: '2024-01-20',
         roastLevel: 'Medium',
-        roastDegree: 85,
-      });
+      };
+
+      const createdBatch = await beanBatchService.createBeanBatch(beanBatchData);
 
       const updateData = {
-        bagOpenDate: null,
+        roaster: null,
+        country: null,
         roastLevel: null,
-        roastDegree: null,
       };
 
       // Act: Update bean batch with null values
-      const result = await beanBatchService.updateBeanBatch(beanBatch.id, updateData);
+      const result = await beanBatchService.updateBeanBatch(createdBatch.id, updateData);
 
       // Assert: Verify null values are handled correctly
       expect(result).toBeDefined();
-      expect(result.id).toBe(beanBatch.id);
-      expect(result.bagOpenDate).toBeNull();
+      expect(result.id).toBe(createdBatch.id);
+      expect(result.name).toBe('Test Bean'); // Should remain unchanged
+      expect(result.roaster).toBeNull();
+      expect(result.country).toBeNull();
       expect(result.roastLevel).toBeNull();
-      expect(result.roastDegree).toBeNull();
       expect(result.roastDate).toBe('2024-01-15'); // Service returns date string
+    });
+
+    it('should handle date updates correctly', async () => {
+      // Arrange: Create test data
+      const beanBatchData = {
+        name: 'Test Bean',
+        roastDate: '2024-01-15',
+        bagOpenDate: '2024-01-20',
+      };
+
+      const createdBatch = await beanBatchService.createBeanBatch(beanBatchData);
+
+      const updateData = {
+        roastDate: '2024-02-15',
+        bagOpenDate: '2024-02-20',
+      };
+
+      // Act: Update bean batch dates
+      const result = await beanBatchService.updateBeanBatch(createdBatch.id, updateData);
+
+      // Assert: Verify dates were updated
+      expect(result).toBeDefined();
+      expect(result.id).toBe(createdBatch.id);
+      expect(result.roastDate).toBeInstanceOf(Date);
+      expect(result.bagOpenDate).toBeInstanceOf(Date);
+      expect(result.roastDate.getFullYear()).toBe(2024);
+      expect(result.roastDate.getMonth()).toBe(1); // February
+      expect(result.roastDate.getDate()).toBe(15);
+      expect(result.bagOpenDate!.getFullYear()).toBe(2024);
+      expect(result.bagOpenDate!.getMonth()).toBe(1); // February
+      expect(result.bagOpenDate!.getDate()).toBe(20);
     });
   });
 
   describe('deleteBeanBatch', () => {
     it('should delete existing bean batch', async () => {
       // Arrange: Create test data
-      const bean = beanRepository.create({
-        name: 'Test Bean',
+      const beanBatchData = {
+        name: 'Bean to Delete',
         roaster: 'Test Roaster',
         country: 'Test Country',
-        region: 'Test Region',
-        farm: 'Test Farm',
-        varietal: 'Test Varietal',
-        processing_method: 'Test Method',
-        altitude_m: 1500,
-        density_category: 'Medium',
-      });
-      const savedBean = await beanRepository.save(bean);
-
-      const beanBatch = await beanBatchService.createBeanBatch({
-        beanId: savedBean.id,
         roastDate: '2024-01-15',
-        bagOpenDate: '2024-01-20',
-        roastLevel: 'Medium',
-        roastDegree: 85,
-      });
+      };
+
+      const createdBatch = await beanBatchService.createBeanBatch(beanBatchData);
+
+      // Verify bean batch exists before deletion
+      const beforeDelete = await beanBatchService.getBeanBatchById(createdBatch.id);
+      expect(beforeDelete).toBeDefined();
 
       // Act: Delete bean batch
-      const result = await beanBatchService.deleteBeanBatch(beanBatch.id);
+      const result = await beanBatchService.deleteBeanBatch(createdBatch.id);
 
       // Assert: Verify deletion was successful
       expect(result).toBe(true);
+
+      // Verify bean batch no longer exists
+      await expect(
+        beanBatchService.getBeanBatchById(createdBatch.id)
+      ).rejects.toThrow('Bean batch with ID');
     });
 
     it('should throw error when deleting non-existent bean batch', async () => {
