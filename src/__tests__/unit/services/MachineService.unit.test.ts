@@ -6,6 +6,7 @@ import { createMockDataSource } from '../../__mocks__/data-source.mock';
 // Mock data
 const mockMachineData = {
   model: 'La Marzocco Linea Mini',
+  manufacturer: 'La Marzocco',
   firmware_version: '1.2.3',
 };
 
@@ -36,6 +37,7 @@ describe('MachineService', () => {
         {
           id: '1',
           model: 'Machine 1',
+          manufacturer: 'Manufacturer 1',
           firmware_version: '1.0.0',
           created_at: new Date(),
           shots: [],
@@ -43,6 +45,7 @@ describe('MachineService', () => {
         {
           id: '2',
           model: 'Machine 2',
+          manufacturer: 'Manufacturer 2',
           firmware_version: '1.1.0',
           created_at: new Date(),
           shots: [],
@@ -77,6 +80,7 @@ describe('MachineService', () => {
       const expectedMachine = {
         id: machineId,
         model: 'Test Machine',
+        manufacturer: 'Test Manufacturer',
         firmware_version: '1.0.0',
         created_at: new Date(),
         shots: [],
@@ -167,17 +171,20 @@ describe('MachineService', () => {
       // Arrange
       const machineDataWithoutFirmware = {
         model: 'Test Machine',
+        manufacturer: 'Test Manufacturer',
         // firmware_version is undefined
       };
       const expectedMachine = {
         id: 'new-id',
         model: 'Test Machine',
+        manufacturer: 'Test Manufacturer',
         firmware_version: null,
         created_at: new Date(),
         shots: [],
       };
       mockMachineRepository.create.mockReturnValue({
         model: 'Test Machine',
+        manufacturer: 'Test Manufacturer',
         firmware_version: null,
       });
       mockMachineRepository.save.mockResolvedValue(expectedMachine);
@@ -188,6 +195,7 @@ describe('MachineService', () => {
       // Assert
       expect(mockMachineRepository.create).toHaveBeenCalledWith({
         model: 'Test Machine',
+        manufacturer: 'Test Manufacturer',
         firmware_version: null,
       });
       expect(result).toEqual(expectedMachine);
@@ -197,11 +205,13 @@ describe('MachineService', () => {
       // Arrange
       const machineDataWithNullFirmware = {
         model: 'Test Machine',
+        manufacturer: 'Test Manufacturer',
         firmware_version: null,
       };
       const expectedMachine = {
         id: 'new-id',
         model: 'Test Machine',
+        manufacturer: 'Test Manufacturer',
         firmware_version: null,
         created_at: new Date(),
         shots: [],
@@ -337,6 +347,7 @@ describe('MachineService', () => {
       const existingMachine = {
         id: machineId,
         model: 'Test Machine',
+        manufacturer: 'Test Manufacturer',
         firmware_version: '1.0.0',
         created_at: new Date(),
       };

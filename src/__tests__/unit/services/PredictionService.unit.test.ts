@@ -4,7 +4,6 @@ import { Shot } from '../../../../src/entities/Shot';
 import { ShotPreparation } from '../../../../src/entities/ShotPreparation';
 import { ShotExtraction } from '../../../../src/entities/ShotExtraction';
 import { BeanBatch } from '../../../../src/entities/BeanBatch';
-import { Bean } from '../../../../src/entities/Bean';
 import { Machine } from '../../../../src/entities/Machine';
 import { Grinder } from '../../../../src/entities/Grinder';
 
@@ -18,7 +17,6 @@ describe('PredictionService', () => {
   let mockPrepRepository: any;
   let mockExtractionRepository: any;
   let mockBatchRepository: any;
-  let mockBeanRepository: any;
   let mockMachineRepository: any;
   let mockGrinderRepository: any;
 
@@ -43,10 +41,6 @@ describe('PredictionService', () => {
       findOne: jest.fn(),
     };
 
-    mockBeanRepository = {
-      findOne: jest.fn(),
-    };
-
     mockMachineRepository = {
       findOne: jest.fn(),
     };
@@ -61,7 +55,6 @@ describe('PredictionService', () => {
       if (entity === ShotPreparation) return mockPrepRepository;
       if (entity === ShotExtraction) return mockExtractionRepository;
       if (entity === BeanBatch) return mockBatchRepository;
-      if (entity === Bean) return mockBeanRepository;
       if (entity === Machine) return mockMachineRepository;
       if (entity === Grinder) return mockGrinderRepository;
       return null;
@@ -97,12 +90,11 @@ describe('PredictionService', () => {
       };
       const mockBeanBatch = {
         id: 'batch-1',
+        name: 'Test Bean',
+        roaster: 'Test Roaster',
+        country: 'Ethiopia',
         roastDate: new Date('2024-01-01'),
         roastLevel: 'medium',
-        bean: {
-          name: 'Test Bean',
-          roaster: 'Test Roaster',
-        },
       };
       const mockMachine = {
         id: 'machine-1',
