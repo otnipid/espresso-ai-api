@@ -1,4 +1,3 @@
-export * from './Bean';
 export * from './BeanBatch';
 export * from './Machine';
 export * from './Shot';
